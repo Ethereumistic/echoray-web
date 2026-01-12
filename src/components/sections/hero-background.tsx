@@ -164,7 +164,7 @@ const TracingLine = ({ path, delay, duration, reverse = false, totalCycle }: {
 }
 
 const TechBubble = ({ Icon, x, y, duration, delay, totalCycle, reverse = false }: {
-    Icon: any,
+    Icon: React.ElementType,
     x: number,
     y: number,
     duration: number,
