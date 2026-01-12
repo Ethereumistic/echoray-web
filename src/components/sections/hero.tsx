@@ -1,8 +1,10 @@
 "use client"
 
 import Link from "next/link"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { HeroBackground } from "./hero-background"
 
 const stats = [
     { label: "Projects Delivered", value: "50+" },
@@ -12,41 +14,69 @@ const stats = [
 
 export function Hero() {
     return (
-        <section className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-hidden bg-background py-20 md:py-32">
-            {/* Background decoration */}
-            <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
+        <section className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-hidden py-20 md:py-32">
+            <HeroBackground />
 
-            <div className="container mx-auto flex flex-col items-center text-center px-4 md:px-6">
-                <Badge variant="secondary" className="mb-6 rounded-full px-4 py-1.5 text-sm font-medium animate-in fade-in slide-in-from-bottom-3 duration-1000">
-                    Web Development Excellence
-                </Badge>
+            <div className="container relative z-10 mx-auto flex flex-col items-center text-center px-4 md:px-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                >
+                    <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-sm font-medium">
+                        Web Development Excellence
+                    </Badge>
+                </motion.div>
 
-                <h1 className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl animate-in fade-in slide-in-from-bottom-5 duration-1000 fill-mode-both">
+                <motion.h1
+                    className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                >
                     We Build Digital Solutions That <span className="text-primary">Drive Business Growth</span>
-                </h1>
+                </motion.h1>
 
-                <p className="mt-8 max-w-2xl text-lg text-muted-foreground md:text-xl animate-in fade-in slide-in-from-bottom-7 duration-1000 fill-mode-both">
-                    From simple websites to enterprise CRMs, Echoray.io brings clarity to the web's complexity.
-                </p>
+                <motion.p
+                    className="mt-8 max-w-2xl text-lg text-muted-foreground md:text-xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                    From simple websites to enterprise CRMs, Echoray.io brings clarity to the web&apos;s complexity.
+                </motion.p>
 
-                <div className="mt-10 flex flex-col gap-4 sm:flex-row animate-in fade-in slide-in-from-bottom-9 duration-1000 fill-mode-both">
+                <motion.div
+                    className="mt-10 flex flex-col gap-4 sm:flex-row"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                >
                     <Button size="lg" asChild className="h-12 px-8 text-base">
                         <Link href="/start-project">Start Your Project</Link>
                     </Button>
-                    <Button variant="outline" size="lg" asChild className="h-12 px-8 text-base">
+                    <Button variant="outline" size="lg" asChild className="h-12 px-8 text-base bg-background/50 backdrop-blur-sm">
                         <Link href="/work">View Our Work</Link>
                     </Button>
-                </div>
+                </motion.div>
 
-                <div className="mt-20 grid w-full max-w-4xl grid-cols-1 gap-8 sm:grid-cols-3 animate-in fade-in slide-in-from-bottom-11 duration-1000 fill-mode-both">
+                <motion.div
+                    className="mt-20 grid w-full max-w-4xl grid-cols-1 gap-8 sm:grid-cols-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
+                >
                     {stats.map((stat, index) => (
                         <div key={index} className="flex flex-col items-center">
                             <span className="text-4xl font-bold md:text-5xl">{stat.value}</span>
                             <span className="mt-2 text-sm text-muted-foreground uppercase tracking-wider">{stat.label}</span>
                         </div>
                     ))}
-                </div>
+                </motion.div>
             </div>
+
+            {/* Bottom Gradient Fade */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-background to-transparent z-20 pointer-events-none" />
         </section>
     )
 }

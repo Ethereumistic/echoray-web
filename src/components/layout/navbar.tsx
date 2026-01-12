@@ -74,18 +74,18 @@ export function Navbar() {
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
                             <NavigationMenuItem>
-                                <Link href="/work" legacyBehavior passHref>
-                                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "bg-transparent")}>
+                                <NavigationMenuLink asChild>
+                                    <Link href="/work" className={cn(navigationMenuTriggerStyle(), "bg-transparent")}>
                                         Our Work
-                                    </NavigationMenuLink>
-                                </Link>
+                                    </Link>
+                                </NavigationMenuLink>
                             </NavigationMenuItem>
                             <NavigationMenuItem>
-                                <Link href="/about" legacyBehavior passHref>
-                                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "bg-transparent")}>
+                                <NavigationMenuLink asChild>
+                                    <Link href="/about" className={cn(navigationMenuTriggerStyle(), "bg-transparent")}>
                                         About
-                                    </NavigationMenuLink>
-                                </Link>
+                                    </Link>
+                                </NavigationMenuLink>
                             </NavigationMenuItem>
                         </NavigationMenuList>
                     </NavigationMenu>
@@ -141,7 +141,7 @@ export function Navbar() {
                 </div>
             </div>
         </header>
-    )
+    );
 }
 
 const ListItem = React.forwardRef<React.ElementRef<"a">, React.ComponentPropsWithoutRef<"a">>(

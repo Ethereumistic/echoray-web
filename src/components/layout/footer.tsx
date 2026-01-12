@@ -13,7 +13,7 @@ export function Footer() {
                             <span className="text-xl font-bold tracking-tight">Echoray</span>
                         </Link>
                         <p className="max-w-xs text-sm text-muted-foreground">
-                            Bringing clarity and understanding to the web's complexity. We build digital tools that empower businesses to thrive in the modern age.
+                            Bringing clarity and understanding to the web&apos;s complexity. We build digital tools that empower businesses to thrive in the modern age.
                         </p>
                     </div>
 
