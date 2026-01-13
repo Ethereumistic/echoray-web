@@ -1,0 +1,1842 @@
+
+# Echoray.io Design System
+
+**Version:** 2.0.0 (shadcn/ui ONLY)  
+**Last Updated:** January 2026  
+**Purpose:** Comprehensive design guidelines for AI models building components for echoray.io using ONLY shadcn/ui components
+
+---
+
+## 🚨 CRITICAL RULE FOR AI MODELS
+
+**NEVER write vanilla/custom components or HTML elements.**
+
+**ALWAYS use shadcn/ui components from:** https://ui.shadcn.com/docs/components
+
+This design system defines HOW to compose shadcn/ui components, not how to reinvent them.
+
+---
+
+## 🌊 Brand Philosophy
+
+### Origin Story
+Echoray.io draws inspiration from **Mr. Ray** in Finding Nemo—the wise educator who brings clarity to the vast, complex underwater world. Just as Mr. Ray guides young fish through the ocean's mysteries, **Echoray.io illuminates the digital landscape for businesses navigating the web**.
+
+**The Ocean Metaphor:**
+- **The Ocean** = The vast, overwhelming internet ecosystem (Web2, Web3, digital infrastructure)
+- **Mr. Ray** = Echoray.io—the beacon of knowledge, clarity, and guidance
+- **Dory** = Security-naive users who reuse passwords, need protection
+- **Nemo** = Curious explorers who may stumble into digital threats
+- **Bruce** = Gray-hat hackers, ethical dilemmas in the digital space
+
+### Mission
+**We bring clarity and understanding to the web's complexity.** Echoray.io serves businesses ranging from simple brochure sites to enterprise-grade custom CRMs, helping them thrive in the ever-evolving digital landscape.
+
+---
+
+## 🎯 Business Positioning
+
+### What We Do
+Echoray.io is an **ALL-IN web applications company** delivering:
+
+1. **Modern wesbites** – Clean, conversion-focused marketing sites
+2. **Mid-Tier Web Apps** – Custom dashboards, portals, SaaS products
+3. **Enterprise CRMs** – Complex, business-specific systems fine-tuned to workflows
+
+### Target Audience
+- **Small Businesses** seeking their first professional web presence
+- **Mid-Market Companies** needing custom tools and integrations
+- **Enterprise Clients** requiring sophisticated, scalable CRM systems
+
+### Brand Tone
+- **Professional yet approachable** – We're technical experts, not intimidating
+- **Clear and educational** – Like Mr. Ray, we explain complex concepts simply
+- **Trustworthy and reliable** – Clients building critical business systems need confidence
+- **Modern and forward-thinking** – We work across Web2, Web3, and emerging tech
+
+---
+
+## 🎨 Visual Identity
+
+### Color System (OKLCH)
+
+The color system is defined in `globals.css` and automatically applied to ALL shadcn/ui components.
+
+#### Primary Brand Color
+**Electric Blue** – Trust, intelligence, technical expertise
+```css
+--primary: oklch(0.5635 0.2408 260.8178); /* #0066FF */
+--primary-foreground: oklch(1.0000 0 0);  /* #FFFFFF */
+```
+
+**Usage in shadcn/ui:**
+- `<Button>` default variant
+- `<Badge variant="default">`
+- `<Progress>` fill color
+- `<Checkbox>` checked state
+- `<Switch>` enabled state
+- `<Slider>` thumb and track
+
+#### Theme Colors
+
+**Dark Theme (Default):**
+```css
+--background: oklch(0.2223 0.0060 271.1393);     /* #1a1b1e */
+--foreground: oklch(0.9551 0 0);                 /* #f0f0f0 */
+--card: oklch(0.2568 0.0076 274.6528);           /* #222327 */
+--card-foreground: oklch(0.9551 0 0);            /* #f0f0f0 */
+--muted: oklch(0.2940 0.0130 272.9312);          /* #2a2c33 */
+--muted-foreground: oklch(0.7058 0 0);           /* #a0a0a0 */
+--accent: oklch(0.2795 0.0368 260.0310);         /* #1e293b */
+--accent-foreground: oklch(0.7857 0.1153 246.6596); /* #79c0ff */
+--destructive: oklch(0.7106 0.1661 22.2162);     /* #f87171 */
+--destructive-foreground: oklch(1.0000 0 0);     /* #ffffff */
+--border: oklch(0.3289 0.0092 268.3843);         /* #33353a */
+--input: oklch(0.3289 0.0092 268.3843);          /* #33353a */
+--ring: oklch(0.5635 0.2408 260.8178);           /* #0066FF */
+```
+
+**Light Theme (Secondary):**
+```css
+--background: oklch(0.9940 0 0);                 /* #ffffff */
+--foreground: oklch(0 0 0);                      /* #000000 */
+--card: oklch(0.9940 0 0);                       /* #ffffff */
+--card-foreground: oklch(0 0 0);                 /* #000000 */
+--muted: oklch(0.9702 0 0);                      /* Light gray */
+--muted-foreground: oklch(0.4386 0 0);           /* Medium gray */
+--accent: oklch(0.9393 0.0288 266.3680);         /* Light accent */
+--accent-foreground: oklch(0.5445 0.1903 259.4848); /* Blue accent */
+--destructive: oklch(0.6290 0.1902 23.0704);     /* #ef4444 */
+--border: oklch(0.9300 0.0094 286.2156);         /* Light border */
+```
+
+**Chart Colors:**
+```css
+--chart-1: oklch(0.7599 0.2161 148.1499);  /* Green #4ade80 */
+--chart-2: oklch(0.5635 0.2408 260.8178);  /* Blue (primary) */
+--chart-3: oklch(0.7336 0.1758 50.5517);   /* Yellow-orange */
+--chart-4: oklch(0.6132 0.2294 291.7437);  /* Purple-blue */
+--chart-5: oklch(0.5590 0 0);              /* Neutral gray */
+```
+
+### Color Psychology & Application
+
+**When to use each shadcn/ui variant:**
+
+**`<Button variant="default">`** → Primary actions, main CTAs
+**`<Button variant="secondary">`** → Secondary actions, less prominent
+**`<Button variant="outline">`** → Tertiary actions, alternative choices
+**`<Button variant="destructive">`** → Delete, remove, dangerous actions
+**`<Button variant="ghost">`** → Subtle actions, icon buttons
+**`<Button variant="link">`** → Text-style navigation
+
+**`<Badge variant="default">`** → Primary status (active, live)
+**`<Badge variant="secondary">`** → Neutral status (pending)
+**`<Badge variant="outline">`** → Subtle emphasis
+**`<Badge variant="destructive">`** → Error, failed, critical
+
+**`<Alert variant="default">`** → General information
+**`<Alert variant="destructive">`** → Errors, critical warnings
+
+---
+
+## 📐 Spatial System
+
+### Border Radius
+```css
+--radius: 0.5rem; /* 8px - Professional B2B sweet spot */
+```
+
+**Shadcn/ui components automatically use this via:**
+- `rounded-lg` → Most components (Button, Card, Input)
+- `rounded-md` → Smaller elements (Badge, smaller buttons)
+- `rounded-full` → Avatar, circular buttons
+
+### Spacing Scale
+```css
+--spacing: 0.3rem; /* 4.8px base unit */
+```
+
+**Application in shadcn/ui:**
+- Use Tailwind spacing classes: `p-4`, `gap-6`, `space-y-8`
+- Component internal padding: `p-4` to `p-6`
+- Section spacing: `py-12` to `py-24`
+- Container padding: `px-4 md:px-6 lg:px-8`
+
+**Recommended spacing scale:**
+- Tight: `gap-2` (8px)
+- Normal: `gap-4` (16px)
+- Comfortable: `gap-6` (24px)
+- Generous: `gap-8` (32px)
+- Section: `gap-12` (48px)
+
+### Shadow System
+```css
+--shadow-color: #1a1a1a;
+--shadow-opacity: 0.16;
+```
+
+**Shadcn/ui components with built-in shadows:**
+- `<Card>` → Subtle elevation
+- `<Dialog>` → Modal elevation
+- `<Popover>` → Floating UI elevation
+- `<DropdownMenu>` → Menu elevation
+- `<HoverCard>` → Tooltip elevation
+
+**DO NOT** add custom shadows. Use shadcn/ui's default elevation system.
+
+---
+
+## 🔤 Typography
+
+### Font Families
+```css
+--font-sans: Plus Jakarta Sans, sans-serif;
+--font-serif: Lora, serif;
+--font-mono: IBM Plex Mono, monospace;
+```
+
+### Typography in shadcn/ui
+
+**Use `<Typography>` component variants when available, otherwise use Tailwind classes:**
+
+**Headings:**
+```tsx
+<h1 className="scroll-m-20 text-4xl font-bold tracking-tight lg:text-5xl">
+  Hero Headline
+</h1>
+
+<h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight">
+  Section Title
+</h2>
+
+<h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">
+  Subsection
+</h3>
+
+<h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
+  Card Title
+</h4>
+```
+
+**Body Text:**
+```tsx
+<p className="leading-7 [&:not(:first-child)]:mt-6">
+  Standard paragraph text with comfortable line height.
+</p>
+
+<p className="text-sm text-muted-foreground">
+  Secondary text, captions, helper text.
+</p>
+
+<p className="text-lg text-muted-foreground">
+  Large intro text for hero sections.
+</p>
+```
+
+**Code:**
+```tsx
+<code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
+  npm install
+</code>
+```
+
+**Links:**
+```tsx
+<Button variant="link" asChild>
+  <a href="/about">Learn More</a>
+</Button>
+```
+
+### Letter Spacing
+```css
+--tracking-normal: -0.025em;
+```
+
+Applied automatically through Tailwind's `tracking-tight` on headings.
+
+---
+
+## 🧩 shadcn/ui Component Usage Guide
+
+### Navigation Components
+
+#### 1. Header with Navigation Menu
+
+```tsx
+import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuContent, NavigationMenuLink } from "@/components/ui/navigation-menu"
+import { Button } from "@/components/ui/button"
+
+export function SiteHeader() {
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center">
+        {/* Logo */}
+        <a href="/" className="mr-6 flex items-center space-x-2">
+          <span className="font-bold text-xl">Echoray.io</span>
+        </a>
+
+        {/* Navigation */}
+        <NavigationMenu className="hidden md:flex">
+          <NavigationMenuList>
+            <NavigationMenuItem>
+              <NavigationMenuTrigger>Services</NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                  <li className="row-span-3">
+                    <NavigationMenuLink asChild>
+                      <a className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md" href="/services">
+                        <div className="mb-2 mt-4 text-lg font-medium">
+                          Our Services
+                        </div>
+                        <p className="text-sm leading-tight text-muted-foreground">
+                          From websites to enterprise CRMs
+                        </p>
+                      </a>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink asChild>
+                      <a href="/services/websites">Websites</a>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink asChild>
+                      <a href="/services/web-apps">Web Applications</a>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink asChild>
+                      <a href="/services/crm">Enterprise CRMs</a>
+                    </NavigationMenuLink>
+                  </li>
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem>
+              <NavigationMenuLink href="/work">
+                Our Work
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem>
+              <NavigationMenuLink href="/about">
+                About
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
+
+        {/* CTA */}
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="ghost" asChild className="hidden md:inline-flex">
+            <a href="/contact">Contact</a>
+          </Button>
+          <Button asChild>
+            <a href="/start-project">Start Project</a>
+          </Button>
+        </div>
+
+        {/* Mobile menu */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="md:hidden">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right">
+            <SheetHeader>
+              <SheetTitle>Menu</SheetTitle>
+            </SheetHeader>
+            {/* Mobile navigation items */}
+          </SheetContent>
+        </Sheet>
+      </div>
+    </header>
+  )
+}
+```
+
+**Components used:**
+- `NavigationMenu` - Main desktop navigation
+- `Sheet` - Mobile slide-out menu
+- `Button` - CTAs and menu toggle
+
+#### 2. Sidebar Navigation
+
+```tsx
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarFooter } from "@/components/ui/sidebar"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { LayoutDashboard, Folder, Settings } from "lucide-react"
+
+export function AppSidebar() {
+  return (
+    <Sidebar>
+      <SidebarHeader className="p-6">
+        <h2 className="text-lg font-semibold">Echoray CRM</h2>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href="/dashboard">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href="/projects">
+                    <Folder className="mr-2 h-4 w-4" />
+                    Projects
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href="/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="p-4 border-t">
+        <div className="flex items-center gap-3">
+          <Avatar>
+            <AvatarImage src="/user.jpg" />
+            <AvatarFallback>JD</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="text-sm font-medium">John Doe</p>
+            <p className="text-xs text-muted-foreground">john@example.com</p>
+          </div>
+        </div>
+      </SidebarFooter>
+    </Sidebar>
+  )
+}
+```
+
+**Components used:**
+- `Sidebar` - Complete sidebar system
+- `Avatar` - User profile display
+
+---
+
+### Content Components
+
+#### 3. Hero Section
+
+```tsx
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+
+export function HeroSection() {
+  return (
+    <section className="container flex min-h-screen flex-col items-center justify-center gap-8 py-24 md:py-32">
+      {/* Eyebrow badge */}
+      <Badge variant="secondary" className="px-4 py-1">
+        Web Development Excellence
+      </Badge>
+
+      {/* Headline */}
+      <h1 className="max-w-4xl text-center text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+        We Build Digital Solutions That Drive Business Growth
+      </h1>
+
+      {/* Subheadline */}
+      <p className="max-w-2xl text-center text-lg text-muted-foreground md:text-xl">
+        From modern wesbites to enterprise CRMs, Echoray.io brings clarity to the web's complexity.
+      </p>
+
+      {/* CTAs */}
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <Button size="lg" asChild>
+          <a href="/start-project">Start Your Project</a>
+        </Button>
+        <Button variant="outline" size="lg" asChild>
+          <a href="/work">View Our Work</a>
+        </Button>
+      </div>
+
+      {/* Social proof */}
+      <div className="mt-12 grid gap-8 text-center sm:grid-cols-3">
+        <div>
+          <p className="text-4xl font-bold">50+</p>
+          <p className="text-sm text-muted-foreground">Projects Delivered</p>
+        </div>
+        <div>
+          <p className="text-4xl font-bold">98%</p>
+          <p className="text-sm text-muted-foreground">Client Satisfaction</p>
+        </div>
+        <div>
+          <p className="text-4xl font-bold">5+</p>
+          <p className="text-sm text-muted-foreground">Years Experience</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+```
+
+**Components used:**
+- `Button` - Primary and secondary CTAs
+- `Badge` - Eyebrow label
+
+#### 4. Services Section with Cards
+
+```tsx
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Globe, Layers, Database } from "lucide-react"
+
+export function ServicesSection() {
+  const services = [
+    {
+      icon: <Globe className="h-10 w-10" />,
+      title: "Modern wesbites",
+      description: "Clean, conversion-focused sites that establish your digital presence.",
+      features: ["Responsive Design", "SEO Optimized", "Fast Loading"],
+      href: "/services/websites"
+    },
+    {
+      icon: <Layers className="h-10 w-10" />,
+      title: "Web Applications",
+      description: "Custom dashboards, portals, and SaaS products built for scale.",
+      features: ["User Authentication", "API Integration", "Real-time Updates"],
+      href: "/services/web-apps",
+      highlighted: true
+    },
+    {
+      icon: <Database className="h-10 w-10" />,
+      title: "Enterprise CRMs",
+      description: "Sophisticated systems fine-tuned to your business workflows.",
+      features: ["Custom Workflows", "Advanced Analytics", "Third-party Integration"],
+      href: "/services/crm"
+    }
+  ]
+
+  return (
+    <section className="container py-24">
+      <div className="mb-16 max-w-2xl">
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          Our Services
+        </h2>
+        <p className="mt-4 text-lg text-muted-foreground">
+          Whether you need a landing page or a complex enterprise system, we guide you through the digital landscape.
+        </p>
+      </div>
+
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {services.map((service) => (
+          <Card key={service.title} className={service.highlighted ? "border-primary" : ""}>
+            <CardHeader>
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                {service.icon}
+              </div>
+              <CardTitle>{service.title}</CardTitle>
+              <CardDescription>{service.description}</CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <ul className="space-y-2">
+                {service.features.map((feature) => (
+                  <li key={feature} className="flex items-center text-sm">
+                    <Check className="mr-2 h-4 w-4 text-primary" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+
+            <CardFooter>
+              <Button variant="outline" className="w-full" asChild>
+                <a href={service.href}>Learn More</a>
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    </section>
+  )
+}
+```
+
+**Components used:**
+- `Card` with all subcomponents - Service display
+- `Button` - "Learn More" CTAs
+
+#### 5. Testimonials with Avatar
+
+```tsx
+import { Card, CardContent } from "@/components/ui/card"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+
+export function TestimonialsSection() {
+  const testimonials = [
+    {
+      quote: "Echoray.io transformed our chaotic sales process into a streamlined system. The custom CRM they built has become the backbone of our operations.",
+      author: "Sarah Johnson",
+      role: "CEO, TechFlow",
+      avatar: "/testimonials/sarah.jpg",
+      initials: "SJ"
+    },
+    // More testimonials...
+  ]
+
+  return (
+    <section className="container py-24">
+      <div className="mb-16 max-w-2xl text-center mx-auto">
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          What Our Clients Say
+        </h2>
+        <p className="mt-4 text-lg text-muted-foreground">
+          We've helped businesses of all sizes navigate the digital landscape.
+        </p>
+      </div>
+
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {testimonials.map((testimonial) => (
+          <Card key={testimonial.author}>
+            <CardContent className="pt-6">
+              <blockquote className="text-sm leading-relaxed">
+                "{testimonial.quote}"
+              </blockquote>
+
+              <div className="mt-6 flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={testimonial.avatar} alt={testimonial.author} />
+                  <AvatarFallback>{testimonial.initials}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-sm">{testimonial.author}</p>
+                  <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  )
+}
+```
+
+**Components used:**
+- `Card` - Testimonial container
+- `Avatar` - Client photos
+
+#### 6. CTA Section with Dialog
+
+```tsx
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { ContactForm } from "./contact-form" // Uses Form component
+
+export function CTASection() {
+  return (
+    <section className="bg-primary py-24 text-primary-foreground">
+      <div className="container text-center">
+        <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
+          Ready to Bring Clarity to Your Digital Presence?
+        </h2>
+        <p className="mx-auto mt-6 max-w-2xl text-lg opacity-90">
+          Let's discuss your project and how we can guide you through the web's complexity.
+        </p>
+
+        <div className="mt-8 flex flex-col gap-4 sm:flex-row justify-center">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="secondary" size="lg">
+                Schedule a Call
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Schedule Your Consultation</DialogTitle>
+                <DialogDescription>
+                  Fill out the form below and we'll get back to you within 24 hours.
+                </DialogDescription>
+              </DialogHeader>
+              <ContactForm />
+            </DialogContent>
+          </Dialog>
+
+          <Button variant="outline" size="lg" asChild className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
+            <a href="/pricing">View Pricing</a>
+          </Button>
+        </div>
+      </div>
+    </section>
+  )
+}
+```
+
+**Components used:**
+- `Button` - CTAs
+- `Dialog` - Contact form modal
+
+---
+
+### Form Components
+
+#### 7. Contact Form with React Hook Form
+
+```tsx
+"use client"
+
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import { Button } from "@/components/ui/button"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "@/components/ui/use-toast"
+
+const formSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  projectType: z.string(),
+  message: z.string().min(10, "Message must be at least 10 characters"),
+})
+
+export function ContactForm() {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      projectType: "",
+      message: "",
+    },
+  })
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log(values)
+    toast({
+      title: "Form submitted!",
+      description: "We'll get back to you within 24 hours.",
+    })
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="John Doe" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="john@company.com" {...field} />
+              </FormControl>
+              <FormDescription>
+                We'll never share your email.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="projectType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Project Type</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a project type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="website">Simple Website</SelectItem>
+                  <SelectItem value="webapp">Web Application</SelectItem>
+                  <SelectItem value="crm">Enterprise CRM</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="message"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Message</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Tell us about your project..."
+                  className="min-h-[100px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" className="w-full">
+          Send Message
+        </Button>
+      </form>
+    </Form>
+  )
+}
+```
+
+**Components used:**
+- `Form` - Complete form system with validation
+- `Input` - Text inputs
+- `Textarea` - Long-form text
+- `Select` - Dropdown selection
+- `Button` - Submit button
+
+---
+
+### Data Display Components
+
+#### 8. Stats Dashboard
+
+```tsx
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
+import { TrendingUp, TrendingDown } from "lucide-react"
+
+export function StatsDashboard() {
+  const stats = [
+    {
+      title: "Total Projects",
+      value: "247",
+      change: "+12%",
+      trend: "up",
+      progress: 75
+    },
+    {
+      title: "Active Clients",
+      value: "89",
+      change: "+8%",
+      trend: "up",
+      progress: 60
+    },
+    {
+      title: "Revenue (MRR)",
+      value: "$54.2k",
+      change: "-3%",
+      trend: "down",
+      progress: 45
+    },
+  ]
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {stats.map((stat) => (
+        <Card key={stat.title}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {stat.title}
+            </CardTitle>
+            <Badge variant={stat.trend === "up" ? "default" : "destructive"}>
+              {stat.trend === "up" ? (
+                <TrendingUp className="mr-1 h-3 w-3" />
+              ) : (
+                <TrendingDown className="mr-1 h-3 w-3" />
+              )}
+              {stat.change}
+            </Badge>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{stat.value}</div>
+            <Progress value={stat.progress} className="mt-4" />
+            <p className="mt-2 text-xs text-muted-foreground">
+              {stat.progress}% of monthly goal
+            </p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
+```
+
+**Components used:**
+- `Card` - Stat containers
+- `Progress` - Progress bars
+- `Badge` - Trend indicators
+
+#### 9. Data Table
+
+```tsx
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { MoreHorizontal } from "lucide-react"
+
+export function ProjectsTable() {
+  const projects = [
+    {
+      id: 1,
+      name: "Custom CRM Dashboard",
+      client: "TechFlow Inc",
+      status: "in-progress",
+      deadline: "Jan 31, 2026"
+    },
+    {
+      id: 2,
+      name: "E-commerce Website",
+      client: "RetailCo",
+      status: "completed",
+      deadline: "Jan 15, 2026"
+    },
+    // More projects...
+  ]
+
+  return (
+    <div className="rounded-lg border">
+      <Table>
+        <TableCaption>A list of recent projects</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Project</TableHead>
+            <TableHead>Client</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Deadline</TableHead>
+            <TableHead className="w-[100px]">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {projects.map((project) => (
+            <TableRow key={project.id}>
+              <TableCell className="font-medium">{project.name}</TableCell>
+              <TableCell>{project.client}</TableCell>
+              <TableCell>
+                <Badge variant={project.status === "completed" ? "default" : "secondary"}>
+                  {project.status}
+                </Badge>
+              </TableCell>
+              <TableCell>{project.deadline}</TableCell>
+              <TableCell>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>View Details</DropdownMenuItem>
+                    <DropdownMenuItem>Edit Project</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">
+                      Delete Project
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  )
+}
+```
+
+**Components used:**
+- `Table` - Complete table system
+- `Badge` - Status indicators
+- `DropdownMenu` - Row actions
+
+#### 10. Tabs for Content Organization
+
+```tsx
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+export function ServiceTabs() {
+  return (
+    <Tabs defaultValue="websites" className="w-full">
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="websites">Websites</TabsTrigger>
+        <TabsTrigger value="webapps">Web Apps</TabsTrigger>
+        <TabsTrigger value="crm">CRMs</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="websites">
+        <Card>
+          <CardHeader>
+            <CardTitle>Modern wesbites</CardTitle>
+            <CardDescription>
+              Clean, conversion-focused sites that establish your digital presence.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p>Perfect for businesses looking to establish an online presence with a professional website.</p>
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+              <li>Responsive design across all devices</li>
+              <li>SEO optimization for better visibility</li>
+              <li>Fast loading times</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="webapps">
+        <Card>
+          <CardHeader>
+            <CardTitle>Web Applications</CardTitle>
+            <CardDescription>
+              Custom dashboards, portals, and SaaS products built for scale.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p>Scalable solutions for businesses needing custom functionality.</p>
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+              <li>User authentication and authorization</li>
+              <li>API integrations</li>
+              <li>Real-time updates</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="crm">
+        <Card>
+          <CardHeader>
+            <CardTitle>Enterprise CRMs</CardTitle>
+            <CardDescription>
+              Sophisticated systems fine-tuned to your business workflows.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p>Complex systems designed to streamline your entire business operation.</p>
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+              <li>Custom workflow automation</li>
+              <li>Advanced analytics and reporting</li>
+              <li>Third-party integrations</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
+  )
+}
+```
+
+**Components used:**
+- `Tabs` - Content organization
+- `Card` - Tab content containers
+
+---
+
+### Feedback Components
+
+#### 11. Toast Notifications
+
+```tsx
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
+
+export function NotificationExample() {
+  const { toast } = useToast()
+
+  return (
+    <div className="space-y-4">
+      <Button
+        onClick={() => {
+          toast({
+            title: "Project Created",
+            description: "Your new project has been created successfully.",
+          })
+        }}
+      >
+        Show Success Toast
+      </Button>
+
+      <Button
+        variant="destructive"
+        onClick={() => {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Something went wrong. Please try again.",
+          })
+        }}
+      >
+        Show Error Toast
+      </Button>
+    </div>
+  )
+}
+```
+
+**Components used:**
+- `Toast` - Notification system via `useToast` hook
+
+#### 12. Alert Components
+
+```tsx
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, CheckCircle2, Info } from "lucide-react"
+
+export function AlertExamples() {
+  return (
+    <div className="space-y-4">
+      {/* Info Alert */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>Information</AlertTitle>
+        <AlertDescription>
+          Your project timeline has been updated. Check your dashboard for details.
+        </AlertDescription>
+      </Alert>
+
+      {/* Success Alert */}
+      <Alert className="border-chart-1 bg-chart-1/10">
+        <CheckCircle2 className="h-4 w-4 text-chart-1" />
+        <AlertTitle>Success</AlertTitle>
+        <AlertDescription>
+          Your changes have been saved successfully.
+        </AlertDescription>
+      </Alert>
+
+      {/* Error Alert */}
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          Failed to save changes. Please try again.
+        </AlertDescription>
+      </Alert>
+    </div>
+  )
+}
+```
+
+**Components used:**
+- `Alert` - Inline alerts with variants
+
+#### 13. Skeleton Loaders
+
+```tsx
+import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
+
+export function LoadingState() {
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-[200px]" />
+          <Skeleton className="h-4 w-[300px]" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+```
+
+**Components used:**
+- `Skeleton` - Loading placeholders
+
+#### 14. Spinner
+
+```tsx
+import { Spinner } from "@/components/ui/spinner"
+
+export function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <Spinner className="h-8 w-8" />
+    </div>
+  )
+}
+```
+
+**Components used:**
+- `Spinner` - Loading indicator
+
+---
+
+### Interactive Components
+
+#### 15. Accordion for FAQs
+
+```tsx
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+
+export function FAQSection() {
+  const faqs = [
+    {
+      question: "What services does Echoray.io offer?",
+      answer: "We offer three tiers of services: Modern wesbites for businesses establishing their online presence, custom web applications for companies needing specific functionality, and enterprise CRMs tailored to complex business workflows."
+    },
+    {
+      question: "How long does a typical project take?",
+      answer: "Project timelines vary based on complexity. Modern wesbites typically take 2-4 weeks, web applications 6-12 weeks, and enterprise CRMs 3-6 months. We provide detailed timelines during the consultation phase."
+    },
+    {
+      question: "Do you offer ongoing support?",
+      answer: "Yes, we offer various support packages including maintenance, updates, and feature additions. All projects include a 30-day warranty period after launch."
+    },
+  ]
+
+  return (
+    <section className="container py-24">
+      <div className="mx-auto max-w-3xl">
+        <h2 className="mb-12 text-3xl font-bold tracking-tight text-center">
+          Frequently Asked Questions
+        </h2>
+
+        <Accordion type="single" collapsible className="w-full">
+          {faqs.map((faq, index) => (
+            <AccordionItem key={index} value={`item-${index}`}>
+              <AccordionTrigger className="text-left">
+                {faq.question}
+              </AccordionTrigger>
+              <AccordionContent>
+                {faq.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </div>
+    </section>
+  )
+}
+```
+
+**Components used:**
+- `Accordion` - Collapsible FAQ sections
+
+#### 16. Popover for Additional Info
+
+```tsx
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { Info } from "lucide-react"
+
+export function PricingInfo() {
+  return (
+    <div className="flex items-center gap-2">
+      <span>Enterprise Plan</span>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-5 w-5">
+            <Info className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80">
+          <div className="space-y-2">
+            <h4 className="font-semibold">What's included:</h4>
+            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+              <li>Unlimited projects</li>
+              <li>Priority support</li>
+              <li>Custom integrations</li>
+              <li>Dedicated account manager</li>
+            </ul>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+```
+
+**Components used:**
+- `Popover` - Contextual information displays
+
+#### 17. Tooltip
+
+```tsx
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Button } from "@/components/ui/button"
+import { HelpCircle } from "lucide-react"
+
+export function FeatureWithTooltip() {
+  return (
+    <TooltipProvider>
+      <div className="flex items-center gap-2">
+        <span>API Integration</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-5 w-5">
+              <HelpCircle className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Connect with third-party services via REST or GraphQL APIs</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </TooltipProvider>
+  )
+}
+```
+
+**Components used:**
+- `Tooltip` - Hover tooltips
+
+---
+
+## 🎭 Animation Patterns
+
+### Hover States (Built into shadcn/ui)
+
+shadcn/ui components come with hover states out of the box:
+
+- `<Button>` - Opacity change on hover
+- `<Card>` - Add `hover:shadow-lg` for elevation change
+- `<NavigationMenuLink>` - Underline animation
+- `<DropdownMenuItem>` - Background highlight
+
+**Custom hover effects using Tailwind:**
+
+```tsx
+<Card className="transition-all duration-300 hover:scale-105 hover:shadow-xl">
+  {/* Card content */}
+</Card>
+```
+
+### Loading States
+
+**Use shadcn/ui components:**
+
+```tsx
+// Skeleton for initial load
+<Skeleton className="h-32 w-full" />
+
+// Spinner for actions
+<Button disabled>
+  <Spinner className="mr-2 h-4 w-4" />
+  Loading...
+</Button>
+```
+
+### Page Transitions
+
+**DO NOT** implement custom animations. Let Next.js handle page transitions naturally.
+
+For scroll-based animations, use `framer-motion` with shadcn/ui components:
+
+```tsx
+import { motion } from "framer-motion"
+import { Card } from "@/components/ui/card"
+
+const MotionCard = motion(Card)
+
+<MotionCard
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5 }}
+>
+  {/* Card content */}
+</MotionCard>
+```
+
+---
+
+## 📱 Responsive Patterns
+
+### Mobile Navigation
+
+**Use `<Sheet>` for mobile menus:**
+
+```tsx
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
+import { Menu } from "lucide-react"
+
+<Sheet>
+  <SheetTrigger asChild>
+    <Button variant="ghost" size="icon" className="md:hidden">
+      <Menu className="h-5 w-5" />
+    </Button>
+  </SheetTrigger>
+  <SheetContent side="right">
+    {/* Mobile navigation items */}
+  </SheetContent>
+</Sheet>
+```
+
+### Responsive Grid Layouts
+
+**Use Tailwind responsive classes with shadcn/ui:**
+
+```tsx
+<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  <Card>...</Card>
+  <Card>...</Card>
+  <Card>...</Card>
+</div>
+```
+
+### Responsive Typography
+
+**Built into shadcn/ui typography patterns:**
+
+```tsx
+<h1 className="text-3xl font-bold md:text-4xl lg:text-5xl">
+  Responsive Heading
+</h1>
+```
+
+---
+
+## ♿ Accessibility
+
+### shadcn/ui Accessibility Features
+
+All shadcn/ui components are built on **Radix UI** primitives, which means they include:
+
+- ✅ Keyboard navigation
+- ✅ ARIA attributes
+- ✅ Focus management
+- ✅ Screen reader support
+
+**DO NOT** modify these accessibility features. They are production-tested.
+
+### Accessibility Checklist
+
+When using shadcn/ui components:
+
+- [ ] Use `<Button asChild>` for links that look like buttons
+- [ ] Always include `<Label>` with form `<Input>` components
+- [ ] Use `<FormDescription>` for helper text
+- [ ] Use `<AlertDialog>` for destructive actions (not `<Dialog>`)
+- [ ] Provide alt text for `<Avatar>` fallbacks
+- [ ] Use semantic HTML inside `<Card>` components
+
+---
+
+## 🎯 Conversion Optimization with shadcn/ui
+
+### Button Hierarchy
+
+```tsx
+// Primary CTA - Most important action
+<Button size="lg">Start Your Project</Button>
+
+// Secondary CTA - Alternative action
+<Button variant="outline" size="lg">View Pricing</Button>
+
+// Tertiary CTA - Low-priority action
+<Button variant="ghost">Learn More</Button>
+```
+
+### Form Best Practices
+
+```tsx
+<Form {...form}>
+  <form onSubmit={form.handleSubmit(onSubmit)}>
+    {/* Minimum viable fields */}
+    <FormField name="email" />
+    <FormField name="projectType" />
+    
+    {/* Optional fields in Accordion */}
+    <Accordion type="single" collapsible>
+      <AccordionItem value="additional">
+        <AccordionTrigger>Additional Information (Optional)</AccordionTrigger>
+        <AccordionContent>
+          <FormField name="budget" />
+          <FormField name="timeline" />
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+
+    <Button type="submit">Submit</Button>
+  </form>
+</Form>
+```
+
+### Trust Signals
+
+```tsx
+<Card>
+  <CardHeader>
+    <div className="flex items-center gap-2">
+      <Badge variant="default">Verified</Badge>
+      <Badge variant="secondary">98% Satisfaction</Badge>
+    </div>
+  </CardHeader>
+  <CardContent>
+    {/* Trust content */}
+  </CardContent>
+</Card>
+```
+
+---
+
+## 🔍 SEO with shadcn/ui
+
+### Semantic HTML
+
+shadcn/ui components render semantic HTML automatically. Enhance with proper structure:
+
+```tsx
+<main>
+  <section>
+    <h1>Page Title</h1>
+    <Card>
+      <CardHeader>
+        <CardTitle>Section Title</CardTitle>
+      </CardHeader>
+    </Card>
+  </section>
+</main>
+```
+
+### Performance
+
+shadcn/ui is optimized for performance:
+- Tree-shakeable (only imports what you use)
+- CSS variables for theming (no runtime overhead)
+- Built on Radix UI (minimal JavaScript)
+
+---
+
+## 🛠️ Component Development Workflow for AI Models
+
+### Step-by-Step Process
+
+1. **Identify the shadcn/ui components needed**
+   - Review the official components list: https://ui.shadcn.com/docs/components
+   - Choose the most appropriate component(s)
+
+2. **Import the components**
+   ```tsx
+   import { Button } from "@/components/ui/button"
+   import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+   ```
+
+3. **Compose the components**
+   - Use Tailwind classes for layout (grid, flex, spacing)
+   - Use component variants for styling (variant, size props)
+   - Never write custom CSS
+
+4. **Add interactivity**
+   - Use shadcn/ui's built-in state management
+   - Use React Hook Form with `<Form>` component for forms
+   - Use `useToast` hook for notifications
+
+5. **Ensure responsiveness**
+   - Use Tailwind responsive classes (`md:`, `lg:`)
+   - Use `<Sheet>` for mobile menus
+   - Test at breakpoints: 375px, 768px, 1024px, 1440px
+
+6. **Verify accessibility**
+   - shadcn/ui handles this automatically
+   - Just ensure proper component usage (e.g., `<Label>` with `<Input>`)
+
+---
+
+## 📚 Complete shadcn/ui Components Reference
+
+### All Available Components:
+
+**Layout & Structure:**
+- `Card` - Container for content sections
+- `Separator` - Horizontal or vertical dividers
+- `Resizable` - Adjustable panes
+- `Scroll Area` - Custom scrollbars
+- `Aspect Ratio` - Maintain aspect ratios
+
+**Navigation:**
+- `NavigationMenu` - Main site navigation
+- `Sidebar` - App sidebar navigation
+- `Breadcrumb` - Navigation breadcrumbs
+- `Pagination` - Page navigation
+- `Tabs` - Tab-based navigation
+- `Menubar` - Menu bar navigation
+
+**Form Elements:**
+- `Form` - Complete form system with validation
+- `Input` - Text inputs
+- `Textarea` - Multi-line text input
+- `Select` - Dropdown selection
+- `Checkbox` - Checkboxes
+- `Radio Group` - Radio buttons
+- `Switch` - Toggle switches
+- `Slider` - Range sliders
+- `Date Picker` - Date selection
+- `Calendar` - Calendar component
+- `Input OTP` - One-time password input
+- `Native Select` - Native select element
+- `Combobox` - Autocomplete input
+- `Command` - Command palette
+
+**Buttons & Actions:**
+- `Button` - All button types
+- `Button Group` - Grouped buttons
+- `Toggle` - Toggle button
+- `Toggle Group` - Toggle button groups
+
+**Feedback & Status:**
+- `Alert` - Inline alerts
+- `Alert Dialog` - Modal alerts
+- `Toast` / `Sonner` - Notifications
+- `Progress` - Progress bars
+- `Skeleton` - Loading placeholders
+- `Spinner` - Loading spinner
+- `Badge` - Status badges
+- `Tooltip` - Hover tooltips
+- `Hover Card` - Hover cards
+- `Popover` - Popover panels
+
+**Overlays:**
+- `Dialog` - Modal dialogs
+- `Sheet` - Slide-out panels
+- `Drawer` - Bottom drawer
+- `Dropdown Menu` - Dropdown menus
+- `Context Menu` - Right-click menus
+
+**Data Display:**
+- `Table` - Data tables
+- `Data Table` - Advanced tables with sorting/filtering
+- `Avatar` - User avatars
+- `Chart` - Charts and graphs
+- `Carousel` - Image carousels
+- `Accordion` - Collapsible sections
+- `Collapsible` - Show/hide content
+- `Empty` - Empty states
+- `Kbd` - Keyboard key display
+
+**Typography:**
+- `Typography` - Text styles
+- `Label` - Form labels
+
+**Utility:**
+- `Field` - Form field wrapper
+- `Item` - List item component
+- `Input Group` - Input with addons
+
+---
+
+## 🚨 CRITICAL REMINDERS FOR AI MODELS
+
+### NEVER DO THIS:
+
+❌ Write custom HTML elements (`<div>`, `<button>`, `<input>`)
+❌ Create custom styled components
+❌ Use inline styles
+❌ Write custom CSS classes
+❌ Implement custom accessibility features
+❌ Build custom form validation (use Form + zod)
+❌ Create custom modals/dialogs
+❌ Build custom dropdown menus
+❌ Implement custom tooltips
+
+### ALWAYS DO THIS:
+
+✅ Import shadcn/ui components
+✅ Use Tailwind utility classes for layout
+✅ Use component variants (variant, size props)
+✅ Use `<Form>` with React Hook Form + zod
+✅ Use `<Dialog>` and `<AlertDialog>` for modals
+✅ Use `<DropdownMenu>` for menus
+✅ Use `<Tooltip>` for tooltips
+✅ Use `<Sheet>` for mobile menus
+✅ Use `<Skeleton>` for loading states
+✅ Use `useToast` for notifications
+
+---
+
+## 📖 Example: Complete Page Composition
+
+Here's how to build a complete landing page using ONLY shadcn/ui:
+
+```tsx
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuLink } from "@/components/ui/navigation-menu"
+
+export function LandingPage() {
+  return (
+    <>
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+        <div className="container flex h-16 items-center justify-between">
+          <a href="/" className="font-bold text-xl">Echoray.io</a>
+          
+          <NavigationMenu className="hidden md:flex">
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuLink href="/services">Services</NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink href="/work">Work</NavigationMenuLink>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+
+          <Button>Start Project</Button>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="container py-24 md:py-32">
+        <div className="mx-auto max-w-3xl text-center">
+          <Badge variant="secondary" className="mb-4">Web Development Excellence</Badge>
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+            We Build Digital Solutions That Drive Business Growth
+          </h1>
+          <p className="mt-6 text-lg text-muted-foreground">
+            From modern wesbites to enterprise CRMs, we bring clarity to the web.
+          </p>
+          <div className="mt-8 flex flex-col gap-4 sm:flex-row justify-center">
+            <Button size="lg">Get Started</Button>
+            <Button variant="outline" size="lg">View Work</Button>
+          </div>
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* Services */}
+      <section className="container py-24">
+        <h2 className="mb-12 text-3xl font-bold text-center">Our Services</h2>
+        <div className="grid gap-8 md:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Modern wesbites</CardTitle>
+              <CardDescription>Clean, conversion-focused sites</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Perfect for establishing your online presence.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full">Learn More</Button>
+            </CardFooter>
+          </Card>
+
+          <Card className="border-primary">
+            <CardHeader>
+              <Badge className="w-fit">Most Popular</Badge>
+              <CardTitle>Web Applications</CardTitle>
+              <CardDescription>Custom dashboards and portals</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Scalable solutions for growing businesses.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full">Learn More</Button>
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Enterprise CRMs</CardTitle>
+              <CardDescription>Sophisticated business systems</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Fine-tuned to your workflows.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full">Learn More</Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="bg-primary py-24 text-primary-foreground">
+        <div className="container text-center">
+          <h2 className="text-3xl font-bold md:text-4xl">
+            Ready to Start Your Project?
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-lg opacity-90">
+            Let's bring clarity to your digital presence.
+          </p>
+          <Button variant="secondary" size="lg" className="mt-8">
+            Schedule a Call
+          </Button>
+        </div>
+      </section>
+    </>
+  )
+}
+```
+
+**This example uses:**
+- Navigation: `NavigationMenu`
+- Hero: `Badge`, `Button`
+- Services: `Card` with all subcomponents
+- Divider: `Separator`
+- CTA: `Button` with variants
+
+**Zero custom components. Zero vanilla HTML. Pure shadcn/ui composition.**
+
+---
+
+## 🎓 Final Instructions for AI Models
+
+When building ANY component for echoray.io:
+
+1. **Read this design system first** - Understand the brand and available components
+2. **Check shadcn/ui docs** - https://ui.shadcn.com/docs/components
+3. **Import shadcn/ui components** - Never write custom components
+4. **Compose with Tailwind** - Use utility classes for layout only
+5. **Use component variants** - Don't override with custom styles
+6. **Ensure responsiveness** - Use Tailwind responsive classes
+7. **Trust accessibility** - shadcn/ui handles it via Radix UI
+8. **Test in both themes** - Dark (default) and light
+9. **Follow brand tone** - Professional yet approachable
+10. **Optimize for conversion** - Clear CTAs, trust signals, minimal friction
+
+Remember: Echoray.io brings **clarity to complexity**. Your components should embody this by being clean, semantic, and built from proven shadcn/ui primitives.
+
+---
+
+**End of Design System v2.0.0**
+
+*For questions or additions to this design system, consult the project lead or submit a pull request with proposed changes.*

@@ -1,0 +1,86 @@
+
+# 🏗 Echoray Project Architecture & Refactoring Plan
+
+## 🌐 Overview
+The Echoray ecosystem is transitioning from a single project to a multi-project architecture. This setup allows for a clear separation of concerns between the public marketing site and the internal business management platform.
+
+### Architecture Components
+1. **`echoray-web`**: The public-facing website built with **Next.js** (App Router). Hosted on Cloudflare Pages.
+2. **`echoray-app`**: The internal dashboard and CRM built with **Next.js** (App Router). This handles project management, pricing control, and business logic. Hosted on Cloudflare Workers via OpenNext.
+3. **Supabase**: The unified backend providing PostgreSQL, Authentication, and Real-time capabilities to both projects.
+
+---
+
+## 📂 Proposed Directory Structure
+
+To ensure AI models and developers have clear context, we will use a "Grouped Repository" structure (not a monorepo).
+
+```text
+/echoray (Root Folder - No Git)
+├── /echoray-web (Current Next.js Project)
+│   ├── .git/
+│   ├── src/
+│   ├── wrangler.jsonc
+│   └── ...
+└── /echoray-app (Next.js Internal App)
+    ├── .git/
+    ├── src/
+    └── ...
+```
+
+---
+
+## 🛠 Refactoring Implementation Plan
+
+### Step 1: Prepare the Root
+We will transform the current `echoray` directory into a organizational root and move the current project into `echoray-web`.
+
+**Actions:**
+1. Create a new directory named `echoray-web` inside the current project.
+2. Move all core project files and folders (`src`, `ai`, `public`, `wrangler.jsonc`, `package.json`, etc.) into `echoray-web`.
+3. **Critical:** Move the `.git` directory into `echoray-web`. This preserves the history for the web project.
+4. Update the `.gitignore` in `echoray-web` to ensure it doesn't try to track parent folders.
+
+### Step 2: Initialize the Admin App
+Create the sister project for the internal dashboard.
+
+**Actions:**
+1. Create a new directory `echoray-app` at the same level as `echoray-web`.
+2. Initialize **Next.js** inside this directory using `npm create cloudflare@latest -- echoray-app --framework=next --platform=workers`.
+3. Run `git init` inside `echoray-app` to create its independent history.
+4. Set up Supabase types and environment variables for the app.
+
+### Step 3: Global Context Management
+To help AI models (like this one) understand the context, we maintain an `ai/` folder in each sub-directory.
+
+*   `echoray-web/ai/`: Focuses on SEO, public design, and edge deployment.
+*   `echoray-app/ai/`: Focuses on state management, dashboard logic, and internal tools.
+
+---
+
+## 🔄 Coordination & Deployment
+
+*   **Public Site (`echoray-web`)**: Deploys to `echoray.io` via Cloudflare Pages.
+*   **Admin App (`echoray-app`)**: Deploys to `app.echoray.io` (also via Cloudflare or similar).
+*   **State Sharing**: All data synchronization happens via **Supabase**. When the Admin App updates a row in the `pricing` table, the Web project revalidates its cache to show the new data instantly.
+
+---
+
+## 📜 Git Commands for Refactor
+(To be executed from current project root)
+
+```bash
+# 1. Create subfolder
+mkdir echoray-web
+
+# 2. Move everything (excluding echoray-web itself)
+# Note: On Windows PowerShell, this might be simpler via File Explorer
+# but here is the logic:
+mv src, ai, public, wrangler.jsonc, package.json, bun.lockb, .git echoray-web/
+
+# 3. Create the app folder
+mkdir echoray-app
+cd echoray-app
+npm create cloudflare@latest -- ./ --framework=next --platform=workers
+git init
+```

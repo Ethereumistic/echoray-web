@@ -1,5 +1,3 @@
-import { Navbar } from "@/components/layout/navbar"
-import { Footer } from "@/components/layout/footer"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
@@ -11,9 +9,7 @@ import { Pricing } from "@/components/sections/pricing"
 
 export default function ServicesPage() {
     return (
-        <main className="flex min-h-screen flex-col">
-            <Navbar />
-
+        <>
             {/* Hero Section */}
             <section className="container mx-auto px-4 py-24 text-center">
                 <Badge variant="secondary" className="mb-6 px-4 py-1">
@@ -146,8 +142,6 @@ export default function ServicesPage() {
                 {/* Background Glow */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/20 blur-[120px] rounded-full pointer-events-none transition-transform group-hover:scale-110 duration-700"></div>
             </section>
-
-            <Footer />
-        </main>
+        </>
     )
 }

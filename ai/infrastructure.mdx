@@ -1,0 +1,107 @@
+
+# Echoray.io Infrastructure & Setup Guide
+
+**Version:** 1.0.0
+**Last Updated:** January 2026
+**Purpose:** Technical documentation for AI models to understand the development environment, deployment pipeline, and architectural decisions of echoray.io.
+
+---
+
+## 🛠 Tech Stack Core
+
+| Technology | Version | Purpose |
+| :--- | :--- | :--- |
+| **Next.js** | 15.5.9 | Full-stack Framework (App Router) |
+| **React** | 19.1.4 | UI Library |
+| **TypeScript** | 5.x | Type Safety |
+| **Tailwind CSS** | 4.x | Utility-first Styling |
+| **OpenNext** | 1.14.4 | Adapter for Cloudflare Workers |
+| **Wrangler** | 4.58.0 | Cloudflare Developer Tools |
+
+---
+
+## 🌩 Cloudflare Architecture
+
+The website is hosted on **Cloudflare Pages/Workers** using `@opennextjs/cloudflare` to bridge Next.js features with the Cloudflare runtime.
+
+### Key Configurations (`wrangler.jsonc`)
+- **Compatibility Date:** `2025-12-01`
+- **Compatibility Flags:** `nodejs_compat`, `global_fetch_strictly_public`
+- **Main Entry:** `.open-next/worker.js`
+- **Assets Directory:** `.open-next/assets`
+
+### Cloudflare Bindings
+1. **KV Cache:** `NEXT_INC_CACHE_KV` handles incremental static regeneration (ISR) and caching.
+2. **Image Optimization:** Bound to `IMAGES` for on-the-fly resizing and optimization using Cloudflare's image service.
+3. **Internal Service:** `WORKER_SELF_REFERENCE` for internal routing and cache revalidation.
+
+---
+
+## ⌨️ Development Workflow
+
+### Package Management
+We use **bun** exclusively.
+- **Add Component:** `bun dlx shadcn@latest add [component]`
+- **Install Deps:** `bun install`
+
+### Local Development
+Next.js is integrated with Cloudflare bindings for local dev.
+```bash
+bun dev
+```
+*Note: `next.config.ts` calls `initOpenNextCloudflareForDev()` to enable `getCloudflareContext()` locally.*
+
+### Type Generation
+When changing bindings in `wrangler.jsonc`, update types:
+```bash
+bun cf-typegen
+```
+
+---
+
+## 🔐 Environment Variables & Secrets
+
+**CRITICAL RULE:** Do NOT use `.env` or `.env.local` files. 
+
+Following Cloudflare best practices with Wrangler:
+1. **Local Dev:** Use `.dev.vars` for local environment variables.
+2. **Production:** Managed via Cloudflare Dashboard secrets.
+3. **Format:** Standard `KEY=VALUE` format.
+
+---
+
+## 🏗 Project Structure
+
+- `src/`: Core application logic (Aliased as `@/*`).
+- `ai/`: Specialized documentation for AI context (Infrastructure, Design System).
+- `public/`: Static assets.
+- `cloudflare-env.d.ts`: Generated types for Cloudflare environment and bindings.
+
+---
+
+## 🚢 Deployment Pipeline
+
+Deployment is handled via OpenNext to optimize for edge execution.
+
+| Command | Action |
+| :--- | :--- |
+| **bun build** | Standard Next.js build |
+| **bun run deploy** | Build via OpenNext and deploy to Cloudflare Pages |
+| **bun run preview** | Build and create a preview deployment |
+
+---
+
+## 🤖 AI Interaction Guidelines
+
+When working on this codebase, remember:
+1. **Server Actions:** Fully supported. Access Cloudflare context using `getCloudflareContext()` from `@opennextjs/cloudflare`.
+2. **Caching:** Leverages KV. Ensure proper revalidation tags are used for dynamic content.
+3. **Styling:** Adhere strictly to the definitions in `ai/design-system.mdx`.
+4. **Edge First:** Most logic runs at the edge. Avoid Node.js-specific APIs that aren't covered by `nodejs_compat`.
+
+---
+
+## 🔗 Related Documentation
+- [Design System](./design-system.mdx)
+- [Wrangler Configuration](../wrangler.jsonc)
+- [OpenNext Docs](https://opennext.js.org/cloudflare)

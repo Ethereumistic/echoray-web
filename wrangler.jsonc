@@ -1,73 +1,35 @@
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- */
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "echoray-web",
+	"name": "echoray",
 	"main": ".open-next/worker.js",
-	"routes": [
-		{
-			"pattern": "echoray.io",
-			"custom_domain": true
-		},
-		{
-			"pattern": "www.echoray.io",
-			"custom_domain": true
-		}
-	],
-	"compatibility_date": "2025-12-01",
+	"compatibility_date": "2024-12-30",
 	"compatibility_flags": [
-		"nodejs_compat",
-		"global_fetch_strictly_public"
+		"nodejs_compat"
 	],
 	"assets": {
-		"binding": "ASSETS",
-		"directory": ".open-next/assets"
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
 	},
 	"images": {
-		// Enable image optimization
-		// see https://opennext.js.org/cloudflare/howtos/image
 		"binding": "IMAGES"
 	},
 	"services": [
 		{
-			// Self-reference service binding, the service name must match the worker name
-			// see https://opennext.js.org/cloudflare/caching
 			"binding": "WORKER_SELF_REFERENCE",
-			"service": "echoray-web"
+			"service": "echoray"
 		}
 	],
-	"observability": {
-		"enabled": true
-	},
 	"kv_namespaces": [
 		{
 			"binding": "NEXT_INC_CACHE_KV",
 			"id": "f126e50f8d3d44408ecf524f85f30bf2",
 			"remote": true
 		}
-	]
-	/**
-	 * Smart Placement
-	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
-	// "placement": {  "mode": "smart" }
-	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-	 */
-	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
+	],
+	"vars": {
+		"NEXT_PUBLIC_SUPABASE_URL": "https://xwzhwrxsrbtoqvehmmjm.supabase.co",
+		"NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_N-oys_Lw0io9YA-9UofmJA_lNubn-_0",
+		"NEXT_PUBLIC_APP_URL": "https://app.echoray.io",
+		"NEXT_PUBLIC_WEB_URL": "https://echoray.io"
+	}
 }

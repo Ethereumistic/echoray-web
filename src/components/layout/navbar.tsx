@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, Globe, Terminal, Settings2 } from "lucide-react"
+import { Menu, Globe, Terminal, Settings2, LogIn } from "lucide-react"
 
 import {
     NavigationMenu,
@@ -98,9 +98,13 @@ export function Navbar() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" asChild className="hidden md:inline-flex">
-                        <Link href="/contact">Contact</Link>
+                    <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex">
+                        <a target="_blank" href={process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"}>
+                            <LogIn className="h-5 w-5" />
+                            <span className="sr-only">Sign In</span>
+                        </a>
                     </Button>
+
                     <Button asChild className="hidden sm:inline-flex">
                         <Link href="/start-project">Start Project</Link>
                     </Button>
@@ -135,9 +139,11 @@ export function Navbar() {
                                 <Link href="/about" className="text-lg font-medium hover:text-primary">
                                     About
                                 </Link>
-                                <Link href="/contact" className="text-lg font-medium hover:text-primary">
-                                    Contact
-                                </Link>
+                                <a href={process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"} className="text-lg font-medium hover:text-primary flex items-center gap-2">
+                                    <LogIn className="h-5 w-5" />
+                                    <span>App</span>
+                                </a>
+
                                 <Button asChild className="mt-4 w-full">
                                     <Link href="/start-project">Start Project</Link>
                                 </Button>
