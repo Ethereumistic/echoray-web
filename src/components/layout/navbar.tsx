@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
+import { useAuthStore } from "@/stores/auth-store"
 
 const services: { title: string; href: string; description: string; icon: React.ReactNode }[] = [
     {
@@ -40,6 +41,8 @@ const services: { title: string; href: string; description: string; icon: React.
 ]
 
 export function Navbar() {
+    const { isAuthenticated, profile } = useAuthStore()
+
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
             <div className="container mx-auto flex h-16 items-center px-4 md:px-6">
@@ -98,12 +101,35 @@ export function Navbar() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex">
-                        <a target="_blank" href={process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"}>
-                            <LogIn className="h-5 w-5" />
-                            <span className="sr-only">Sign In</span>
-                        </a>
-                    </Button>
+                    {isAuthenticated ? (
+                        <>
+                            <Button variant="ghost" asChild className="hidden md:inline-flex gap-2">
+                                <Link href="/dashboard">
+                                    {profile?.avatarUrl ? (
+                                        <Image
+                                            src={profile.avatarUrl}
+                                            alt={profile.displayName || "User"}
+                                            width={24}
+                                            height={24}
+                                            className="h-6 w-6 rounded-full"
+                                        />
+                                    ) : (
+                                        <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold">
+                                            {profile?.displayName?.charAt(0) || profile?.email?.charAt(0) || "U"}
+                                        </div>
+                                    )}
+                                    <span className="font-medium">{profile?.displayName?.split(' ')[0] || "Dashboard"}</span>
+                                </Link>
+                            </Button>
+                        </>
+                    ) : (
+                        <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex">
+                            <Link href="/auth/login">
+                                <LogIn className="h-5 w-5" />
+                                <span className="sr-only">Sign In</span>
+                            </Link>
+                        </Button>
+                    )}
 
                     <Button asChild className="hidden sm:inline-flex">
                         <Link href="/start-project">Start Project</Link>
@@ -139,10 +165,20 @@ export function Navbar() {
                                 <Link href="/about" className="text-lg font-medium hover:text-primary">
                                     About
                                 </Link>
-                                <a href={process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"} className="text-lg font-medium hover:text-primary flex items-center gap-2">
-                                    <LogIn className="h-5 w-5" />
-                                    <span>App</span>
-                                </a>
+
+                                {isAuthenticated ? (
+                                    <Link href="/dashboard" className="text-lg font-medium hover:text-primary flex items-center gap-2">
+                                        <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold">
+                                            {profile?.displayName?.charAt(0) || "D"}
+                                        </div>
+                                        <span>Dashboard</span>
+                                    </Link>
+                                ) : (
+                                    <Link href="/auth/login" className="text-lg font-medium hover:text-primary flex items-center gap-2">
+                                        <LogIn className="h-5 w-5" />
+                                        <span>Sign In</span>
+                                    </Link>
+                                )}
 
                                 <Button asChild className="mt-4 w-full">
                                     <Link href="/start-project">Start Project</Link>

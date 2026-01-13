@@ -10,13 +10,11 @@ import { FolderOpen, FileText, Users, Clock } from 'lucide-react'
  */
 export default async function DashboardPage() {
     const supabase = await createClient()
-    const { data, error } = await supabase.auth.getClaims()
+    const { data: { user }, error } = await supabase.auth.getUser()
 
-    if (error || !data?.claims) {
+    if (error || !user) {
         redirect('/auth/login')
     }
-
-    const user = data.claims
 
     // Stats cards data - in a real app, fetch these from your database
     const stats = [
@@ -62,7 +60,7 @@ export default async function DashboardPage() {
                 <Card className="bg-linear-to-r from-primary/10 via-primary/5 to-transparent border-primary/20">
                     <CardHeader>
                         <CardTitle className="text-2xl">
-                            Welcome back, {typeof user.email === 'string' ? user.email.split('@')[0] : 'User'}! 👋
+                            Welcome back, {user.user_metadata?.display_name || (typeof user.email === 'string' ? user.email.split('@')[0] : 'User')}! 👋
                         </CardTitle>
                         <CardDescription>
                             Here&apos;s what&apos;s happening with your projects today.

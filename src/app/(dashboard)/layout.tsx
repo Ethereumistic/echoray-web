@@ -1,11 +1,9 @@
-import { DashboardSidebar } from '@/components/dashboard/sidebar'
-import { AuthProvider } from '@/components/providers/auth-provider'
+import { AppSidebar } from '@/components/dashboard/app-sidebar'
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 
 /**
  * Dashboard layout for authenticated pages.
  * Includes sidebar navigation and content area.
- * The middleware handles auth protection, but we also use AuthProvider
- * to sync auth state with Zustand for client-side features.
  */
 export default function DashboardLayout({
     children,
@@ -13,13 +11,11 @@ export default function DashboardLayout({
     children: React.ReactNode
 }) {
     return (
-        <AuthProvider>
-            <div className="min-h-screen bg-background">
-                <DashboardSidebar />
-                <div className="lg:pl-64">
-                    {children}
-                </div>
-            </div>
-        </AuthProvider>
+        <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+                {children}
+            </SidebarInset>
+        </SidebarProvider>
     )
 }

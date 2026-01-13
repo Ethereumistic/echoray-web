@@ -1,0 +1,2382 @@
+# Discord-Style Roles & Permissions System for Supabase
+
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture & Design Philosophy](#architecture--design-philosophy)
+3. [Database Schema](#database-schema)
+4. [Permission System](#permission-system)
+5. [Implementation Steps](#implementation-steps)
+6. [SQL Functions & Triggers](#sql-functions--triggers)
+7. [Row Level Security (RLS)](#row-level-security-rls)
+8. [API Layer (TypeScript)](#api-layer-typescript)
+9. [Testing Strategy](#testing-strategy)
+10. [Migration Path](#migration-path)
+
+---
+
+## System Overview
+
+### What We're Building
+A multi-tenant SaaS with Discord-inspired permission system featuring:
+- **Subscription Tiers**: user (free), web (€99), app (€299), crm (custom)
+- **Organizations**: Teams that users can create and join
+- **Roles**: Flexible role system with hierarchical permissions
+- **Permissions**: Granular, bitwise permissions for performance
+- **Addons**: Per-organization feature additions
+- **Member Overrides**: Per-user permission grants/denies
+
+### Permission Resolution Order
+```
+1. Explicit DENY override on member     → ❌ DENY
+2. Explicit ALLOW override on member    → ✅ ALLOW  
+3. Organization purchased addons        → ✅ ALLOW
+4. Member's roles (combined bitwise)    → ✅ ALLOW if any role has it
+5. Organization subscription tier       → ✅ ALLOW if tier includes it
+6. System role privileges (owner/admin) → ✅ ALLOW for admin features
+7. Default                              → ❌ DENY
+```
+
+---
+
+## Architecture & Design Philosophy
+
+### Key Principles
+1. **Separation of Concerns**: Profiles ≠ Organization Membership ≠ Permissions
+2. **Multi-tenancy**: Users can belong to multiple organizations with different roles
+3. **Performance**: Bitwise permissions + caching for fast checks
+4. **Flexibility**: Custom roles per organization
+5. **Audit Trail**: Every permission change is logged
+6. **Security**: RLS policies at database level
+
+### Data Model Relationships
+```
+auth.users (Supabase Auth)
+    ↓
+profiles (Your existing table - global user data)
+    ↓
+organization_members (User's membership in organizations)
+    ↓
+member_roles (Many-to-many: members can have multiple roles)
+    ↓
+roles (Organization-specific role definitions)
+    ↓
+permissions (System-wide permission definitions)
+```
+
+---
+
+## Database Schema
+
+### Phase 1: Core Tables
+
+#### 1. Subscription Tiers Table
+```sql
+-- Defines what each subscription tier includes
+CREATE TABLE subscription_tiers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT UNIQUE NOT NULL, -- 'user', 'web', 'app', 'crm'
+  slug TEXT UNIQUE NOT NULL, -- 'user', 'web', 'app', 'crm'
+  price_eur INTEGER NOT NULL,
+  is_custom BOOLEAN DEFAULT FALSE,
+  description TEXT,
+  base_permissions BIGINT DEFAULT 0, -- Bitwise base permissions
+  features JSONB DEFAULT '[]'::jsonb, -- Marketing features list
+  max_members INTEGER, -- NULL = unlimited
+  max_organizations INTEGER DEFAULT 1,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Seed data
+INSERT INTO subscription_tiers (name, slug, price_eur, is_custom, base_permissions, max_members) VALUES
+  ('User', 'user', 0, FALSE, 0, 1), -- No base permissions
+  ('Web', 'web', 99, FALSE, 1, 5), -- Basic permission bit
+  ('App', 'app', 299, FALSE, 3, 20), -- Web + App permissions
+  ('CRM', 'crm', 0, TRUE, 7, NULL); -- All base permissions
+```
+
+#### 2. Organizations Table
+```sql
+-- Teams/Companies that users create
+CREATE TABLE organizations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  description TEXT,
+  logo_url TEXT,
+  website TEXT,
+  
+  -- Ownership
+  owner_id UUID REFERENCES auth.users(id) NOT NULL,
+  
+  -- Subscription
+  subscription_tier_id UUID REFERENCES subscription_tiers(id) NOT NULL,
+  subscription_status TEXT DEFAULT 'active' CHECK (subscription_status IN ('active', 'trialing', 'past_due', 'cancelled', 'paused')),
+  subscription_started_at TIMESTAMPTZ DEFAULT NOW(),
+  subscription_ends_at TIMESTAMPTZ,
+  
+  -- Custom tier config (for CRM tier)
+  custom_permissions BIGINT DEFAULT 0,
+  custom_config JSONB DEFAULT '{}'::jsonb,
+  
+  -- Metadata
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT valid_slug CHECK (slug ~ '^[a-z0-9-]+$')
+);
+
+-- Index for fast lookups
+CREATE INDEX idx_organizations_owner ON organizations(owner_id);
+CREATE INDEX idx_organizations_slug ON organizations(slug);
+CREATE INDEX idx_organizations_tier ON organizations(subscription_tier_id);
+```
+
+#### 3. Organization Members Table
+```sql
+-- Users' membership in organizations
+CREATE TABLE organization_members (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  
+  -- Invitation tracking
+  status TEXT DEFAULT 'active' CHECK (status IN ('invited', 'active', 'suspended', 'left')),
+  invited_by UUID REFERENCES auth.users(id),
+  invited_at TIMESTAMPTZ DEFAULT NOW(),
+  joined_at TIMESTAMPTZ,
+  
+  -- Permissions cache (for performance)
+  computed_permissions BIGINT DEFAULT 0,
+  permissions_last_computed_at TIMESTAMPTZ,
+  
+  -- Metadata
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(organization_id, user_id)
+);
+
+-- Indexes
+CREATE INDEX idx_org_members_org ON organization_members(organization_id);
+CREATE INDEX idx_org_members_user ON organization_members(user_id);
+CREATE INDEX idx_org_members_status ON organization_members(status);
+```
+
+#### 4. System Permissions Table
+```sql
+-- Defines all available permissions in the system
+CREATE TABLE permissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT UNIQUE NOT NULL, -- 'analytics.view', 'api.access', etc.
+  bit_position INTEGER UNIQUE NOT NULL CHECK (bit_position >= 0 AND bit_position < 64),
+  name TEXT NOT NULL,
+  description TEXT,
+  category TEXT NOT NULL, -- 'analytics', 'export', 'api', 'crm', 'admin', 'billing'
+  
+  -- Tier requirements
+  min_tier TEXT, -- Minimum tier needed: 'web', 'app', 'crm'
+  is_addon BOOLEAN DEFAULT FALSE, -- Can be purchased as addon
+  addon_price_eur INTEGER,
+  
+  -- Metadata
+  is_dangerous BOOLEAN DEFAULT FALSE, -- Requires extra confirmation
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Seed core permissions
+INSERT INTO permissions (code, bit_position, name, category, min_tier, is_addon) VALUES
+  -- Basic (tier: user/free)
+  ('profile.view', 0, 'View Profile', 'basic', NULL, FALSE),
+  ('profile.edit', 1, 'Edit Own Profile', 'basic', NULL, FALSE),
+  
+  -- Web tier
+  ('analytics.view', 2, 'View Analytics', 'analytics', 'web', FALSE),
+  ('export.csv', 3, 'Export CSV', 'export', 'web', FALSE),
+  ('integrations.basic', 4, 'Basic Integrations', 'integrations', 'web', FALSE),
+  
+  -- App tier
+  ('analytics.advanced', 5, 'Advanced Analytics', 'analytics', 'app', FALSE),
+  ('api.access', 6, 'API Access', 'api', 'app', FALSE),
+  ('export.pdf', 7, 'Export PDF', 'export', 'app', FALSE),
+  ('webhooks.manage', 8, 'Manage Webhooks', 'api', 'app', FALSE),
+  
+  -- CRM tier
+  ('crm.contacts', 9, 'CRM Contacts', 'crm', 'crm', FALSE),
+  ('crm.deals', 10, 'CRM Deals', 'crm', 'crm', FALSE),
+  ('crm.automation', 11, 'CRM Automation', 'crm', 'crm', FALSE),
+  
+  -- Admin permissions
+  ('org.settings', 12, 'Manage Organization Settings', 'admin', NULL, FALSE),
+  ('members.invite', 13, 'Invite Members', 'admin', NULL, FALSE),
+  ('members.remove', 14, 'Remove Members', 'admin', NULL, FALSE),
+  ('roles.manage', 15, 'Manage Roles', 'admin', NULL, FALSE),
+  ('billing.view', 16, 'View Billing', 'billing', NULL, FALSE),
+  ('billing.manage', 17, 'Manage Billing', 'billing', NULL, FALSE),
+  
+  -- Addons (can be purchased separately)
+  ('integrations.zapier', 18, 'Zapier Integration', 'integrations', 'web', TRUE),
+  ('integrations.slack', 19, 'Slack Integration', 'integrations', 'web', TRUE),
+  ('storage.extended', 20, 'Extended Storage (100GB)', 'storage', 'web', TRUE),
+  ('support.priority', 21, 'Priority Support', 'support', 'web', TRUE);
+
+-- Index for fast category lookups
+CREATE INDEX idx_permissions_category ON permissions(category);
+CREATE INDEX idx_permissions_addon ON permissions(is_addon) WHERE is_addon = TRUE;
+```
+
+#### 5. Roles Table
+```sql
+-- Organization-specific roles (like Discord roles)
+CREATE TABLE roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  
+  -- Role definition
+  name TEXT NOT NULL,
+  description TEXT,
+  color TEXT, -- Hex color for UI (e.g., '#3498db')
+  
+  -- Permissions (bitwise)
+  permissions BIGINT DEFAULT 0,
+  
+  -- Hierarchy (lower position = higher priority, like Discord)
+  position INTEGER NOT NULL DEFAULT 0,
+  
+  -- System roles (cannot be deleted)
+  is_system_role BOOLEAN DEFAULT FALSE,
+  system_role_type TEXT CHECK (system_role_type IN ('owner', 'admin', 'moderator', 'member')),
+  
+  -- Settings
+  is_assignable BOOLEAN DEFAULT TRUE, -- Can be manually assigned
+  is_default BOOLEAN DEFAULT FALSE, -- Assigned to new members automatically
+  
+  -- Metadata
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(organization_id, name),
+  CHECK (NOT is_system_role OR system_role_type IS NOT NULL)
+);
+
+-- Indexes
+CREATE INDEX idx_roles_org ON roles(organization_id);
+CREATE INDEX idx_roles_position ON roles(organization_id, position);
+CREATE INDEX idx_roles_system ON roles(organization_id, is_system_role);
+```
+
+#### 6. Member Roles Table (Many-to-Many)
+```sql
+-- Links members to their roles
+CREATE TABLE member_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  member_id UUID REFERENCES organization_members(id) ON DELETE CASCADE NOT NULL,
+  role_id UUID REFERENCES roles(id) ON DELETE CASCADE NOT NULL,
+  
+  -- Assignment tracking
+  assigned_by UUID REFERENCES auth.users(id),
+  assigned_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(member_id, role_id)
+);
+
+-- Indexes
+CREATE INDEX idx_member_roles_member ON member_roles(member_id);
+CREATE INDEX idx_member_roles_role ON member_roles(role_id);
+```
+
+#### 7. Member Permission Overrides Table
+```sql
+-- Direct permission grants/denies for specific members
+CREATE TABLE member_permission_overrides (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  member_id UUID REFERENCES organization_members(id) ON DELETE CASCADE NOT NULL,
+  permission_id UUID REFERENCES permissions(id) ON DELETE CASCADE NOT NULL,
+  
+  -- Override type
+  allow BOOLEAN NOT NULL, -- TRUE = grant, FALSE = deny
+  
+  -- Tracking
+  granted_by UUID REFERENCES auth.users(id),
+  reason TEXT, -- Optional reason for audit
+  expires_at TIMESTAMPTZ, -- NULL = permanent
+  
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(member_id, permission_id)
+);
+
+-- Indexes
+CREATE INDEX idx_permission_overrides_member ON member_permission_overrides(member_id);
+CREATE INDEX idx_permission_overrides_active ON member_permission_overrides(member_id) 
+  WHERE expires_at IS NULL OR expires_at > NOW();
+```
+
+#### 8. Organization Addons Table
+```sql
+-- Purchased add-on permissions for organizations
+CREATE TABLE organization_addons (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  permission_id UUID REFERENCES permissions(id) ON DELETE CASCADE NOT NULL,
+  
+  -- Purchase tracking
+  purchased_by UUID REFERENCES auth.users(id),
+  purchased_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ, -- NULL = permanent/lifetime
+  
+  -- Billing
+  price_paid_eur INTEGER,
+  is_active BOOLEAN DEFAULT TRUE,
+  
+  UNIQUE(organization_id, permission_id)
+);
+
+-- Indexes
+CREATE INDEX idx_org_addons_org ON organization_addons(organization_id);
+CREATE INDEX idx_org_addons_active ON organization_addons(organization_id, is_active);
+```
+
+#### 9. Audit Log Table
+```sql
+-- Complete audit trail of all permission changes
+CREATE TABLE permission_audit_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Context
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+  actor_id UUID REFERENCES auth.users(id),
+  
+  -- Action
+  action TEXT NOT NULL CHECK (action IN (
+    'role_created', 'role_updated', 'role_deleted',
+    'role_assigned', 'role_unassigned',
+    'permission_granted', 'permission_revoked',
+    'addon_purchased', 'addon_cancelled',
+    'member_invited', 'member_joined', 'member_removed',
+    'tier_upgraded', 'tier_downgraded',
+    'override_added', 'override_removed'
+  )),
+  
+  -- Targets
+  target_user_id UUID REFERENCES auth.users(id),
+  target_role_id UUID REFERENCES roles(id) ON DELETE SET NULL,
+  target_permission_id UUID REFERENCES permissions(id) ON DELETE SET NULL,
+  
+  -- Details
+  metadata JSONB DEFAULT '{}'::jsonb,
+  ip_address INET,
+  user_agent TEXT,
+  
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for audit queries
+CREATE INDEX idx_audit_org ON permission_audit_log(organization_id, created_at DESC);
+CREATE INDEX idx_audit_actor ON permission_audit_log(actor_id, created_at DESC);
+CREATE INDEX idx_audit_target ON permission_audit_log(target_user_id, created_at DESC);
+CREATE INDEX idx_audit_action ON permission_audit_log(action, created_at DESC);
+```
+
+---
+
+## Permission System
+
+### Bitwise Permission System
+
+#### Why Bitwise?
+- **Performance**: Single integer comparison vs. multiple table joins
+- **Space Efficient**: Store 64 permissions in 8 bytes
+- **Fast Computation**: Combine roles with bitwise OR
+- **Cache Friendly**: Easy to cache and invalidate
+
+#### Permission Bit Mapping
+```sql
+-- Each permission gets a unique bit position (0-63)
+-- Example:
+Bit 0  = 2^0  = 1       = profile.view
+Bit 1  = 2^1  = 2       = profile.edit
+Bit 2  = 2^2  = 4       = analytics.view
+Bit 3  = 2^3  = 8       = export.csv
+Bit 4  = 2^4  = 16      = integrations.basic
+Bit 5  = 2^5  = 32      = analytics.advanced
+...
+Bit 63 = 2^63           = Last available permission
+
+-- Combined permissions are OR'd together:
+permissions = (1 << 0) | (1 << 2) | (1 << 5)
+           = 1 | 4 | 32
+           = 37
+```
+
+#### Helper SQL Functions
+```sql
+-- Check if specific bit is set
+CREATE OR REPLACE FUNCTION has_permission_bit(
+  permissions BIGINT,
+  bit_position INTEGER
+)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN (permissions & (1::BIGINT << bit_position)) != 0;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- Set a permission bit
+CREATE OR REPLACE FUNCTION set_permission_bit(
+  permissions BIGINT,
+  bit_position INTEGER
+)
+RETURNS BIGINT AS $$
+BEGIN
+  RETURN permissions | (1::BIGINT << bit_position);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- Clear a permission bit
+CREATE OR REPLACE FUNCTION clear_permission_bit(
+  permissions BIGINT,
+  bit_position INTEGER
+)
+RETURNS BIGINT AS $$
+BEGIN
+  RETURN permissions & ~(1::BIGINT << bit_position);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- Combine multiple permission sets (OR)
+CREATE OR REPLACE FUNCTION combine_permissions(
+  perm1 BIGINT,
+  perm2 BIGINT
+)
+RETURNS BIGINT AS $$
+BEGIN
+  RETURN perm1 | perm2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+```
+
+---
+
+## Implementation Steps
+
+### Step 1: Backup & Preparation
+```sql
+-- Backup existing profiles table
+CREATE TABLE profiles_backup AS SELECT * FROM public.profiles;
+
+-- Document existing roles
+SELECT role, COUNT(*) FROM public.profiles GROUP BY role;
+```
+
+### Step 2: Create New Schema
+```sql
+-- Run all CREATE TABLE statements from Phase 1 in order:
+-- 1. subscription_tiers
+-- 2. organizations
+-- 3. organization_members
+-- 4. permissions
+-- 5. roles
+-- 6. member_roles
+-- 7. member_permission_overrides
+-- 8. organization_addons
+-- 9. permission_audit_log
+
+-- Enable RLS on all new tables
+ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE organization_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE member_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE member_permission_overrides ENABLE ROW LEVEL SECURITY;
+ALTER TABLE organization_addons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE permission_audit_log ENABLE ROW LEVEL SECURITY;
+```
+
+### Step 3: Create System Roles Function
+```sql
+-- Automatically create system roles for new organizations
+CREATE OR REPLACE FUNCTION create_system_roles_for_org(org_id UUID)
+RETURNS VOID AS $$
+DECLARE
+  owner_role_id UUID;
+  admin_role_id UUID;
+  mod_role_id UUID;
+  member_role_id UUID;
+BEGIN
+  -- Owner role (highest privileges)
+  INSERT INTO roles (organization_id, name, description, color, permissions, position, is_system_role, system_role_type, is_assignable)
+  VALUES (
+    org_id,
+    'Owner',
+    'Organization owner with full control',
+    '#e74c3c',
+    9223372036854775807, -- All bits set (2^63 - 1)
+    0,
+    TRUE,
+    'owner',
+    FALSE
+  ) RETURNING id INTO owner_role_id;
+  
+  -- Admin role
+  INSERT INTO roles (organization_id, name, description, color, permissions, position, is_system_role, system_role_type, is_assignable)
+  VALUES (
+    org_id,
+    'Admin',
+    'Administrator with most privileges',
+    '#3498db',
+    524287, -- Many admin permissions (customize based on your needs)
+    1,
+    TRUE,
+    'admin',
+    TRUE
+  ) RETURNING id INTO admin_role_id;
+  
+  -- Moderator role
+  INSERT INTO roles (organization_id, name, description, color, permissions, position, is_system_role, system_role_type, is_assignable)
+  VALUES (
+    org_id,
+    'Moderator',
+    'Can manage members and content',
+    '#2ecc71',
+    8191, -- Moderate permissions
+    2,
+    TRUE,
+    'moderator',
+    TRUE
+  ) RETURNING id INTO mod_role_id;
+  
+  -- Member role (default)
+  INSERT INTO roles (organization_id, name, description, color, permissions, position, is_system_role, system_role_type, is_assignable, is_default)
+  VALUES (
+    org_id,
+    'Member',
+    'Default member role',
+    '#95a5a6',
+    7, -- Basic permissions (profile.view, profile.edit, analytics.view)
+    3,
+    TRUE,
+    'member',
+    TRUE,
+    TRUE
+  ) RETURNING id INTO member_role_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+### Step 4: Organization Creation Trigger
+```sql
+-- Trigger to auto-create system roles when org is created
+CREATE OR REPLACE FUNCTION trigger_create_system_roles()
+RETURNS TRIGGER AS $$
+BEGIN
+  PERFORM create_system_roles_for_org(NEW.id);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_organization_created
+  AFTER INSERT ON organizations
+  FOR EACH ROW
+  EXECUTE FUNCTION trigger_create_system_roles();
+```
+
+### Step 5: Member Permission Cache Function
+```sql
+-- Compute and cache member's effective permissions
+CREATE OR REPLACE FUNCTION compute_member_permissions(member_id UUID)
+RETURNS BIGINT AS $$
+DECLARE
+  v_permissions BIGINT := 0;
+  v_org_id UUID;
+  v_tier_permissions BIGINT;
+  v_custom_permissions BIGINT;
+  v_addon_permissions BIGINT := 0;
+  v_role_permissions BIGINT := 0;
+  v_override RECORD;
+BEGIN
+  -- Get organization ID
+  SELECT organization_id INTO v_org_id
+  FROM organization_members WHERE id = member_id;
+  
+  IF v_org_id IS NULL THEN
+    RETURN 0;
+  END IF;
+  
+  -- 1. Get base tier permissions
+  SELECT st.base_permissions, o.custom_permissions
+  INTO v_tier_permissions, v_custom_permissions
+  FROM organizations o
+  JOIN subscription_tiers st ON o.subscription_tier_id = st.id
+  WHERE o.id = v_org_id;
+  
+  v_permissions := COALESCE(v_tier_permissions, 0) | COALESCE(v_custom_permissions, 0);
+  
+  -- 2. Add organization addons
+  SELECT COALESCE(BIT_OR(1::BIGINT << p.bit_position), 0) INTO v_addon_permissions
+  FROM organization_addons oa
+  JOIN permissions p ON oa.permission_id = p.id
+  WHERE oa.organization_id = v_org_id
+    AND oa.is_active = TRUE
+    AND (oa.expires_at IS NULL OR oa.expires_at > NOW());
+  
+  v_permissions := v_permissions | v_addon_permissions;
+  
+  -- 3. Combine all role permissions (OR)
+  SELECT COALESCE(BIT_OR(r.permissions), 0) INTO v_role_permissions
+  FROM member_roles mr
+  JOIN roles r ON mr.role_id = r.id
+  WHERE mr.member_id = compute_member_permissions.member_id;
+  
+  v_permissions := v_permissions | v_role_permissions;
+  
+  -- 4. Apply member-specific overrides (DENY takes precedence)
+  FOR v_override IN
+    SELECT p.bit_position, mpo.allow
+    FROM member_permission_overrides mpo
+    JOIN permissions p ON mpo.permission_id = p.id
+    WHERE mpo.member_id = compute_member_permissions.member_id
+      AND (mpo.expires_at IS NULL OR mpo.expires_at > NOW())
+    ORDER BY mpo.allow ASC -- FALSE (deny) comes first
+  LOOP
+    IF v_override.allow THEN
+      -- Grant permission
+      v_permissions := set_permission_bit(v_permissions, v_override.bit_position);
+    ELSE
+      -- Deny permission (remove bit)
+      v_permissions := clear_permission_bit(v_permissions, v_override.bit_position);
+    END IF;
+  END LOOP;
+  
+  -- Update cache
+  UPDATE organization_members
+  SET 
+    computed_permissions = v_permissions,
+    permissions_last_computed_at = NOW()
+  WHERE id = compute_member_permissions.member_id;
+  
+  RETURN v_permissions;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+### Step 6: Permission Check Function
+```sql
+-- Main function to check if a user has a specific permission
+CREATE OR REPLACE FUNCTION user_has_permission(
+  p_user_id UUID,
+  p_organization_id UUID,
+  p_permission_code TEXT
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_member_id UUID;
+  v_permissions BIGINT;
+  v_bit_position INTEGER;
+BEGIN
+  -- Get permission bit position
+  SELECT bit_position INTO v_bit_position
+  FROM permissions WHERE code = p_permission_code;
+  
+  IF v_bit_position IS NULL THEN
+    RETURN FALSE; -- Permission doesn't exist
+  END IF;
+  
+  -- Get member ID
+  SELECT id INTO v_member_id
+  FROM organization_members
+  WHERE user_id = p_user_id 
+    AND organization_id = p_organization_id
+    AND status = 'active';
+  
+  IF v_member_id IS NULL THEN
+    RETURN FALSE; -- User not in organization
+  END IF;
+  
+  -- Get cached permissions (compute if stale)
+  SELECT 
+    CASE 
+      WHEN permissions_last_computed_at IS NULL 
+           OR permissions_last_computed_at < NOW() - INTERVAL '5 minutes'
+      THEN compute_member_permissions(id)
+      ELSE computed_permissions
+    END
+  INTO v_permissions
+  FROM organization_members
+  WHERE id = v_member_id;
+  
+  -- Check if bit is set
+  RETURN has_permission_bit(v_permissions, v_bit_position);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Batch permission check (returns all permissions for a user)
+CREATE OR REPLACE FUNCTION get_user_permissions(
+  p_user_id UUID,
+  p_organization_id UUID
+)
+RETURNS TABLE(permission_code TEXT, has_permission BOOLEAN) AS $$
+DECLARE
+  v_member_id UUID;
+  v_permissions BIGINT;
+BEGIN
+  -- Get member ID
+  SELECT id INTO v_member_id
+  FROM organization_members
+  WHERE user_id = p_user_id 
+    AND organization_id = p_organization_id
+    AND status = 'active';
+  
+  IF v_member_id IS NULL THEN
+    RETURN; -- User not in organization
+  END IF;
+  
+  -- Get/compute permissions
+  SELECT 
+    CASE 
+      WHEN permissions_last_computed_at IS NULL 
+           OR permissions_last_computed_at < NOW() - INTERVAL '5 minutes'
+      THEN compute_member_permissions(id)
+      ELSE computed_permissions
+    END
+  INTO v_permissions
+  FROM organization_members
+  WHERE id = v_member_id;
+  
+  -- Return all permissions with their status
+  RETURN QUERY
+  SELECT 
+    p.code,
+    has_permission_bit(v_permissions, p.bit_position)
+  FROM permissions p
+  ORDER BY p.category, p.bit_position;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+### Step 7: Invalidation Triggers
+```sql
+-- Invalidate permission cache when roles change
+CREATE OR REPLACE FUNCTION invalidate_member_permissions_on_role_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Invalidate cache for all members with this role
+  UPDATE organization_members om
+  SET permissions_last_computed_at = NULL
+  WHERE EXISTS (
+    SELECT 1 FROM member_roles mr
+    WHERE mr.member_id = om.id
+      AND mr.role_id = COALESCE(NEW.id, OLD.id)
+  );
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_role_permissions_changed
+  AFTER UPDATE OF permissions ON roles
+  FOR EACH ROW
+  EXECUTE FUNCTION invalidate_member_permissions_on_role_change();
+
+-- Invalidate when member roles change
+CREATE OR REPLACE FUNCTION invalidate_member_permissions_on_member_role_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE organization_members
+  SET permissions_last_computed_at = NULL
+  WHERE id = COALESCE(NEW.member_id, OLD.member_id);
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_member_role_changed
+  AFTER INSERT OR DELETE ON member_roles
+  FOR EACH ROW
+  EXECUTE FUNCTION invalidate_member_permissions_on_member_role_change();
+
+-- Invalidate when overrides change
+CREATE TRIGGER on_permission_override_changed
+  AFTER INSERT OR UPDATE OR DELETE ON member_permission_overrides
+  FOR EACH ROW
+  EXECUTE FUNCTION invalidate_member_permissions_on_member_role_change();
+
+-- Invalidate when org addons change
+CREATE OR REPLACE FUNCTION invalidate_org_permissions_on_addon_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE organization_members
+  SET permissions_last_computed_at = NULL
+  WHERE organization_id = COALESCE(NEW.organization_id, OLD.organization_id);
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_org_addon_changed
+  AFTER INSERT OR UPDATE OR DELETE ON organization_addons
+  FOR EACH ROW
+  EXECUTE FUNCTION invalidate_org_permissions_on_addon_change();
+```
+
+---
+
+## Row Level Security (RLS)
+
+### Organizations RLS
+```sql
+-- Users can view organizations they're members of
+CREATE POLICY "Users can view their organizations"
+  ON organizations FOR SELECT
+  USING (
+    auth.uid() = owner_id
+    OR auth.uid() IN (
+      SELECT user_id FROM organization_members
+      WHERE organization_id = organizations.id
+        AND status = 'active'
+    )
+  );
+
+-- Only owners can update organizations
+CREATE POLICY "Owners can update organizations"
+  ON organizations FOR UPDATE
+  USING (auth.uid() = owner_id);
+
+-- Only owners can delete organizations
+CREATE POLICY "Owners can delete organizations"
+  ON organizations FOR DELETE
+  USING (auth.uid() = owner_id);
+
+-- Anyone authenticated can create an organization
+CREATE POLICY "Authenticated users can create organizations"
+  ON organizations FOR INSERT
+  WITH CHECK (auth.uid() = owner_id);
+```
+
+### Organization Members RLS
+```sql
+-- Users can view members of their organizations
+CREATE POLICY "Users can view org members"
+  ON organization_members FOR SELECT
+  USING (
+    organization_id IN (
+      SELECT organization_id FROM organization_members
+      WHERE user_id = auth.uid() AND status = 'active'
+    )
+  );
+
+-- Admins and owners can invite members
+CREATE POLICY "Admins can invite members"
+  ON organization_members FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM organization_members om
+      WHERE om.organization_id = organization_members.organization_id
+        AND om.user_id = auth.uid()
+        AND om.status = 'active'
+        AND user_has_permission(auth.uid(), om.organization_id, 'members.invite')
+    )
+  );
+
+-- Admins can remove members (except owner)
+CREATE POLICY "Admins can remove members"
+  ON organization_members FOR DELETE
+  USING (
+    user_id != (SELECT owner_id FROM organizations WHERE id = organization_id)
+    AND EXISTS (
+      SELECT 1 FROM organization_members om
+      WHERE om.organization_id = organization_members.organization_id
+        AND om.user_id = auth.uid()
+        AND om.status = 'active'
+        AND user_has_permission(auth.uid(), om.organization_id, 'members.remove')
+    )
+  );
+
+-- Members can update their own status (leave org)
+CREATE POLICY "Members can update own status"
+  ON organization_members FOR UPDATE
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+```
+
+### Roles RLS
+```sql
+-- Members can view roles in their organizations
+CREATE POLICY "Users can view org roles"
+  ON roles FOR SELECT
+  USING (
+    organization_id IN (
+      SELECT organization_id FROM organization_members
+      WHERE user_id = auth.uid() AND status = 'active'
+    )
+  );
+
+-- Only users with roles.manage permission can create/update/delete roles
+CREATE POLICY "Admins can manage roles"
+  ON roles FOR ALL
+  USING (
+    user_has_permission(auth.uid(), organization_id, 'roles.manage')
+    AND NOT (is_system_role AND TG_OP = 'DELETE') -- Cannot delete system roles
+  );
+```
+
+### Member Roles RLS
+```sql
+-- Users can view role assignments in their organizations
+CREATE POLICY "Users can view role assignments"
+  ON member_roles FOR SELECT
+  USING (
+    member_id IN (
+      SELECT id FROM organization_members om
+      WHERE om.organization_id IN (
+        SELECT organization_id FROM organization_members
+        WHERE user_id = auth.uid() AND status = 'active'
+      )
+    )
+  );
+
+-- Admins can assign/unassign roles
+CREATE POLICY "Admins can manage member roles"
+  ON member_roles FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM organization_members om
+      JOIN roles r ON member_roles.role_id = r.id
+      WHERE om.id = member_roles.member_id
+        AND user_has_permission(auth.uid(), om.organization_id, 'roles.manage')
+    )
+  );
+```
+
+### Permission Overrides RLS
+```sql
+-- Admins can view/manage permission overrides
+CREATE POLICY "Admins can manage permission overrides"
+  ON member_permission_overrides FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM organization_members om
+      WHERE om.id = member_permission_overrides.member_id
+        AND user_has_permission(auth.uid(), om.organization_id, 'roles.manage')
+    )
+  );
+```
+
+### Organization Addons RLS
+```sql
+-- Members can view addons in their organizations
+CREATE POLICY "Users can view org addons"
+  ON organization_addons FOR SELECT
+  USING (
+    organization_id IN (
+      SELECT organization_id FROM organization_members
+      WHERE user_id = auth.uid() AND status = 'active'
+    )
+  );
+
+-- Only billing managers can purchase/manage addons
+CREATE POLICY "Billing managers can manage addons"
+  ON organization_addons FOR ALL
+  USING (
+    user_has_permission(auth.uid(), organization_id, 'billing.manage')
+  );
+```
+
+### Audit Log RLS
+```sql
+-- Organization members can view their org's audit log
+CREATE POLICY "Members can view audit log"
+  ON permission_audit_log FOR SELECT
+  USING (
+    organization_id IN (
+      SELECT organization_id FROM organization_members
+      WHERE user_id = auth.uid() AND status = 'active'
+    )
+  );
+
+-- System can insert (no user policy needed, use SECURITY DEFINER functions)
+```
+
+---
+
+## SQL Functions & Triggers
+
+### Organization Management Functions
+
+#### Create Organization
+```sql
+CREATE OR REPLACE FUNCTION create_organization(
+  p_name TEXT,
+  p_slug TEXT,
+  p_description TEXT DEFAULT NULL,
+  p_tier_slug TEXT DEFAULT 'user'
+)
+RETURNS UUID AS $$
+DECLARE
+  v_org_id UUID;
+  v_tier_id UUID;
+  v_member_id UUID;
+  v_owner_role_id UUID;
+BEGIN
+  -- Validate user doesn't exceed org limits
+  -- (Add logic based on their tier)
+  
+  -- Get tier ID
+  SELECT id INTO v_tier_id FROM subscription_tiers WHERE slug = p_tier_slug;
+  
+  IF v_tier_id IS NULL THEN
+    RAISE EXCEPTION 'Invalid subscription tier';
+  END IF;
+  
+  -- Create organization
+  INSERT INTO organizations (name, slug, description, owner_id, subscription_tier_id)
+  VALUES (p_name, p_slug, p_description, auth.uid(), v_tier_id)
+  RETURNING id INTO v_org_id;
+  
+  -- System roles are created automatically by trigger
+  
+  -- Add creator as member with owner role
+  INSERT INTO organization_members (organization_id, user_id, status, joined_at)
+  VALUES (v_org_id, auth.uid(), 'active', NOW())
+  RETURNING id INTO v_member_id;
+  
+  -- Assign owner role
+  SELECT id INTO v_owner_role_id
+  FROM roles
+  WHERE organization_id = v_org_id AND system_role_type = 'owner';
+  
+  INSERT INTO member_roles (member_id, role_id, assigned_by)
+  VALUES (v_member_id, v_owner_role_id, auth.uid());
+  
+  -- Log audit event
+  INSERT INTO permission_audit_log (organization_id, actor_id, action, metadata)
+  VALUES (v_org_id, auth.uid(), 'tier_upgraded', jsonb_build_object('tier', p_tier_slug));
+  
+  RETURN v_org_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+#### Invite Member
+```sql
+CREATE OR REPLACE FUNCTION invite_member_to_organization(
+  p_organization_id UUID,
+  p_user_email TEXT,
+  p_role_ids UUID[] DEFAULT NULL
+)
+RETURNS UUID AS $$
+DECLARE
+  v_user_id UUID;
+  v_member_id UUID;
+  v_role_id UUID;
+  v_default_role_id UUID;
+BEGIN
+  -- Check permission
+  IF NOT user_has_permission(auth.uid(), p_organization_id, 'members.invite') THEN
+    RAISE EXCEPTION 'Insufficient permissions';
+  END IF;
+  
+  -- Find user by email
+  SELECT id INTO v_user_id FROM auth.users WHERE email = p_user_email;
+  
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'User not found';
+  END IF;
+  
+  -- Check if already a member
+  IF EXISTS (
+    SELECT 1 FROM organization_members
+    WHERE organization_id = p_organization_id AND user_id = v_user_id
+  ) THEN
+    RAISE EXCEPTION 'User is already a member';
+  END IF;
+  
+  -- Create member
+  INSERT INTO organization_members (organization_id, user_id, status, invited_by)
+  VALUES (p_organization_id, v_user_id, 'invited', auth.uid())
+  RETURNING id INTO v_member_id;
+  
+  -- Assign roles (or default role if none specified)
+  IF p_role_ids IS NOT NULL AND array_length(p_role_ids, 1) > 0 THEN
+    FOREACH v_role_id IN ARRAY p_role_ids LOOP
+      INSERT INTO member_roles (member_id, role_id, assigned_by)
+      VALUES (v_member_id, v_role_id, auth.uid());
+    END LOOP;
+  ELSE
+    -- Assign default role
+    SELECT id INTO v_default_role_id
+    FROM roles
+    WHERE organization_id = p_organization_id AND is_default = TRUE
+    LIMIT 1;
+    
+    IF v_default_role_id IS NOT NULL THEN
+      INSERT INTO member_roles (member_id, role_id, assigned_by)
+      VALUES (v_member_id, v_default_role_id, auth.uid());
+    END IF;
+  END IF;
+  
+  -- Log audit event
+  INSERT INTO permission_audit_log (
+    organization_id, actor_id, action, target_user_id, metadata
+  ) VALUES (
+    p_organization_id, auth.uid(), 'member_invited', v_user_id,
+    jsonb_build_object('invited_by', auth.uid())
+  );
+  
+  RETURN v_member_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+#### Accept Invitation
+```sql
+CREATE OR REPLACE FUNCTION accept_organization_invitation(
+  p_organization_id UUID
+)
+RETURNS BOOLEAN AS $$
+BEGIN
+  -- Update member status
+  UPDATE organization_members
+  SET status = 'active', joined_at = NOW()
+  WHERE organization_id = p_organization_id
+    AND user_id = auth.uid()
+    AND status = 'invited';
+  
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'No pending invitation found';
+  END IF;
+  
+  -- Log audit event
+  INSERT INTO permission_audit_log (
+    organization_id, actor_id, action, target_user_id
+  ) VALUES (
+    p_organization_id, auth.uid(), 'member_joined', auth.uid()
+  );
+  
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+#### Remove Member
+```sql
+CREATE OR REPLACE FUNCTION remove_member_from_organization(
+  p_organization_id UUID,
+  p_user_id UUID
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_owner_id UUID;
+BEGIN
+  -- Check permission
+  IF NOT user_has_permission(auth.uid(), p_organization_id, 'members.remove') THEN
+    RAISE EXCEPTION 'Insufficient permissions';
+  END IF;
+  
+  -- Cannot remove owner
+  SELECT owner_id INTO v_owner_id FROM organizations WHERE id = p_organization_id;
+  
+  IF p_user_id = v_owner_id THEN
+    RAISE EXCEPTION 'Cannot remove organization owner';
+  END IF;
+  
+  -- Delete member (cascades to member_roles and overrides)
+  DELETE FROM organization_members
+  WHERE organization_id = p_organization_id AND user_id = p_user_id;
+  
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Member not found';
+  END IF;
+  
+  -- Log audit event
+  INSERT INTO permission_audit_log (
+    organization_id, actor_id, action, target_user_id
+  ) VALUES (
+    p_organization_id, auth.uid(), 'member_removed', p_user_id
+  );
+  
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+### Role Management Functions
+
+#### Create Custom Role
+```sql
+CREATE OR REPLACE FUNCTION create_custom_role(
+  p_organization_id UUID,
+  p_name TEXT,
+  p_description TEXT DEFAULT NULL,
+  p_color TEXT DEFAULT '#95a5a6',
+  p_permission_codes TEXT[] DEFAULT ARRAY[]::TEXT[]
+)
+RETURNS UUID AS $$
+DECLARE
+  v_role_id UUID;
+  v_permissions BIGINT := 0;
+  v_permission_code TEXT;
+  v_bit_position INTEGER;
+BEGIN
+  -- Check permission
+  IF NOT user_has_permission(auth.uid(), p_organization_id, 'roles.manage') THEN
+    RAISE EXCEPTION 'Insufficient permissions';
+  END IF;
+  
+  -- Calculate permissions bitfield
+  FOREACH v_permission_code IN ARRAY p_permission_codes LOOP
+    SELECT bit_position INTO v_bit_position
+    FROM permissions WHERE code = v_permission_code;
+    
+    IF v_bit_position IS NOT NULL THEN
+      v_permissions := set_permission_bit(v_permissions, v_bit_position);
+    END IF;
+  END LOOP;
+  
+  -- Create role
+  INSERT INTO roles (
+    organization_id, name, description, color, permissions, position, is_system_role
+  )
+  SELECT 
+    p_organization_id, p_name, p_description, p_color, v_permissions,
+    COALESCE(MAX(position), 0) + 1, FALSE
+  FROM roles
+  WHERE organization_id = p_organization_id
+  RETURNING id INTO v_role_id;
+  
+  -- Log audit event
+  INSERT INTO permission_audit_log (
+    organization_id, actor_id, action, target_role_id, metadata
+  ) VALUES (
+    p_organization_id, auth.uid(), 'role_created', v_role_id,
+    jsonb_build_object('name', p_name, 'permissions', p_permission_codes)
+  );
+  
+  RETURN v_role_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+#### Update Role Permissions
+```sql
+CREATE OR REPLACE FUNCTION update_role_permissions(
+  p_role_id UUID,
+  p_permission_codes TEXT[]
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_organization_id UUID;
+  v_permissions BIGINT := 0;
+  v_permission_code TEXT;
+  v_bit_position INTEGER;
+  v_is_system_role BOOLEAN;
+BEGIN
+  -- Get role info
+  SELECT organization_id, is_system_role
+  INTO v_organization_id, v_is_system_role
+  FROM roles WHERE id = p_role_id;
+  
+  -- Check permission
+  IF NOT user_has_permission(auth.uid(), v_organization_id, 'roles.manage') THEN
+    RAISE EXCEPTION 'Insufficient permissions';
+  END IF;
+  
+  -- Cannot modify system roles
+  IF v_is_system_role THEN
+    RAISE EXCEPTION 'Cannot modify system roles';
+  END IF;
+  
+  -- Calculate new permissions
+  FOREACH v_permission_code IN ARRAY p_permission_codes LOOP
+    SELECT bit_position INTO v_bit_position
+    FROM permissions WHERE code = v_permission_code;
+    
+    IF v_bit_position IS NOT NULL THEN
+      v_permissions := set_permission_bit(v_permissions, v_bit_position);
+    END IF;
+  END LOOP;
+  
+  -- Update role
+  UPDATE roles
+  SET permissions = v_permissions, updated_at = NOW()
+  WHERE id = p_role_id;
+  
+  -- Log audit event
+  INSERT INTO permission_audit_log (
+    organization_id, actor_id, action, target_role_id, metadata
+  ) VALUES (
+    v_organization_id, auth.uid(), 'role_updated', p_role_id,
+    jsonb_build_object('permissions', p_permission_codes)
+  );
+  
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+#### Assign Role to Member
+```sql
+CREATE OR REPLACE FUNCTION assign_role_to_member(
+  p_member_id UUID,
+  p_role_id UUID
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_organization_id UUID;
+BEGIN
+  -- Get organization
+  SELECT organization_id INTO v_organization_id
+  FROM organization_members WHERE id = p_member_id;
+  
+  -- Check permission
+  IF NOT user_has_permission(auth.uid(), v_organization_id, 'roles.manage') THEN
+    RAISE EXCEPTION 'Insufficient permissions';
+  END IF;
+  
+  -- Verify role belongs to same organization
+  IF NOT EXISTS (
+    SELECT 1 FROM roles WHERE id = p_role_id AND organization_id = v_organization_id
+  ) THEN
+    RAISE EXCEPTION 'Role not found in organization';
+  END IF;
+  
+  -- Assign role (ignore if already assigned)
+  INSERT INTO member_roles (member_id, role_id, assigned_by)
+  VALUES (p_member_id, p_role_id, auth.uid())
+  ON CONFLICT (member_id, role_id) DO NOTHING;
+  
+  -- Log audit event
+  INSERT INTO permission_audit_log (
+    organization_id, actor_id, action, target_role_id,
+    target_user_id, metadata
+  )
+  SELECT 
+    v_organization_id, auth.uid(), 'role_assigned', p_role_id,
+    om.user_id, jsonb_build_object('member_id', p_member_id)
+  FROM organization_members om
+  WHERE om.id = p_member_id;
+  
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+### Permission Override Functions
+
+#### Grant Permission to Member
+```sql
+CREATE OR REPLACE FUNCTION grant_permission_to_member(
+  p_member_id UUID,
+  p_permission_code TEXT,
+  p_reason TEXT DEFAULT NULL,
+  p_expires_at TIMESTAMPTZ DEFAULT NULL
+)
+RETURNS UUID AS $$
+DECLARE
+  v_organization_id UUID;
+  v_permission_id UUID;
+  v_override_id UUID;
+BEGIN
+  -- Get organization
+  SELECT organization_id INTO v_organization_id
+  FROM organization_members WHERE id = p_member_id;
+  
+  -- Check permission
+  IF NOT user_has_permission(auth.uid(), v_organization_id, 'roles.manage') THEN
+    RAISE EXCEPTION 'Insufficient permissions';
+  END IF;
+  
+  -- Get permission ID
+  SELECT id INTO v_permission_id FROM permissions WHERE code = p_permission_code;
+  
+  IF v_permission_id IS NULL THEN
+    RAISE EXCEPTION 'Permission not found';
+  END IF;
+  
+  -- Create or update override
+  INSERT INTO member_permission_overrides (
+    member_id, permission_id, allow, granted_by, reason, expires_at
+  )
+  VALUES (p_member_id, v_permission_id, TRUE, auth.uid(), p_reason, p_expires_at)
+  ON CONFLICT (member_id, permission_id) DO UPDATE
+  SET allow = TRUE, granted_by = auth.uid(), reason = p_reason,
+      expires_at = p_expires_at, created_at = NOW()
+  RETURNING id INTO v_override_id;
+  
+  -- Log audit event
+  INSERT INTO permission_audit_log (
+    organization_id, actor_id, action, target_user_id, target_permission_id, metadata
+  )
+  SELECT 
+    v_organization_id, auth.uid(), 'permission_granted',
+    om.user_id, v_permission_id,
+    jsonb_build_object('permission', p_permission_code, 'reason', p_reason)
+  FROM organization_members om
+  WHERE om.id = p_member_id;
+  
+  RETURN v_override_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+#### Revoke Permission from Member
+```sql
+CREATE OR REPLACE FUNCTION revoke_permission_from_member(
+  p_member_id UUID,
+  p_permission_code TEXT,
+  p_reason TEXT DEFAULT NULL
+)
+RETURNS UUID AS $$
+DECLARE
+  v_organization_id UUID;
+  v_permission_id UUID;
+  v_override_id UUID;
+BEGIN
+  -- Get organization
+  SELECT organization_id INTO v_organization_id
+  FROM organization_members WHERE id = p_member_id;
+  
+  -- Check permission
+  IF NOT user_has_permission(auth.uid(), v_organization_id, 'roles.manage') THEN
+    RAISE EXCEPTION 'Insufficient permissions';
+  END IF;
+  
+  -- Get permission ID
+  SELECT id INTO v_permission_id FROM permissions WHERE code = p_permission_code;
+  
+  IF v_permission_id IS NULL THEN
+    RAISE EXCEPTION 'Permission not found';
+  END IF;
+  
+  -- Create DENY override
+  INSERT INTO member_permission_overrides (
+    member_id, permission_id, allow, granted_by, reason
+  )
+  VALUES (p_member_id, v_permission_id, FALSE, auth.uid(), p_reason)
+  ON CONFLICT (member_id, permission_id) DO UPDATE
+  SET allow = FALSE, granted_by = auth.uid(), reason = p_reason, created_at = NOW()
+  RETURNING id INTO v_override_id;
+  
+  -- Log audit event
+  INSERT INTO permission_audit_log (
+    organization_id, actor_id, action, target_user_id, target_permission_id, metadata
+  )
+  SELECT 
+    v_organization_id, auth.uid(), 'permission_revoked',
+    om.user_id, v_permission_id,
+    jsonb_build_object('permission', p_permission_code, 'reason', p_reason)
+  FROM organization_members om
+  WHERE om.id = p_member_id;
+  
+  RETURN v_override_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+---
+
+## API Layer (TypeScript)
+
+### Types
+```typescript
+// types/permissions.ts
+
+export type SubscriptionTier = 'user' | 'web' | 'app' | 'crm';
+
+export type OrganizationStatus = 'active' | 'trialing' | 'past_due' | 'cancelled' | 'paused';
+
+export type MemberStatus = 'invited' | 'active' | 'suspended' | 'left';
+
+export type SystemRoleType = 'owner' | 'admin' | 'moderator' | 'member';
+
+export type PermissionCategory = 
+  | 'basic' 
+  | 'analytics' 
+  | 'export' 
+  | 'integrations' 
+  | 'api' 
+  | 'crm' 
+  | 'admin' 
+  | 'billing';
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  logo_url?: string;
+  owner_id: string;
+  subscription_tier_id: string;
+  subscription_status: OrganizationStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrganizationMember {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  status: MemberStatus;
+  invited_by?: string;
+  invited_at: string;
+  joined_at?: string;
+  computed_permissions: bigint;
+  created_at: string;
+}
+
+export interface Role {
+  id: string;
+  organization_id: string;
+  name: string;
+  description?: string;
+  color: string;
+  permissions: bigint;
+  position: number;
+  is_system_role: boolean;
+  system_role_type?: SystemRoleType;
+  is_assignable: boolean;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Permission {
+  id: string;
+  code: string;
+  bit_position: number;
+  name: string;
+  description?: string;
+  category: PermissionCategory;
+  min_tier?: SubscriptionTier;
+  is_addon: boolean;
+  addon_price_eur?: number;
+  is_dangerous: boolean;
+}
+
+export interface MemberWithRoles extends OrganizationMember {
+  user: {
+    id: string;
+    email: string;
+    full_name?: string;
+    avatar_url?: string;
+  };
+  roles: Role[];
+}
+```
+
+### Supabase Client Setup
+```typescript
+// lib/supabase/permissions.ts
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+/**
+ * Check if current user has a specific permission in an organization
+ */
+export async function hasPermission(
+  organizationId: string,
+  permissionCode: string
+): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return false;
+  
+  const { data, error } = await supabase.rpc('user_has_permission', {
+    p_user_id: user.id,
+    p_organization_id: organizationId,
+    p_permission_code: permissionCode
+  });
+  
+  if (error) {
+    console.error('Permission check error:', error);
+    return false;
+  }
+  
+  return data;
+}
+
+/**
+ * Get all permissions for current user in an organization
+ */
+export async function getUserPermissions(
+  organizationId: string
+): Promise<Record<string, boolean>> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return {};
+  
+  const { data, error } = await supabase.rpc('get_user_permissions', {
+    p_user_id: user.id,
+    p_organization_id: organizationId
+  });
+  
+  if (error) {
+    console.error('Get permissions error:', error);
+    return {};
+  }
+  
+  // Convert array to object
+  return data.reduce((acc: Record<string, boolean>, item: any) => {
+    acc[item.permission_code] = item.has_permission;
+    return acc;
+  }, {});
+}
+
+/**
+ * Create a new organization
+ */
+export async function createOrganization(params: {
+  name: string;
+  slug: string;
+  description?: string;
+  tierSlug?: SubscriptionTier;
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('create_organization', {
+    p_name: params.name,
+    p_slug: params.slug,
+    p_description: params.description,
+    p_tier_slug: params.tierSlug || 'user'
+  });
+  
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Invite member to organization
+ */
+export async function inviteMember(params: {
+  organizationId: string;
+  userEmail: string;
+  roleIds?: string[];
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('invite_member_to_organization', {
+    p_organization_id: params.organizationId,
+    p_user_email: params.userEmail,
+    p_role_ids: params.roleIds || null
+  });
+  
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Accept organization invitation
+ */
+export async function acceptInvitation(organizationId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('accept_organization_invitation', {
+    p_organization_id: organizationId
+  });
+  
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Remove member from organization
+ */
+export async function removeMember(
+  organizationId: string,
+  userId: string
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('remove_member_from_organization', {
+    p_organization_id: organizationId,
+    p_user_id: userId
+  });
+  
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Create custom role
+ */
+export async function createRole(params: {
+  organizationId: string;
+  name: string;
+  description?: string;
+  color?: string;
+  permissionCodes?: string[];
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('create_custom_role', {
+    p_organization_id: params.organizationId,
+    p_name: params.name,
+    p_description: params.description,
+    p_color: params.color || '#95a5a6',
+    p_permission_codes: params.permissionCodes || []
+  });
+  
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Update role permissions
+ */
+export async function updateRolePermissions(
+  roleId: string,
+  permissionCodes: string[]
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('update_role_permissions', {
+    p_role_id: roleId,
+    p_permission_codes: permissionCodes
+  });
+  
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Assign role to member
+ */
+export async function assignRole(
+  memberId: string,
+  roleId: string
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('assign_role_to_member', {
+    p_member_id: memberId,
+    p_role_id: roleId
+  });
+  
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Grant permission to specific member
+ */
+export async function grantPermission(params: {
+  memberId: string;
+  permissionCode: string;
+  reason?: string;
+  expiresAt?: string;
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('grant_permission_to_member', {
+    p_member_id: params.memberId,
+    p_permission_code: params.permissionCode,
+    p_reason: params.reason,
+    p_expires_at: params.expiresAt
+  });
+  
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Revoke permission from member
+ */
+export async function revokePermission(params: {
+  memberId: string;
+  permissionCode: string;
+  reason?: string;
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('revoke_permission_from_member', {
+    p_member_id: params.memberId,
+    p_permission_code: params.permissionCode,
+    p_reason: params.reason
+  });
+  
+  if (error) throw error;
+  return data;
+}
+```
+
+### React Hooks
+```typescript
+// hooks/usePermissions.ts
+
+import { useEffect, useState } from 'react';
+import { getUserPermissions } from '@/lib/supabase/permissions';
+import { useOrganization } from './useOrganization';
+
+export function usePermissions() {
+  const { currentOrg } = useOrganization();
+  const [permissions, setPermissions] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    if (!currentOrg) {
+      setPermissions({});
+      setLoading(false);
+      return;
+    }
+    
+    loadPermissions();
+  }, [currentOrg?.id]);
+  
+  const loadPermissions = async () => {
+    try {
+      setLoading(true);
+      const perms = await getUserPermissions(currentOrg!.id);
+      setPermissions(perms);
+    } catch (error) {
+      console.error('Failed to load permissions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const can = (permissionCode: string): boolean => {
+    return permissions[permissionCode] === true;
+  };
+  
+  const canAny = (...permissionCodes: string[]): boolean => {
+    return permissionCodes.some(code => can(code));
+  };
+  
+  const canAll = (...permissionCodes: string[]): boolean => {
+    return permissionCodes.every(code => can(code));
+  };
+  
+  return {
+    permissions,
+    loading,
+    can,
+    canAny,
+    canAll,
+    refresh: loadPermissions
+  };
+}
+```
+
+### Permission Guard Component
+```typescript
+// components/PermissionGuard.tsx
+
+import { ReactNode } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+
+interface PermissionGuardProps {
+  permission: string | string[];
+  requireAll?: boolean; // If true, requires all permissions; if false, requires any
+  fallback?: ReactNode;
+  children: ReactNode;
+}
+
+export function PermissionGuard({
+  permission,
+  requireAll = false,
+  fallback = null,
+  children
+}: PermissionGuardProps) {
+  const { can, canAll, canAny, loading } = usePermissions();
+  
+  if (loading) {
+    return null; // or loading spinner
+  }
+  
+  const permissions = Array.isArray(permission) ? permission : [permission];
+  const hasPermission = requireAll 
+    ? canAll(...permissions)
+    : canAny(...permissions);
+  
+  if (!hasPermission) {
+    return <>{fallback}</>;
+  }
+  
+  return <>{children}</>;
+}
+
+// Usage example:
+// <PermissionGuard permission="analytics.view">
+//   <AnalyticsDashboard />
+// </PermissionGuard>
+//
+// <PermissionGuard 
+//   permission={["billing.view", "billing.manage"]} 
+//   requireAll={false}
+//   fallback={<div>No access</div>}
+// >
+//   <BillingPage />
+// </PermissionGuard>
+```
+
+### Middleware for API Routes
+```typescript
+// middleware/requirePermission.ts
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+
+export async function requirePermission(
+  request: NextRequest,
+  organizationId: string,
+  permissionCode: string
+) {
+  const cookieStore = cookies();
+  
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  const { data: hasPermission } = await supabase.rpc('user_has_permission', {
+    p_user_id: user.id,
+    p_organization_id: organizationId,
+    p_permission_code: permissionCode
+  });
+  
+  if (!hasPermission) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  
+  return null; // Permission granted, continue
+}
+
+// Usage in API route:
+// export async function POST(request: NextRequest) {
+//   const body = await request.json();
+//   const { organizationId } = body;
+//   
+//   const permissionError = await requirePermission(
+//     request,
+//     organizationId,
+//     'members.invite'
+//   );
+//   
+//   if (permissionError) return permissionError;
+//   
+//   // Continue with actual logic...
+// }
+```
+
+---
+
+## Testing Strategy
+
+### Unit Tests (SQL Functions)
+```sql
+-- Test permission computation
+DO $$
+DECLARE
+  v_org_id UUID;
+  v_member_id UUID;
+  v_user_id UUID := gen_random_uuid();
+  v_permissions BIGINT;
+BEGIN
+  -- Setup test org
+  INSERT INTO organizations (name, slug, owner_id, subscription_tier_id)
+  SELECT 'Test Org', 'test-org', v_user_id, id
+  FROM subscription_tiers WHERE slug = 'web'
+  RETURNING id INTO v_org_id;
+  
+  -- Add member
+  INSERT INTO organization_members (organization_id, user_id, status)
+  VALUES (v_org_id, v_user_id, 'active')
+  RETURNING id INTO v_member_id;
+  
+  -- Compute permissions
+  v_permissions := compute_member_permissions(v_member_id);
+  
+  -- Assert: should have web tier base permissions
+  ASSERT v_permissions > 0, 'Member should have base permissions';
+  
+  -- Cleanup
+  DELETE FROM organizations WHERE id = v_org_id;
+  
+  RAISE NOTICE 'Test passed: permission computation';
+END $$;
+```
+
+### Integration Tests (TypeScript)
+```typescript
+// tests/permissions.test.ts
+
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import {
+  createOrganization,
+  inviteMember,
+  createRole,
+  assignRole,
+  hasPermission,
+  grantPermission
+} from '@/lib/supabase/permissions';
+
+describe('Permission System', () => {
+  let orgId: string;
+  let memberId: string;
+  let roleId: string;
+  
+  beforeAll(async () => {
+    // Create test organization
+    orgId = await createOrganization({
+      name: 'Test Organization',
+      slug: 'test-org-' + Date.now(),
+      tierSlug: 'web'
+    });
+  });
+  
+  afterAll(async () => {
+    // Cleanup (delete org)
+  });
+  
+  it('should create organization with system roles', async () => {
+    // Verify system roles were created
+    const { data: roles } = await supabase
+      .from('roles')
+      .select('*')
+      .eq('organization_id', orgId)
+      .eq('is_system_role', true);
+    
+    expect(roles).toHaveLength(4); // owner, admin, mod, member
+  });
+  
+  it('should check base tier permissions', async () => {
+    const canExport = await hasPermission(orgId, 'export.csv');
+    expect(canExport).toBe(true); // Included in web tier
+    
+    const canUseApi = await hasPermission(orgId, 'api.access');
+    expect(canUseApi).toBe(false); // Only in app tier
+  });
+  
+  it('should grant permission via custom role', async () => {
+    // Create custom role with specific permission
+    roleId = await createRole({
+      organizationId: orgId,
+      name: 'API User',
+      permissionCodes: ['api.access']
+    });
+    
+    // Assign role to member
+    await assignRole(memberId, roleId);
+    
+    // Check permission
+    const canUseApi = await hasPermission(orgId, 'api.access');
+    expect(canUseApi).toBe(true);
+  });
+  
+  it('should handle permission overrides', async () => {
+    // Grant specific permission
+    await grantPermission({
+      memberId,
+      permissionCode: 'crm.contacts',
+      reason: 'Testing overrides'
+    });
+    
+    const canAccessCRM = await hasPermission(orgId, 'crm.contacts');
+    expect(canAccessCRM).toBe(true);
+  });
+});
+```
+
+---
+
+## Migration Path
+
+### Step-by-Step Migration from Current System
+
+#### Phase 1: Parallel Run (Week 1-2)
+```sql
+-- Keep existing profiles.role column
+-- Add new system alongside
+
+-- 1. Run all schema creation scripts
+-- 2. Create migration function to sync old → new
+
+CREATE OR REPLACE FUNCTION sync_old_role_to_new_system()
+RETURNS VOID AS $$
+DECLARE
+  v_profile RECORD;
+  v_org_id UUID;
+  v_tier_id UUID;
+  v_member_id UUID;
+  v_role_id UUID;
+BEGIN
+  -- Get 'user' tier (default free tier)
+  SELECT id INTO v_tier_id FROM subscription_tiers WHERE slug = 'user';
+  
+  FOR v_profile IN SELECT * FROM public.profiles LOOP
+    -- Create personal organization for each user
+    INSERT INTO organizations (
+      name, slug, owner_id, subscription_tier_id
+    )
+    VALUES (
+      COALESCE(v_profile.full_name, v_profile.username, 'My Workspace'),
+      'user-' || v_profile.id,
+      v_profile.id,
+      v_tier_id
+    )
+    RETURNING id INTO v_org_id;
+    
+    -- Add user as member
+    INSERT INTO organization_members (
+      organization_id, user_id, status, joined_at
+    )
+    VALUES (v_org_id, v_profile.id, 'active', NOW())
+    RETURNING id INTO v_member_id;
+    
+    -- Assign appropriate system role based on old role
+    SELECT id INTO v_role_id
+    FROM roles
+    WHERE organization_id = v_org_id
+      AND system_role_type = CASE
+        WHEN v_profile.role = 'admin' THEN 'admin'
+        WHEN v_profile.role = 'team_member' THEN 'moderator'
+        ELSE 'member'
+      END;
+    
+    INSERT INTO member_roles (member_id, role_id)
+    VALUES (v_member_id, v_role_id);
+  END LOOP;
+  
+  RAISE NOTICE 'Migration complete: % profiles processed', 
+    (SELECT COUNT(*) FROM public.profiles);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Run migration
+SELECT sync_old_role_to_new_system();
+```
+
+#### Phase 2: Update Application Code (Week 2-3)
+```typescript
+// Update all permission checks from:
+// if (user.role === 'admin')
+// 
+// To:
+// if (await hasPermission(orgId, 'admin_feature'))
+
+// Example migration:
+// OLD:
+const canManageUsers = user.role === 'admin' || user.role === 'team_member';
+
+// NEW:
+const canManageUsers = await hasPermission(orgId, 'members.manage');
+```
+
+#### Phase 3: Testing (Week 3-4)
+- Test all features with new permission system
+- Verify RLS policies work correctly
+- Load test permission checks
+- Audit log verification
+
+#### Phase 4: Deprecate Old System (Week 4+)
+```sql
+-- Make old role column nullable
+ALTER TABLE public.profiles ALTER COLUMN role DROP NOT NULL;
+
+-- Add deprecation notice
+COMMENT ON COLUMN public.profiles.role IS 
+  'DEPRECATED: Use organization_members and roles tables instead';
+
+-- Eventually, drop the column
+-- ALTER TABLE public.profiles DROP COLUMN role;
+```
+
+---
+
+## Performance Optimization
+
+### Caching Strategy
+```typescript
+// lib/cache/permissions.ts
+
+import { Redis } from 'ioredis';
+
+const redis = new Redis(process.env.REDIS_URL);
+
+const CACHE_TTL = 300; // 5 minutes
+
+export async function getCachedPermissions(
+  userId: string,
+  orgId: string
+): Promise<Record<string, boolean> | null> {
+  const key = `perms:${userId}:${orgId}`;
+  const cached = await redis.get(key);
+  return cached ? JSON.parse(cached) : null;
+}
+
+export async function setCachedPermissions(
+  userId: string,
+  orgId: string,
+  permissions: Record<string, boolean>
+): Promise<void> {
+  const key = `perms:${userId}:${orgId}`;
+  await redis.setex(key, CACHE_TTL, JSON.stringify(permissions));
+}
+
+export async function invalidatePermissionCache(
+  userId: string,
+  orgId: string
+): Promise<void> {
+  const key = `perms:${userId}:${orgId}`;
+  await redis.del(key);
+}
+
+// Invalidate on changes
+export async function invalidateOrgPermissions(orgId: string): Promise<void> {
+  const pattern = `perms:*:${orgId}`;
+  const keys = await redis.keys(pattern);
+  if (keys.length > 0) {
+    await redis.del(...keys);
+  }
+}
+```
+
+### Database Indexes
+```sql
+-- Already included in schema, but for reference:
+
+-- Fast member lookup
+CREATE INDEX idx_org_members_user_org ON organization_members(user_id, organization_id);
+
+-- Fast role permission lookup
+CREATE INDEX idx_member_roles_lookup ON member_roles(member_id, role_id);
+
+-- Fast override lookup
+CREATE INDEX idx_overrides_active ON member_permission_overrides(member_id) 
+  WHERE expires_at IS NULL OR expires_at > NOW();
+
+-- Partial index for active members only
+CREATE INDEX idx_org_members_active ON organization_members(organization_id, user_id)
+  WHERE status = 'active';
+```
+
+---
+
+## Monitoring & Observability
+
+### Audit Log Queries
+```sql
+-- Recent permission changes
+SELECT 
+  pal.created_at,
+  pal.action,
+  actor.email as actor_email,
+  target.email as target_email,
+  p.code as permission_code,
+  pal.metadata
+FROM permission_audit_log pal
+LEFT JOIN auth.users actor ON pal.actor_id = actor.id
+LEFT JOIN auth.users target ON pal.target_user_id = target.id
+LEFT JOIN permissions p ON pal.target_permission_id = p.id
+WHERE pal.organization_id = 'your-org-id'
+ORDER BY pal.created_at DESC
+LIMIT 100;
+
+-- Member permission history
+SELECT 
+  pal.created_at,
+  pal.action,
+  p.code as permission,
+  pal.metadata
+FROM permission_audit_log pal
+LEFT JOIN permissions p ON pal.target_permission_id = p.id
+WHERE pal.target_user_id = 'user-id'
+  AND pal.organization_id = 'org-id'
+ORDER BY pal.created_at DESC;
+```
+
+### Metrics to Track
+```typescript
+// Track permission check latency
+export async function hasPermissionWithMetrics(
+  orgId: string,
+  permission: string
+): Promise<boolean> {
+  const start = Date.now();
+  
+  try {
+    const result = await hasPermission(orgId, permission);
+    
+    // Log metrics
+    const duration = Date.now() - start;
+    console.log(`Permission check: ${permission} took ${duration}ms`);
+    
+    return result;
+  } catch (error) {
+    // Log error metrics
+    console.error('Permission check failed:', error);
+    throw error;
+  }
+}
+```
+
+---
+
+## Security Checklist
+
+- [ ] All tables have RLS enabled
+- [ ] RLS policies tested for bypass attempts
+- [ ] System roles cannot be deleted
+- [ ] Owner cannot be removed from organization
+- [ ] Permission cache invalidation works correctly
+- [ ] Audit log captures all permission changes
+- [ ] API endpoints check permissions before operations
+- [ ] Frontend hides UI based on permissions
+- [ ] Rate limiting on permission checks (if needed)
+- [ ] SQL injection prevention (parameterized queries)
+- [ ] CSRF protection on state-changing operations
+
+---
+
+## Next Steps
+
+1. **Run Schema Creation**: Execute all CREATE TABLE statements
+2. **Seed Initial Data**: Insert subscription tiers and base permissions
+3. **Test Functions**: Run test cases to verify permission computation
+4. **Migrate Data**: Use migration function to convert existing users
+5. **Update Application**: Replace old permission checks with new system
+6. **Deploy Gradually**: Start with non-critical features first
+7. **Monitor**: Watch audit logs and performance metrics
+8. **Optimize**: Add caching if needed based on usage patterns
+
+---
+
+## FAQ
+
+**Q: Can a user belong to multiple organizations?**  
+A: Yes! Users can be members of multiple organizations with different roles in each.
+
+**Q: How do I upgrade an organization's subscription tier?**  
+A: Update the `subscription_tier_id` on the organization. The permission cache will automatically invalidate.
+
+**Q: Can I have more than 64 permissions?**  
+A: The bitwise system supports up to 64 permissions. If you need more, you can:
+- Use multiple BIGINT columns (permissions_1, permissions_2)
+- Switch to a relational-only approach (slower but unlimited)
+- Organize permissions into categories with separate bitfields
+
+**Q: What happens if I delete a role that members are assigned to?**  
+A: The CASCADE will delete the member_roles entries. Members will lose those permissions, and their cache will be invalidated.
+
+**Q: How do I handle "limited time" permissions?**  
+A: Use the `expires_at` field on `member_permission_overrides`. The permission check function automatically ignores expired overrides.
+
+---
+
+## Summary
+
+This Discord-style permission system provides:
+
+✅ **Flexible Multi-Tenancy**: Organizations with subscription tiers  
+✅ **Role-Based Access Control**: Custom roles per organization  
+✅ **Granular Permissions**: 64 bitwise permissions with caching  
+✅ **Permission Overrides**: Per-user grants/denies  
+✅ **Addons**: Purchasable feature additions  
+✅ **Audit Trail**: Complete history of all changes  
+✅ **Security**: RLS policies at database level  
+✅ **Performance**: Cached, bitwise permission checks  
+✅ **Scalability**: Handles millions of users and organizations
+
+The system balances flexibility with performance while maintaining security through PostgreSQL's RLS and comprehensive audit logging.
