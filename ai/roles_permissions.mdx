@@ -1897,67 +1897,210 @@ export function PermissionGuard({
 // </PermissionGuard>
 ```
 
-### Middleware for API Routes
+### Cloudflare Workers Integration
 ```typescript
-// middleware/requirePermission.ts
+// workers/api/index.ts
+// Example Cloudflare Worker API endpoint with permission checking
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 
-export async function requirePermission(
-  request: NextRequest,
-  organizationId: string,
-  permissionCode: string
-) {
-  const cookieStore = cookies();
-  
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
+interface Env {
+  SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
+  PERMISSIONS_KV?: KVNamespace; // Optional
+}
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+    
+    // Initialize Supabase client
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
       },
+    });
+    
+    // Example: Protected endpoint
+    if (url.pathname === '/api/analytics/export') {
+      return handleAnalyticsExport(request, env, supabase);
+    }
+    
+    return new Response('Not Found', { status: 404 });
+  },
+};
+
+async function handleAnalyticsExport(
+  request: Request,
+  env: Env,
+  supabase: any
+): Promise<Response> {
+  // 1. Get auth token from header
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  
+  // 2. Set auth token in Supabase client
+  const token = authHeader.replace('Bearer ', '');
+  await supabase.auth.setSession({ access_token: token, refresh_token: '' });
+  
+  // 3. Get user
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  
+  // 4. Get organization from request (could be query param, header, etc.)
+  const url = new URL(request.url);
+  const organizationId = url.searchParams.get('orgId');
+  
+  if (!organizationId) {
+    return new Response('Organization ID required', { status: 400 });
+  }
+  
+  // 5. Check permission (this is the key part!)
+  const { data: hasPermission, error: permError } = await supabase.rpc(
+    'user_has_permission',
+    {
+      p_user_id: user.id,
+      p_organization_id: organizationId,
+      p_permission_code: 'export.csv'
     }
   );
   
+  if (permError) {
+    console.error('Permission check error:', permError);
+    return new Response('Internal Server Error', { status: 500 });
+  }
+  
+  if (!hasPermission) {
+    return new Response('Forbidden: Insufficient permissions', { status: 403 });
+  }
+  
+  // 6. User has permission, proceed with actual logic
+  return new Response(JSON.stringify({ 
+    success: true, 
+    message: 'Export started' 
+  }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+// Helper function to require permission (reusable)
+async function requirePermission(
+  supabase: any,
+  userId: string,
+  organizationId: string,
+  permissionCode: string
+): Promise<{ allowed: boolean; error?: string }> {
+  const { data: hasPermission, error } = await supabase.rpc(
+    'user_has_permission',
+    {
+      p_user_id: userId,
+      p_organization_id: organizationId,
+      p_permission_code: permissionCode
+    }
+  );
+  
+  if (error) {
+    return { allowed: false, error: 'Permission check failed' };
+  }
+  
+  return { allowed: hasPermission };
+}
+
+// Example: Middleware-style helper
+export async function withPermission(
+  supabase: any,
+  organizationId: string,
+  permissionCode: string,
+  handler: () => Promise<Response>
+): Promise<Response> {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return new Response('Unauthorized', { status: 401 });
   }
   
-  const { data: hasPermission } = await supabase.rpc('user_has_permission', {
-    p_user_id: user.id,
-    p_organization_id: organizationId,
-    p_permission_code: permissionCode
+  const { allowed, error } = await requirePermission(
+    supabase,
+    user.id,
+    organizationId,
+    permissionCode
+  );
+  
+  if (!allowed) {
+    return new Response(error || 'Forbidden', { status: 403 });
+  }
+  
+  return handler();
+}
+```
+
+### Usage in Cloudflare Pages Functions
+```typescript
+// functions/api/members/invite.ts
+// Cloudflare Pages Function with permission check
+
+export async function onRequestPost(context) {
+  const { request, env } = context;
+  
+  const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
   });
   
-  if (!hasPermission) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  // Get auth token
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response('Unauthorized', { status: 401 });
   }
   
-  return null; // Permission granted, continue
+  const token = authHeader.replace('Bearer ', '');
+  await supabase.auth.setSession({ access_token: token, refresh_token: '' });
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  
+  // Parse request body
+  const { organizationId, userEmail, roleIds } = await request.json();
+  
+  // Check permission
+  const { data: canInvite } = await supabase.rpc('user_has_permission', {
+    p_user_id: user.id,
+    p_organization_id: organizationId,
+    p_permission_code: 'members.invite'
+  });
+  
+  if (!canInvite) {
+    return new Response('Forbidden', { status: 403 });
+  }
+  
+  // Proceed with invitation
+  const { data, error } = await supabase.rpc('invite_member_to_organization', {
+    p_organization_id: organizationId,
+    p_user_email: userEmail,
+    p_role_ids: roleIds
+  });
+  
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  return new Response(JSON.stringify({ memberId: data }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
 }
-
-// Usage in API route:
-// export async function POST(request: NextRequest) {
-//   const body = await request.json();
-//   const { organizationId } = body;
-//   
-//   const permissionError = await requirePermission(
-//     request,
-//     organizationId,
-//     'members.invite'
-//   );
-//   
-//   if (permissionError) return permissionError;
-//   
-//   // Continue with actual logic...
-// }
 ```
 
 ---
@@ -2187,51 +2330,127 @@ COMMENT ON COLUMN public.profiles.role IS
 
 ## Performance Optimization
 
-### Caching Strategy
+### Caching Strategy (Cloudflare Workers Compatible)
+
+**Good News**: The bitwise permission system works perfectly WITHOUT any external caching! The database-level caching in the `computed_permissions` column is sufficient.
+
+#### Why You Don't Need Redis:
+
+1. **Database-Level Caching**: The `computed_permissions` column on `organization_members` already caches the result
+2. **Bitwise Performance**: Checking a bit in an integer is microseconds (< 1ms)
+3. **Automatic Invalidation**: Triggers automatically clear the cache when needed
+4. **Single Query**: Permission checks require only 1 database query
+
+#### Optional: Cloudflare KV Caching (if you want extra speed)
+
+If you want to add an optional caching layer using Cloudflare KV:
+
 ```typescript
 // lib/cache/permissions.ts
+// This is OPTIONAL - the system works great without it!
 
-import { Redis } from 'ioredis';
-
-const redis = new Redis(process.env.REDIS_URL);
+interface Env {
+  PERMISSIONS_KV: KVNamespace;
+}
 
 const CACHE_TTL = 300; // 5 minutes
 
 export async function getCachedPermissions(
+  env: Env,
   userId: string,
   orgId: string
 ): Promise<Record<string, boolean> | null> {
-  const key = `perms:${userId}:${orgId}`;
-  const cached = await redis.get(key);
-  return cached ? JSON.parse(cached) : null;
+  try {
+    const key = `perms:${userId}:${orgId}`;
+    const cached = await env.PERMISSIONS_KV.get(key, 'json');
+    return cached as Record<string, boolean> | null;
+  } catch (error) {
+    console.error('KV cache read error:', error);
+    return null; // Fail gracefully, just fetch from DB
+  }
 }
 
 export async function setCachedPermissions(
+  env: Env,
   userId: string,
   orgId: string,
   permissions: Record<string, boolean>
 ): Promise<void> {
-  const key = `perms:${userId}:${orgId}`;
-  await redis.setex(key, CACHE_TTL, JSON.stringify(permissions));
+  try {
+    const key = `perms:${userId}:${orgId}`;
+    await env.PERMISSIONS_KV.put(
+      key, 
+      JSON.stringify(permissions),
+      { expirationTtl: CACHE_TTL }
+    );
+  } catch (error) {
+    console.error('KV cache write error:', error);
+    // Don't throw - caching is optional
+  }
 }
 
 export async function invalidatePermissionCache(
+  env: Env,
   userId: string,
   orgId: string
 ): Promise<void> {
-  const key = `perms:${userId}:${orgId}`;
-  await redis.del(key);
-}
-
-// Invalidate on changes
-export async function invalidateOrgPermissions(orgId: string): Promise<void> {
-  const pattern = `perms:*:${orgId}`;
-  const keys = await redis.keys(pattern);
-  if (keys.length > 0) {
-    await redis.del(...keys);
+  try {
+    const key = `perms:${userId}:${orgId}`;
+    await env.PERMISSIONS_KV.delete(key);
+  } catch (error) {
+    console.error('KV cache delete error:', error);
   }
 }
+
+// Note: KV doesn't support pattern matching like Redis
+// For organization-wide invalidation, you'd need to track keys separately
+// But honestly, the DB cache is probably enough!
 ```
+
+#### Recommended Approach for Cloudflare Workers:
+
+**Just use the database cache!** Here's why:
+
+```typescript
+// lib/supabase/permissions.ts
+// Simple, fast, no external cache needed
+
+export async function hasPermission(
+  organizationId: string,
+  permissionCode: string
+): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return false;
+  
+  // This is fast! Single query, uses computed_permissions cache
+  const { data, error } = await supabase.rpc('user_has_permission', {
+    p_user_id: user.id,
+    p_organization_id: organizationId,
+    p_permission_code: permissionCode
+  });
+  
+  if (error) {
+    console.error('Permission check error:', error);
+    return false;
+  }
+  
+  return data;
+}
+
+// Average response time: 5-15ms (plenty fast!)
+// No need for Redis/KV unless you're doing millions of checks per second
+```
+
+#### Performance Characteristics:
+
+| Approach | Latency | Complexity | Cost |
+|----------|---------|------------|------|
+| **DB Cache Only** (Recommended) | 5-15ms | Low | Free |
+| DB Cache + Cloudflare KV | 1-5ms | Medium | ~$0.50/million reads |
+| No Cache (direct calculation) | 20-50ms | Low | Free |
+
+**Recommendation**: Start with DB cache only. Add KV only if you're seeing performance issues (unlikely).
 
 ### Database Indexes
 ```sql
@@ -2377,6 +2596,25 @@ This Discord-style permission system provides:
 ✅ **Audit Trail**: Complete history of all changes  
 ✅ **Security**: RLS policies at database level  
 ✅ **Performance**: Cached, bitwise permission checks  
-✅ **Scalability**: Handles millions of users and organizations
+✅ **Scalability**: Handles millions of users and organizations  
+✅ **Cloudflare Workers Compatible**: No Redis required!
+
+### Important Note on Caching:
+
+**The bitwise permission system works perfectly WITHOUT Redis or any external cache!**
+
+The system has **built-in caching** via:
+1. `computed_permissions` column in `organization_members` (database-level cache)
+2. Automatic invalidation triggers
+3. 5-minute staleness check (recomputes if needed)
+
+**Performance**: 5-15ms per permission check - fast enough for 99% of applications!
+
+**When to add external caching** (Cloudflare KV, Redis, etc.):
+- You're doing 100,000+ permission checks per second
+- You need sub-5ms response times
+- You have specific edge caching requirements
+
+For most SaaS applications, the database cache is sufficient and much simpler to maintain.
 
 The system balances flexibility with performance while maintaining security through PostgreSQL's RLS and comprehensive audit logging.

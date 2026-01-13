@@ -60,46 +60,70 @@ interface NavItem {
     title: string
     href: string
     icon: React.ComponentType<{ className?: string }>
-    roles?: UserRole[]
+    roles?: string[]
     items?: { title: string; href: string }[]
+    organizationOnly?: boolean
 }
 
-const navItems: NavItem[] = [
-    { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    {
-        title: "Projects",
-        href: "/dashboard/projects",
-        icon: FolderOpen,
-        items: [
-            { title: "Active Projects", href: "/dashboard/projects/active" },
-            { title: "Archived", href: "/dashboard/projects/archived" },
-            { title: "New Project", href: "/dashboard/projects/new" },
-        ]
-    },
-    { title: "Documents", href: "/dashboard/documents", icon: FileText },
-    {
-        title: "Team",
-        href: "/dashboard/team",
-        icon: Users,
-        roles: ["admin", "team_member"],
-    },
-    { title: "Settings", href: "/dashboard/settings", icon: Settings },
-]
+const getNavItems = (slug?: string): NavItem[] => {
+    const items: NavItem[] = [
+        { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    ]
+
+    if (slug) {
+        items.push({
+            title: "Workspace",
+            href: `/o/${slug}`,
+            icon: Building2,
+            organizationOnly: true
+        })
+    }
+
+    items.push(
+        {
+            title: "Projects",
+            href: slug ? `/o/${slug}/projects` : "/dashboard/projects",
+            icon: FolderOpen,
+            items: [
+                { title: "Active Projects", href: slug ? `/o/${slug}/projects` : "/dashboard/projects/active" },
+                { title: "Archived", href: slug ? `/o/${slug}/projects/archived` : "/dashboard/projects/archived" },
+                { title: "New Project", href: slug ? `/o/${slug}/projects/new` : "/dashboard/projects/new" },
+            ]
+        },
+        { title: "Documents", href: slug ? `/o/${slug}/documents` : "/dashboard/documents", icon: FileText },
+        {
+            title: "Team",
+            href: slug ? `/o/${slug}/settings?tab=members` : "/dashboard/team",
+            icon: Users,
+        }
+    )
+
+    if (slug) {
+        items.push({
+            title: "Workspace Settings",
+            href: `/o/${slug}/settings`,
+            icon: Settings
+        })
+    } else {
+        items.push({ title: "Settings", href: "/dashboard/settings", icon: Settings })
+    }
+
+    return items
+}
 
 // --- Organizations (Mock) ---
-const organizations = [
-    { name: "Personal Account", id: "personal", logo: Building2 },
-    { name: "Echoray Team", id: "echoray", logo: Building2 },
-]
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const pathname = usePathname()
     const router = useRouter()
-    const { profile, signOut: clearAuthStore } = useAuthStore()
+    const {
+        profile,
+        organizations,
+        activeOrganization,
+        setActiveOrganization,
+        signOut: clearAuthStore
+    } = useAuthStore()
     const { state, isMobile } = useSidebar()
     const isCollapsed = state === "collapsed"
-
-    const [activeOrg, setActiveOrg] = React.useState(organizations[0])
 
     const handleSignOut = async () => {
         const supabase = createClient()
@@ -108,6 +132,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         router.push("/")
     }
 
+    const navItems = getNavItems(activeOrganization?.slug)
+
+    // Role-based filtering (legacy fallback)
     const filteredNavItems = navItems.filter((item) => {
         if (!item.roles) return true
         return profile?.role && item.roles.includes(profile.role)
@@ -232,7 +259,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         <span className="truncate font-bold">
                                             {profile?.displayName}
                                         </span>
-                                        <span className="truncate text-xs text-muted-foreground">{activeOrg.name}</span>
+                                        <span className="truncate text-xs text-muted-foreground">{activeOrganization?.name || "Personal Workspace"}</span>
                                     </div>
                                     <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
                                 </SidebarMenuButton>
@@ -260,25 +287,42 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
                                 <DropdownMenuSeparator />
 
+                                {activeOrganization && (
+                                    <DropdownMenuItem
+                                        onClick={() => router.push(`/o/${activeOrganization.slug}/settings`)}
+                                        className="gap-2 p-2 rounded-lg text-primary bg-primary/5 border border-primary/10"
+                                    >
+                                        <div className="flex size-6 items-center justify-center rounded-md border border-primary/20 bg-primary/10">
+                                            <Settings className="size-3.5" />
+                                        </div>
+                                        <span className="text-sm font-semibold">Workspace Settings</span>
+                                    </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
                                 <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-black uppercase text-muted-foreground tracking-widest">
-                                    Organizations
+                                    Switch Workspace
                                 </DropdownMenuLabel>
-                                {organizations.map((org) => (
+                                {organizations?.map((org) => (
                                     <DropdownMenuItem
                                         key={org.id}
-                                        onClick={() => setActiveOrg(org)}
+                                        onClick={() => {
+                                            setActiveOrganization(org)
+                                            router.push(`/o/${org.slug}`)
+                                        }}
                                         className="gap-2 p-2 rounded-lg"
                                     >
                                         <div className="flex size-6 items-center justify-center rounded-md border bg-muted/30">
-                                            <org.logo className="size-3.5" />
+                                            <Building2 className="size-3.5" />
                                         </div>
                                         <span className="text-sm font-medium">{org.name}</span>
-                                        {activeOrg.id === org.id && <Check className="ml-auto size-4 text-primary" />}
+                                        {activeOrganization?.id === org.id && <Check className="ml-auto size-4 text-primary" />}
                                     </DropdownMenuItem>
                                 ))}
-                                <DropdownMenuItem className="gap-2 p-2 rounded-lg text-muted-foreground">
-                                    <Plus className="size-4" />
-                                    <span className="text-sm">Create Organization</span>
+                                <DropdownMenuItem asChild className="gap-2 p-2 rounded-lg text-muted-foreground cursor-pointer">
+                                    <Link href="/dashboard/organizations/create" className="flex items-center gap-2">
+                                        <Plus className="size-4" />
+                                        <span className="text-sm">Create Organization</span>
+                                    </Link>
                                 </DropdownMenuItem>
 
                                 <DropdownMenuSeparator />

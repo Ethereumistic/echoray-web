@@ -1,10 +1,11 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { User, Session } from '@supabase/supabase-js'
+import type { Organization, OrganizationMember, Role } from '@/types/permissions'
 
 /**
  * User roles for role-based access control in the dashboard.
- * Different user types will see different dashboard views.
+ * DEPRECATED: Moving to bitwise permission system.
  */
 export type UserRole = 'user' | 'admin' | 'client' | 'team_member'
 
@@ -28,6 +29,10 @@ interface AuthState {
     user: User | null
     session: Session | null
     profile: UserProfile | null
+    organizations: Organization[]
+    activeOrganization: Organization | null
+    memberProfile: (OrganizationMember & { roles: Role[] }) | null
+    permissions: Record<string, boolean>
     isLoading: boolean
     isAuthenticated: boolean
 
@@ -35,17 +40,20 @@ interface AuthState {
     setUser: (user: User | null) => void
     setSession: (session: Session | null) => void
     setProfile: (profile: UserProfile | null) => void
+    setOrganizations: (orgs: Organization[]) => void
+    setActiveOrganization: (org: Organization | null) => void
+    setMemberProfile: (member: (OrganizationMember & { roles: Role[] }) | null) => void
+    setPermissions: (permissions: Record<string, boolean>) => void
     setLoading: (isLoading: boolean) => void
     signOut: () => void
 
     // Computed helpers
-    hasRole: (role: UserRole) => boolean
-    isAdmin: () => boolean
+    hasPermission: (permission: string) => boolean
 }
 
 /**
  * Auth store using Zustand for managing authentication state.
- * This store persists the user profile to localStorage for faster initial renders.
+ * This store persists the user profile and active org settings.
  */
 export const useAuthStore = create<AuthState>()(
     persist(
@@ -54,6 +62,10 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             session: null,
             profile: null,
+            organizations: [],
+            activeOrganization: null,
+            memberProfile: null,
+            permissions: {},
             isLoading: true,
             isAuthenticated: false,
 
@@ -71,6 +83,18 @@ export const useAuthStore = create<AuthState>()(
             setProfile: (profile) =>
                 set({ profile }),
 
+            setOrganizations: (organizations) =>
+                set({ organizations }),
+
+            setActiveOrganization: (activeOrganization) =>
+                set({ activeOrganization }),
+
+            setMemberProfile: (memberProfile) =>
+                set({ memberProfile }),
+
+            setPermissions: (permissions) =>
+                set({ permissions }),
+
             setLoading: (isLoading) =>
                 set({ isLoading }),
 
@@ -79,27 +103,30 @@ export const useAuthStore = create<AuthState>()(
                     user: null,
                     session: null,
                     profile: null,
+                    organizations: [],
+                    activeOrganization: null,
+                    memberProfile: null,
+                    permissions: {},
                     isAuthenticated: false,
                     isLoading: false
                 }),
 
             // Computed helpers
-            hasRole: (role) => {
-                const { profile } = get()
-                return profile?.role === role
-            },
-
-            isAdmin: () => {
-                const { profile } = get()
-                return profile?.role === 'admin'
+            hasPermission: (permission) => {
+                const { permissions } = get()
+                return permissions[permission] === true
             },
         }),
         {
             name: 'echoray-auth-storage',
             storage: createJSONStorage(() => localStorage),
-            // Only persist the profile for faster initial renders
-            // User and session should come from Supabase
-            partialize: (state) => ({ profile: state.profile }),
+            // Persist profile and active org for faster initial renders
+            partialize: (state) => ({
+                profile: state.profile,
+                activeOrganization: state.activeOrganization,
+                memberProfile: state.memberProfile,
+                permissions: state.permissions
+            }),
         }
     )
 )

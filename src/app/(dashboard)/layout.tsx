@@ -1,5 +1,6 @@
 import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+import { OrgInitializer } from '@/components/dashboard/org-initializer'
 
 /**
  * Dashboard layout for authenticated pages.
@@ -12,6 +13,7 @@ export default function DashboardLayout({
 }) {
     return (
         <SidebarProvider>
+            <OrgInitializer />
             <AppSidebar />
             <SidebarInset>
                 {children}
