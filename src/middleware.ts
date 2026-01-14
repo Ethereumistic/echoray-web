@@ -12,6 +12,8 @@ const isPublicRoute = createRouteMatcher([
   "/pricing",
   "/blog",
   "/blog/(.*)",
+  "/start-project",
+  "/work",
 ]);
 
 /**
@@ -40,9 +42,9 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
 
   if (!isAuthenticated) {
     // Redirect to login with the intended destination
-    const redirectUrl = new URL("/auth/login", request.url);
-    redirectUrl.searchParams.set("redirectTo", pathname);
-    return nextjsMiddlewareRedirect(request, redirectUrl.toString());
+    const searchParams = new URLSearchParams();
+    searchParams.set("redirectTo", pathname);
+    return nextjsMiddlewareRedirect(request, `/auth/login?${searchParams.toString()}`);
   }
 });
 

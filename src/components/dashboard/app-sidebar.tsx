@@ -129,7 +129,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const handleSignOut = async () => {
         await convexSignOut()
         clearAuthStore()
-        router.push("/")
+        window.location.href = "/"
     }
 
     const navItems = getNavItems(activeOrganization?.slug)

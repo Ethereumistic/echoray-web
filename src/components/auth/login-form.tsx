@@ -13,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
@@ -22,6 +22,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { signIn } = useAuthActions()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -35,8 +36,9 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         password,
         flow: "signIn",
       })
-      // Redirect to dashboard on success
-      router.push('/dashboard')
+      // Redirect to dashboard or intended destination
+      const redirectTo = searchParams.get('redirectTo') || '/dashboard'
+      router.push(redirectTo)
     } catch (error: unknown) {
       console.error('Login error:', error)
       setError(error instanceof Error ? error.message : 'Invalid email or password')
