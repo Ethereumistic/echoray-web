@@ -219,3 +219,41 @@ export const deleteRole = mutation({
         return { success: true };
     },
 });
+
+/**
+ * Set a role as the default for an organization
+ */
+export const setDefaultRole = mutation({
+    args: {
+        organizationId: v.id("organizations"),
+        roleId: v.id("roles")
+    },
+    handler: async (ctx, { organizationId, roleId }) => {
+        const userId = await auth.getUserId(ctx);
+        if (!userId) throw new Error("Not authenticated");
+
+        // Verify the role belongs to the organization
+        const role = await ctx.db.get(roleId);
+        if (!role || role.organizationId !== organizationId) {
+            throw new Error("Role not found in this organization");
+        }
+
+        // TODO: Check if user has roles.manage permission
+
+        // Get all current roles for this org
+        const allRoles = await ctx.db
+            .query("roles")
+            .withIndex("by_organizationId", (q) => q.eq("organizationId", organizationId))
+            .collect();
+
+        // Update all roles: set isDefault to false for others, true for the target
+        for (const r of allRoles) {
+            await ctx.db.patch(r._id, {
+                isDefault: r._id === roleId
+            });
+        }
+
+        return { success: true };
+    },
+});
+

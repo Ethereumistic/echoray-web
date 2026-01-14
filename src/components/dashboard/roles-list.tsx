@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useState } from "react"
+import { useQuery, useMutation } from "convex/react"
+import { api } from "../../../convex/_generated/api"
 import { useAuthStore } from "@/stores/auth-store"
-import { Role } from "@/types/permissions"
-import { useCallback } from "react"
+import type { Id } from "../../../convex/_generated/dataModel"
 import {
     Table,
     TableBody,
@@ -31,64 +31,38 @@ import {
  * RolesList component allows managing organization-wide roles.
  */
 export function RolesList() {
-    const supabase = createClient()
     const { activeOrganization } = useAuthStore()
-    const [roles, setRoles] = useState<Role[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+    const [actionLoading, setActionLoading] = useState(false)
 
-    const fetchRoles = useCallback(async () => {
-        if (!activeOrganization) return
+    const roles = useQuery(
+        api.roles.listRoles,
+        activeOrganization?._id ? { organizationId: activeOrganization._id } : "skip"
+    )
 
-        setIsLoading(true)
-        try {
-            const { data, error } = await supabase
-                .from('roles')
-                .select('*')
-                .eq('organization_id', activeOrganization.id)
-                .order('position', { ascending: true })
-
-            if (error) throw error
-            setRoles(data || [])
-        } catch (err) {
-            console.error("Error fetching roles:", err)
-            toast.error("Failed to load roles")
-        } finally {
-            setIsLoading(false)
-        }
-    }, [activeOrganization, supabase])
-
-    useEffect(() => {
-        fetchRoles()
-    }, [fetchRoles])
+    const setDefaultRole = useMutation(api.roles.setDefaultRole)
 
     const handleSetDefault = async (roleId: string) => {
         if (!activeOrganization) return
 
+        setActionLoading(true)
         try {
-            // First clear all defaults in this org
-            const { error: clearError } = await supabase
-                .from('roles')
-                .update({ is_default: false })
-                .eq('organization_id', activeOrganization.id)
-
-            if (clearError) throw clearError
-
-            // Set new default
-            const { error: setError } = await supabase
-                .from('roles')
-                .update({ is_default: true })
-                .eq('id', roleId)
-
-            if (setError) throw setError
+            await setDefaultRole({
+                organizationId: activeOrganization._id as Id<"organizations">,
+                roleId: roleId as Id<"roles">
+            })
 
             toast.success("Default role updated")
-            fetchRoles()
         } catch (err) {
             console.error("Error updating default role:", err)
             const message = err instanceof Error ? err.message : "Failed to update default role"
             toast.error(message)
+        } finally {
+            setActionLoading(false)
         }
     }
+
+    const isLoading = roles === undefined
+
 
     if (!activeOrganization) return null
 
@@ -135,7 +109,7 @@ export function RolesList() {
                             </TableRow>
                         ) : (
                             roles.map((role) => (
-                                <TableRow key={role.id}>
+                                <TableRow key={role._id}>
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
                                             <Shield className="h-4 w-4 opacity-50" />
@@ -154,7 +128,7 @@ export function RolesList() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        {role.is_system_role ? (
+                                        {role.isSystemRole ? (
                                             <Badge
                                                 variant="outline"
                                                 className="text-[10px] uppercase font-bold"
@@ -164,7 +138,7 @@ export function RolesList() {
                                                     borderColor: `${role.color}30`
                                                 }}
                                             >
-                                                SYSTEM ({role.system_role_type})
+                                                SYSTEM ({role.systemRoleType})
                                             </Badge>
                                         ) : (
                                             <Badge
@@ -181,7 +155,7 @@ export function RolesList() {
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        {role.is_default ? (
+                                        {role.isDefault ? (
                                             <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px]">
                                                 <Check className="mr-1 h-3 w-3" />
                                                 DEFAULT
@@ -192,7 +166,8 @@ export function RolesList() {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="h-7 text-[10px] text-muted-foreground hover:text-foreground"
-                                                    onClick={() => handleSetDefault(role.id)}
+                                                    disabled={actionLoading}
+                                                    onClick={() => handleSetDefault(role._id)}
                                                 >
                                                     Set Default
                                                 </Button>
@@ -214,7 +189,7 @@ export function RolesList() {
                                                         <Edit2 className="h-4 w-4" />
                                                         Edit Permissions
                                                     </DropdownMenuItem>
-                                                    {!role.is_system_role && (
+                                                    {!role.isSystemRole && (
                                                         <DropdownMenuItem className="gap-2 text-destructive">
                                                             Delete Role
                                                         </DropdownMenuItem>

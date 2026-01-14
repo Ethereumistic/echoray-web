@@ -23,8 +23,8 @@ export interface Organization {
     subscriptionStartedAt: number
     subscriptionEndsAt?: number
     customPermissions: number
-    customConfig?: any
-    metadata?: any
+    customConfig?: unknown
+    metadata?: unknown
 }
 
 /**
@@ -69,7 +69,7 @@ export interface OrganizationMember {
     joinedAt?: number
     computedPermissions: number
     permissionsLastComputedAt?: number
-    metadata?: any
+    metadata?: unknown
 }
 
 /**

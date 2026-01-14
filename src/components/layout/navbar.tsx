@@ -17,7 +17,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthStore, createProfileFromConvexUser } from "@/stores/auth-store"
+import { useConvexAuth, useQuery } from "convex/react"
+import { api } from "../../../convex/_generated/api"
 
 const services: { title: string; href: string; description: string; icon: React.ReactNode }[] = [
     {
@@ -41,7 +43,28 @@ const services: { title: string; href: string; description: string; icon: React.
 ]
 
 export function Navbar() {
-    const { isAuthenticated, profile } = useAuthStore()
+    const { isAuthenticated: isConvexAuthenticated } = useConvexAuth()
+    const { profile: storeProfile, setUserId, setProfile } = useAuthStore()
+
+    // Fetch current user from Convex
+    const user = useQuery(api.users.currentUser, isConvexAuthenticated ? {} : "skip")
+
+    // Determine profile: use Convex data if available, fallback to store
+    const profile = React.useMemo(() => {
+        if (user) return createProfileFromConvexUser(user)
+        return storeProfile
+    }, [user, storeProfile])
+
+    // Effectively authenticated if Convex says so
+    const isAuthenticated = isConvexAuthenticated
+
+    // Sync to store when data arrives
+    React.useEffect(() => {
+        if (user) {
+            setUserId(user.id)
+            setProfile(createProfileFromConvexUser(user))
+        }
+    }, [user, setUserId, setProfile])
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">

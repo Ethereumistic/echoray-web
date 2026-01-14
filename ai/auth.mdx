@@ -1,110 +1,76 @@
-# Supabase Authentication System Analysis
+# Convex Authentication System Architecture
 
-This document provides a comprehensive analysis of the Echoray authentication system, covering implementation details, session management, and best practices.
+This document provides a comprehensive analysis of the Echoray authentication system using Convex Auth, covering implementation details, session management, and integrated profile sync.
 
 ## 1. Authentication Flow Overview
 
-The system uses a hybrid approach combining **Supabase SSR** for server-side session management and **Zustand** for client-side state persistence.
+The system uses **Convex Auth** (@convex-dev/auth) for end-to-end authentication, leveraging Convex's built-in session management and reactive data layer.
 
 ### Routes Organization
 - **Public Routes (`/`, `/services`, etc.)**: Accessible without authentication.
 - **Auth Routes (`/auth/*`)**: For login, signup, and recovery flows.
-- **Protected Routes (`/dashboard/*`)**: Enforced via Middleware.
+- **Protected Routes (`/dashboard/*`)**: Enforced via `middleware.ts` using `convexAuthNextjsMiddleware`.
 
 ---
 
-## 2. Best Practices Analysis
+## 2. Technical Stack & Best Practices
 
-### Email & Password Login
-- ✅ **Secure Session Handling**: Uses `@supabase/ssr` to manage sessions via cookies, which is the current best practice for Next.js.
-- ✅ **Route Protection**: Implemented at the Edge/Middleware level, preventing "flash of unauthenticated content."
-- ✅ **Profile Sync**: Automatically syncs `auth.users` to `public.profiles` via database triggers on signup and metadata updates.
-- ⚠️ **Middleware Optimization**: The current middleware uses `supabase.auth.getClaims()`. It is highly recommended to use `supabase.auth.getUser()` to ensure the user is still valid in the database and not just relying on a potentially revoked JWT.
-- ❌ **Password Strength**: Missing client-side or server-side password strength validation (e.g., min length, complexity).
-- ❌ **Rate Limiting**: Currently relies on Supabase's default rate limits. For high-scale, custom rate limiting should be considered.
+### Convex Auth Integration
+- ✅ **First-Class Integration**: Uses `@convex-dev/auth/server` for edge-compatible session handling and server-side redirects.
+- ✅ **Route Protection**: Implemented at the Edge/Middleware level, preventing unauthorized access before the page even begins to render.
+- ✅ **Unified Data Layer**: Auth data lives directly in the Convex database (`users`, `sessions`, `accounts` tables), making it reactive and easy to join with application data.
+- ✅ **Secure Sessions**: Convex Auth manages sessions securely via signed cookies handled by the `ConvexAuthNextjsServerProvider`.
+
+### Password Security
+- ✅ **Standard Hashing**: Passwords are secure hashed and stored in the `users` table via the `Password` provider.
+- ✅ **Validation**: Zod-based validation in the frontend ensures password complexity and length constraints (see `src/lib/validations.ts`).
 
 ---
 
-## 3. Session Treatment
+## 3. Session & State Management
 
 ### Middleware (Server-Side)
-The `src/middleware.ts` calls `updateSession` on every request. This:
-1.  **Refreshes the session**: Ensures the cookie remains valid as long as the user is active.
-2.  **Redirects**: Automatically sends unauthenticated users from `/dashboard` to `/auth/login`.
+The `src/middleware.ts` uses `convexAuthNextjsMiddleware`. This:
+1.  **Verifies JWT**: Checks the session cookie validity on every request.
+2.  **Redirects**: Automatically sends unauthenticated users from `/dashboard` or `/o/[slug]` to `/auth/login`.
+3.  **Auth Store Access**: Provides an `isAuthenticated()` check to determining access during the request.
 
-### Auth Provider (Client-Side)
-The `AuthProvider` in `src/components/providers/auth-provider.tsx`:
-1.  Initializes the session on mount.
-2.  Listens to `onAuthStateChange`.
-3.  Syncs the state with the **Zustand Store** (`useAuthStore`).
-
----
-
-## 4. State Management (Zustand)
-
-The `useAuthStore` persists the `profile` to `localStorage`. This allows the UI to show a "logged in" looking state (avatar/name) immediately on page load before the Supabase SDK has finished verifying the session.
-
-### Navbar Authentication State
-To make the navbar dynamic, follow this pattern:
-
-```tsx
-// src/components/layout/navbar.tsx
-import { useAuthStore } from "@/stores/auth-store";
-
-export function Navbar() {
-  const { isAuthenticated, profile, signOut } = useAuthStore();
-
-  return (
-    <nav>
-      {isAuthenticated ? (
-        <UserMenu profile={profile} onLogout={signOut} />
-      ) : (
-        <SignInButton />
-      )}
-    </nav>
-  );
-}
-```
+### Auth Store (Zustand)
+The `useAuthStore` (`src/stores/auth-store.ts`) acts as the client-side source of truth:
+1.  **Profile Persistence**: Caches the user profile to allow for instant UI rendering.
+2.  **Reactive Updates**: Updated by `OrgInitializer` when Convex data changes.
+3.  **Cross-Component Access**: Provides easy access to `userId`, `activeOrganization`, and `permissions` throughout the React tree.
 
 ---
 
-## 5. Detailed Auth Features
+## 4. Key Auth Flows
 
-### Sign Up
-- **Location**: `src/components/auth/sign-up-form.tsx`
-- **Process**: Uses `supabase.auth.signUp()`.
-- **Email Confirmation**: Configured to redirect to `/auth/sign-up-success`.
-- **Best Practice**: `emailRedirectTo` is set to the site origin, ensuring users return to the app after clicking the link.
+### Sign Up / Sign In
+- **Location**: `src/components/auth/sign-up-form.tsx` and `login-form.tsx`
+- **Hook**: `useAuthActions()` from `@convex-dev/auth/react`
+- **Method**: `signIn("password", { email, password, flow: "signUp" | "signIn" })`
 
-### Sign In
-- **Location**: `src/components/auth/login-form.tsx`
-- **Process**: Uses `supabase.auth.signInWithPassword()`.
-- **Redirect**: Sends user to `/dashboard` upon success.
-
-### Forgot Password
-- **Location**: `src/components/auth/forgot-password-form.tsx`
-- **Process**: Calls `resetPasswordForEmail()` with a redirect to `/auth/update-password`.
-
-### Update Password
-- **Location**: `src/components/auth/settings-password-form.tsx` (for settings) and `src/components/auth/update-password-form.tsx` (for recovery flow).
-- **Process**: Uses `supabase.auth.updateUser({ password })`.
-- **Constraint**: User must be authenticated (usually via the reset link) to perform this action.
-
-### Update Profile (Display Name)
-- **Location**: `src/components/auth/update-profile-form.tsx`.
-- **Process**: Uses `supabase.auth.updateUser({ data: { display_name: '...' } })`. 
-- **Sync**: A database trigger `on_auth_user_updated` automatically propagates this change to the `public.profiles` table.
-
-### Delete Account
-- ❌ **Status**: **Not implemented**.
-- **Requirement**: To implement this, you should add a "Delete Account" button that either calls a Supabase Edge Function (to delete from `auth.users` via Service Role) or flags the user profile as deleted in your public database.
+### Session Lifecycle
+- **persistent**: Sessions remain valid across browser restarts via cookie persistence.
+- **Sign Out**: `signOut()` from `useAuthActions()` clears the session both on the client and in the Convex database.
 
 ---
 
-## 6. Recommendations & Next Steps
+## 5. Profile Management
 
-1.  **Password Validation**: Add `zod` or simple regex validation for passwords in forms.
-2.  **Delete Account**: Implement the backend logic for account deletion as described in the status section.
-3.  **Avatar Upload**: Implement a bucket in Supabase Storage and a component to upload profile pictures.
-4.  **Confirm Flow**: Ensure the `auth/confirm` route is properly handling the PKCE exchange code if using that flow.
+Unlike the Supabase "Triggers & Functions" approach, Convex handles profile management via direct queries and mutations:
 
+### Profile Initialization
+When a user signs in, the `OrgInitializer` component:
+1.  Fetches the user's profile from the `profiles` table.
+2.  Fetches their associated organizations.
+3.  Calculates permissions for the active organization.
+4.  Hydrates the Zustand store.
+
+---
+
+## 6. Recommendations & Maintenance
+
+1.  **OAuth Expansion**: Easily add Google/GitHub providers via `auth.ts` config.
+2.  **Role Changes**: When user roles change in `members.ts`, the frontend reacts instantly due to Convex's subscription model.
+3.  **Security Audit**: Periodically check `convex/auth.ts` for provider configurations and password constraints.

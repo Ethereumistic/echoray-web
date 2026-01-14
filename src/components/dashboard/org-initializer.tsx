@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useQuery } from "convex/react"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthStore, createProfileFromConvexUser } from "@/stores/auth-store"
 import { api } from "../../../convex/_generated/api"
 import type { Organization } from "@/stores/auth-store"
 
@@ -13,12 +13,24 @@ import type { Organization } from "@/stores/auth-store"
 export function OrgInitializer() {
     const {
         userId,
+        setUserId,
+        setProfile,
         setOrganizations,
         activeOrganization,
         setActiveOrganization,
         setPermissions,
         setLoading
     } = useAuthStore()
+
+    // 1. Sync User Data
+    const user = useQuery(api.users.currentUser)
+
+    useEffect(() => {
+        if (user) {
+            setUserId(user.id)
+            setProfile(createProfileFromConvexUser(user))
+        }
+    }, [user, setUserId, setProfile])
 
     // Query organizations the user is a member of
     const organizations = useQuery(
@@ -44,7 +56,11 @@ export function OrgInitializer() {
         setOrganizations(orgs)
 
         // If no active org or the saved one is no longer in the list, pick the first one
-        if (!activeOrganization || !orgs.find(o => o._id === activeOrganization?._id)) {
+        // We also check for _id to ensure it's a Convex org (Supabase used 'id')
+        const isStale = !!activeOrganization && !activeOrganization._id
+        const notInList = !!activeOrganization && !orgs.find(o => o._id === activeOrganization._id)
+
+        if (!activeOrganization || isStale || notInList) {
             const firstOrg = orgs.length > 0 ? orgs[0] : null
             setActiveOrganization(firstOrg)
         }

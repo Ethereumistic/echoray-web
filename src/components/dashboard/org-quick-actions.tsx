@@ -46,7 +46,7 @@ export function OrgQuickActions({ onMemberInvited }: { onMemberInvited?: () => v
             description: "Create and customize permissions for your team.",
             icon: <Shield className="h-5 w-5 text-emerald-400" />,
             permission: "roles.manage",
-            href: `/o/${slug}/settings?tab=organization`,
+            href: `/o/${slug}/settings?tab=roles`,
             color: "from-emerald-500/10 to-teal-500/10 hover:border-emerald-500/30"
         },
         {

@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useQuery, useMutation } from "convex/react"
+import { api } from "../../../convex/_generated/api"
 import { useAuthStore } from "@/stores/auth-store"
+import type { Id } from "../../../convex/_generated/dataModel"
 import {
     Dialog,
     DialogContent,
@@ -25,7 +27,6 @@ import {
 import { UserPlus, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { inviteMemberSchema, type InviteMemberFormValues } from "@/lib/validations"
-import { Role } from "@/types/permissions"
 
 interface InviteMemberDialogProps {
     onSuccess?: () => void
@@ -35,36 +36,31 @@ interface InviteMemberDialogProps {
  * InviteMemberDialog allows triggering an invitation RPC for a specific email and role.
  */
 export function InviteMemberDialog({ onSuccess }: InviteMemberDialogProps) {
-    const supabase = createClient()
     const { activeOrganization } = useAuthStore()
     const [isOpen, setIsOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const [roles, setRoles] = useState<Role[]>([])
+
+    const rolesQuery = useQuery(
+        api.roles.listRoles,
+        isOpen && activeOrganization?._id ? { organizationId: activeOrganization._id } : "skip"
+    )
+
+    // Filter assignable roles
+    const roles = (rolesQuery || []).filter(r => r.isAssignable)
+
+    const inviteMemberMutation = useMutation(api.members.inviteMember)
 
     const [email, setEmail] = useState("")
     const [selectedRoleId, setSelectedRoleId] = useState<string>("")
     const [errors, setErrors] = useState<Partial<Record<keyof InviteMemberFormValues, string>>>({})
 
     useEffect(() => {
-        if (isOpen && activeOrganization) {
-            const fetchRoles = async () => {
-                const { data, error } = await supabase
-                    .from('roles')
-                    .select('*')
-                    .eq('organization_id', activeOrganization.id)
-                    .eq('is_assignable', true)
-                    .order('position', { ascending: true })
-
-                if (!error && data) {
-                    setRoles(data)
-                    // Set default role if available
-                    const defaultRole = data.find(r => r.is_default)
-                    if (defaultRole) setSelectedRoleId(defaultRole.id)
-                }
-            }
-            fetchRoles()
+        if (roles.length > 0 && !selectedRoleId) {
+            const defaultRole = roles.find(r => r.isDefault)
+            if (defaultRole) setSelectedRoleId(defaultRole._id)
+            else setSelectedRoleId(roles[0]._id)
         }
-    }, [isOpen, activeOrganization, supabase])
+    }, [roles, selectedRoleId])
 
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -85,13 +81,11 @@ export function InviteMemberDialog({ onSuccess }: InviteMemberDialogProps) {
 
         setIsLoading(true)
         try {
-            const { error } = await supabase.rpc('invite_member_to_organization', {
-                p_organization_id: activeOrganization.id,
-                p_user_email: email,
-                p_role_ids: [selectedRoleId]
+            await inviteMemberMutation({
+                organizationId: activeOrganization._id as Id<"organizations">,
+                email,
+                roleIds: [selectedRoleId as Id<"roles">]
             })
-
-            if (error) throw error
 
             toast.success(`Invitation sent to ${email}`)
             setIsOpen(false)
@@ -105,6 +99,7 @@ export function InviteMemberDialog({ onSuccess }: InviteMemberDialogProps) {
             setIsLoading(false)
         }
     }
+
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -153,7 +148,7 @@ export function InviteMemberDialog({ onSuccess }: InviteMemberDialogProps) {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {roles.map((role) => (
-                                        <SelectItem key={role.id} value={role.id}>
+                                        <SelectItem key={role._id} value={role._id}>
                                             <div className="flex items-center gap-2">
                                                 <div
                                                     className="size-2 rounded-full"

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useMutation } from "convex/react"
+import { api } from "../../../convex/_generated/api"
 import { useAuthStore } from "@/stores/auth-store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +17,7 @@ import { organizationSchema, type OrganizationFormValues } from "@/lib/validatio
  * Form to manage the current active organization's settings.
  */
 export function OrgSettingsForm() {
-    const supabase = createClient()
+    const updateOrg = useMutation(api.organizations.updateOrganization)
     const { activeOrganization, setActiveOrganization } = useAuthStore()
     const [isLoading, setIsLoading] = useState(false)
     const [name, setName] = useState("")
@@ -54,21 +55,20 @@ export function OrgSettingsForm() {
 
         setIsLoading(true)
         try {
-            const { data, error } = await supabase
-                .from('organizations')
-                .update({
-                    name,
-                    description: description || null,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', activeOrganization.id)
-                .select()
-                .single()
-
-            if (error) throw error
+            await updateOrg({
+                id: activeOrganization._id,
+                name,
+                description: description || undefined,
+            })
 
             toast.success("Organization updated successfully")
-            setActiveOrganization(data)
+            // The active organization in the store will be updated by OrgInitializer
+            // but we can also update it manually for immediate feedback
+            setActiveOrganization({
+                ...activeOrganization,
+                name,
+                description: description || undefined,
+            })
         } catch (err) {
             console.error("Error updating organization:", err)
             const message = err instanceof Error ? err.message : "Failed to update organization"
@@ -77,6 +77,7 @@ export function OrgSettingsForm() {
             setIsLoading(false)
         }
     }
+
 
     if (!activeOrganization) {
         return (

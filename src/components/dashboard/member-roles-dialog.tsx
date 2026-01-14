@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useState } from "react"
+import { useQuery, useMutation } from "convex/react"
+import { api } from "../../../convex/_generated/api"
 import { useAuthStore } from "@/stores/auth-store"
+import type { Id } from "../../../convex/_generated/dataModel"
 import {
     Dialog,
     DialogContent,
@@ -18,10 +20,9 @@ import { Shield, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Role, MemberWithRoles } from "@/types/permissions"
-import { useCallback } from "react"
 
 interface MemberRolesDialogProps {
-    member: MemberWithRoles & { member_roles?: { role: Role }[] }
+    member: MemberWithRoles
     onSuccess?: () => void
     trigger?: React.ReactNode
 }
@@ -30,41 +31,21 @@ interface MemberRolesDialogProps {
  * MemberRolesDialog allows updating the roles assigned to a member.
  */
 export function MemberRolesDialog({ member, onSuccess, trigger }: MemberRolesDialogProps) {
-    const supabase = createClient()
     const { activeOrganization } = useAuthStore()
     const [isOpen, setIsOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const [isFetching, setIsFetching] = useState(false)
-    const [allRoles, setAllRoles] = useState<Role[]>([])
-    const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([])
-    const fetchRoles = useCallback(async () => {
-        if (!activeOrganization) return
-        setIsFetching(true)
-        try {
-            const { data, error } = await supabase
-                .from('roles')
-                .select('*')
-                .eq('organization_id', activeOrganization.id)
-                .order('position', { ascending: true })
 
-            if (error) throw error
-            setAllRoles(data || [])
+    const allRoles = useQuery(
+        api.roles.listRoles,
+        isOpen && activeOrganization?._id ? { organizationId: activeOrganization._id } : "skip"
+    )
 
-            // Set initial selected roles based on member's current roles
-            const initialIds = member.member_roles?.map((mr: { role: Role }) => mr.role.id) || []
-            setSelectedRoleIds(initialIds)
-        } catch (err) {
-            console.error("Error fetching roles:", err)
-        } finally {
-            setIsFetching(false)
-        }
-    }, [activeOrganization, member.member_roles, supabase])
+    const updateMemberRoles = useMutation(api.members.updateMemberRoles)
 
-    useEffect(() => {
-        if (isOpen) {
-            fetchRoles()
-        }
-    }, [isOpen, fetchRoles])
+    // Using local state for selection
+    const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(() =>
+        member.roles?.filter((r): r is Role => r !== null).map(r => r._id) || []
+    )
 
     const handleToggleRole = (roleId: string) => {
         setSelectedRoleIds(prev =>
@@ -79,15 +60,12 @@ export function MemberRolesDialog({ member, onSuccess, trigger }: MemberRolesDia
 
         setIsLoading(true)
         try {
-            const { error } = await supabase.rpc('assign_roles_to_member', {
-                p_organization_id: activeOrganization.id,
-                p_user_id: member.user_id,
-                p_role_ids: selectedRoleIds
+            await updateMemberRoles({
+                memberId: member._id as Id<"organizationMembers">,
+                roleIds: selectedRoleIds as Id<"roles">[]
             })
 
-            if (error) throw error
-
-            toast.success(`Roles updated for ${member.user?.full_name || 'member'}`)
+            toast.success(`Roles updated for ${member.user?.fullName || 'member'}`)
             setIsOpen(false)
             onSuccess?.()
         } catch (err) {
@@ -98,6 +76,9 @@ export function MemberRolesDialog({ member, onSuccess, trigger }: MemberRolesDia
             setIsLoading(false)
         }
     }
+
+    const isFetching = allRoles === undefined
+
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -113,7 +94,7 @@ export function MemberRolesDialog({ member, onSuccess, trigger }: MemberRolesDia
                 <DialogHeader>
                     <DialogTitle>Edit Roles</DialogTitle>
                     <DialogDescription>
-                        Update roles for {member.user?.full_name || 'this member'}. Changes take effect immediately.
+                        Update roles for {member.user?.fullName || 'this member'}. Changes take effect immediately.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -124,18 +105,18 @@ export function MemberRolesDialog({ member, onSuccess, trigger }: MemberRolesDia
                         </div>
                     ) : (
                         <div className="grid gap-4">
-                            {allRoles.map((role) => (
-                                <div key={role.id} className="flex items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-card/50">
+                            {allRoles?.map((role) => (
+                                <div key={role._id} className="flex items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-card/50">
                                     <Checkbox
-                                        id={`role-${role.id}`}
-                                        checked={selectedRoleIds.includes(role.id)}
-                                        onCheckedChange={() => handleToggleRole(role.id)}
+                                        id={`role-${role._id}`}
+                                        checked={selectedRoleIds.includes(role._id)}
+                                        onCheckedChange={() => handleToggleRole(role._id)}
                                     // Disable system roles like owner to prevent accidental removal?
                                     // For now let the RPC handle the security logic.
                                     />
                                     <div className="grid gap-1.5 leading-none">
                                         <label
-                                            htmlFor={`role-${role.id}`}
+                                            htmlFor={`role-${role._id}`}
                                             className="text-sm font-medium leading-none flex items-center gap-2 cursor-pointer"
                                         >
                                             <div
@@ -143,7 +124,7 @@ export function MemberRolesDialog({ member, onSuccess, trigger }: MemberRolesDia
                                                 style={{ backgroundColor: role.color || '#95a5a6' }}
                                             />
                                             {role.name}
-                                            {role.is_system_role && (
+                                            {role.isSystemRole && (
                                                 <Badge variant="outline" className="text-[8px] h-3 px-1">SYSTEM</Badge>
                                             )}
                                         </label>

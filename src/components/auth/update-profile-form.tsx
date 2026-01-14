@@ -5,7 +5,7 @@ import { useMutation } from 'convex/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useAuthStore, createProfileFromConvexUser } from '@/stores/auth-store'
+import { useAuthStore } from '@/stores/auth-store'
 import { api } from '../../../convex/_generated/api'
 import { toast } from 'sonner'
 

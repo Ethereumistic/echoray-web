@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { useMutation } from "convex/react"
+import { api } from "@/../convex/_generated/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -19,7 +20,7 @@ import { organizationSchema, type OrganizationFormValues } from "@/lib/validatio
  */
 export default function CreateOrganizationPage() {
     const router = useRouter()
-    const supabase = createClient()
+    const createOrg = useMutation(api.organizations.createOrganization)
     // No auth store variables needed currently
     const [isLoading, setIsLoading] = useState(false)
     const [name, setName] = useState("")
@@ -66,20 +67,16 @@ export default function CreateOrganizationPage() {
 
         setIsLoading(true)
         try {
-            const { error } = await supabase.rpc('create_organization', {
-                p_name: name,
-                p_slug: slug,
-                p_description: description || null,
-                p_tier_slug: 'user' // Default to free tier
+            await createOrg({
+                name,
+                slug,
+                description: description || undefined,
             })
-
-            if (error) throw error
 
             toast.success("Organization created successfully!")
 
             // Redirect to dashboard
             router.push("/dashboard")
-            router.refresh()
         } catch (err) {
             console.error("Error creating organization:", err)
             const message = err instanceof Error ? err.message : "Failed to create organization"

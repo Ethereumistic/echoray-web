@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
 import { useQuery, useMutation } from "convex/react"
 import { useAuthStore } from "@/stores/auth-store"
+import type { Id } from "../../../convex/_generated/dataModel"
+import type { MemberWithRoles } from "@/types/permissions"
 import {
     Table,
     TableBody,
@@ -29,8 +30,6 @@ import { InviteMemberDialog } from "./invite-member-dialog"
 import { MemberRolesDialog } from "./member-roles-dialog"
 import { api } from "../../../convex/_generated/api"
 
-import type { Role } from "@/stores/auth-store"
-
 /**
  * MembersList component shows a table of all members in the current active org.
  * It includes role badges and management actions.
@@ -51,8 +50,8 @@ export function MembersList() {
 
         try {
             await removeMember({
-                organizationId: activeOrganization._id,
-                targetUserId: userId as any, // Type will be fixed when Convex regenerates
+                organizationId: activeOrganization._id as Id<"organizations">,
+                targetUserId: userId as Id<"users">,
             })
             toast.success("Member removed")
         } catch (err) {
@@ -110,18 +109,18 @@ export function MembersList() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            members.map((member: any) => (
+                            members.map((member: MemberWithRoles) => (
                                 <TableRow key={member._id}>
                                     <TableCell className="flex items-center gap-3">
                                         <Avatar className="h-8 w-8">
-                                            <AvatarImage src={member.user?.avatar_url} />
+                                            <AvatarImage src={member.user?.avatarUrl} />
                                             <AvatarFallback>
-                                                {member.user?.full_name?.charAt(0) || "?"}
+                                                {member.user?.fullName?.charAt(0) || "?"}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div className="flex flex-col">
                                             <span className="font-medium text-sm">
-                                                {member.user?.full_name || "Unknown User"}
+                                                {member.user?.fullName || "Unknown User"}
                                             </span>
                                             <span className="text-xs text-muted-foreground lowercase">
                                                 {member.user?.email || member.user?.username || "user"}
@@ -130,15 +129,17 @@ export function MembersList() {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">
-                                            {member.member_roles?.map((mr: { role: Role }) => (
-                                                <Badge
-                                                    key={mr.role._id}
-                                                    variant="secondary"
-                                                    className="bg-primary/10 text-primary border-primary/20 text-[10px] uppercase font-bold"
-                                                    style={mr.role.color ? { borderLeftColor: mr.role.color, borderLeftWidth: '3px' } : {}}
-                                                >
-                                                    {mr.role.name}
-                                                </Badge>
+                                            {member.memberRoles?.map((mr) => (
+                                                mr.role && (
+                                                    <Badge
+                                                        key={mr.role._id}
+                                                        variant="secondary"
+                                                        className="bg-primary/10 text-primary border-primary/20 text-[10px] uppercase font-bold"
+                                                        style={mr.role.color ? { borderLeftColor: mr.role.color, borderLeftWidth: '3px' } : {}}
+                                                    >
+                                                        {mr.role.name}
+                                                    </Badge>
+                                                )
                                             ))}
                                         </div>
                                     </TableCell>

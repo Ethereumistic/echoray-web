@@ -2,6 +2,7 @@
  * roles and permissions types
  * Strictly follows the bitwise system defined in ai/roles_permissions.mdx
  */
+import type { Id } from "../../convex/_generated/dataModel";
 
 export type SubscriptionTier = 'user' | 'web' | 'app' | 'crm';
 
@@ -63,53 +64,55 @@ export const PERMISSION_BITS = {
 export type PermissionCode = keyof typeof PERMISSION_BITS;
 
 export interface Organization {
-    id: string;
+    _id: Id<"organizations">;
     name: string;
     slug: string;
     description?: string;
-    logo_url?: string;
-    owner_id: string;
-    subscription_tier_id: string;
-    subscription_status: OrganizationStatus;
-    created_at: string;
-    updated_at: string;
+    logoUrl?: string;
+    ownerId: Id<"users">;
+    subscriptionTierId: Id<"subscriptionTiers">;
+    subscriptionStatus: OrganizationStatus;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface OrganizationMember {
-    id: string;
-    organization_id: string;
-    user_id: string;
+    _id: Id<"organizationMembers">;
+    organizationId: Id<"organizations">;
+    userId: Id<"users">;
     status: MemberStatus;
-    invited_by?: string;
-    invited_at: string;
-    joined_at?: string;
-    computed_permissions: string; // BIGINT from Postgres comes as string in JS
-    created_at: string;
+    invitedBy?: Id<"users">;
+    invitedAt: number;
+    joinedAt?: number;
+    computedPermissions: number;
+    createdAt?: string;
+    _creationTime?: number;
 }
 
 export interface Role {
-    id: string;
-    organization_id: string;
+    _id: Id<"roles">;
+    organizationId: Id<"organizations">;
     name: string;
     description?: string;
-    color: string;
-    permissions: string; // BIGINT
+    color?: string;
+    permissions: number;
     position: number;
-    is_system_role: boolean;
-    system_role_type?: SystemRoleType;
-    is_assignable: boolean;
-    is_default: boolean;
-    created_at: string;
-    updated_at: string;
+    isSystemRole: boolean;
+    systemRoleType?: SystemRoleType;
+    isAssignable: boolean;
+    isDefault: boolean;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface MemberWithRoles extends OrganizationMember {
     user: {
-        id: string;
-        email: string;
-        full_name?: string;
+        id: Id<"users">;
+        email?: string;
+        fullName?: string;
         username?: string;
-        avatar_url?: string;
+        avatarUrl?: string;
     };
-    roles: Role[];
+    memberRoles: { role: Role | null }[];
+    roles: (Role | null)[];
 }

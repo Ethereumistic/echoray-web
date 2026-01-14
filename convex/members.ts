@@ -64,11 +64,11 @@ export const listMembers = query({
                     user: {
                         id: member.userId,
                         email: user?.email,
-                        full_name: profile?.fullName,
+                        fullName: profile?.fullName,
                         username: profile?.username,
-                        avatar_url: profile?.avatarUrl,
+                        avatarUrl: profile?.avatarUrl,
                     },
-                    member_roles: roles.filter(Boolean).map((role) => ({ role })),
+                    memberRoles: roles.filter(Boolean).map((role) => ({ role })),
                     roles: roles.filter(Boolean),
                 };
             })
