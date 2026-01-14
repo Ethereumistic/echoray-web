@@ -34,16 +34,10 @@ export const listMembers = query({
             .withIndex("by_organizationId", (q) => q.eq("organizationId", organizationId))
             .collect();
 
-        // Enrich with user profiles and roles
+        // Enrich with user data and roles
         const enrichedMembers = await Promise.all(
             members.map(async (member) => {
-                // Get user profile
-                const profile = await ctx.db
-                    .query("profiles")
-                    .withIndex("by_userId", (q) => q.eq("userId", member.userId))
-                    .first();
-
-                // Get user from auth table for email
+                // Get user directly from unified users table
                 const user = await ctx.db.get(member.userId);
 
                 // Get member roles
@@ -64,9 +58,9 @@ export const listMembers = query({
                     user: {
                         id: member.userId,
                         email: user?.email,
-                        fullName: profile?.fullName,
-                        username: profile?.username,
-                        avatarUrl: profile?.avatarUrl,
+                        fullName: user?.name,
+                        username: user?.username,
+                        avatarUrl: user?.image,
                     },
                     memberRoles: roles.filter(Boolean).map((role) => ({ role })),
                     roles: roles.filter(Boolean),

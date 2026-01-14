@@ -59,6 +59,13 @@ export const PERMISSION_BITS = {
     'integrations.slack': 19,
     'storage.extended': 20,
     'support.priority': 21,
+
+    // Project permissions (Web tier and above)
+    'project.create': 22,
+
+    // System Admin (Bits 50+)
+    'system.admin': 50,
+    'system.support': 51,
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSION_BITS;

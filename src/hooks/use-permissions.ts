@@ -6,7 +6,7 @@ import { PermissionCode } from "@/types/permissions"
  * Works with the Zustand auth store which is populated by OrgInitializer.
  */
 export function usePermissions() {
-    const { permissions, activeOrganization, isLoading } = useAuthStore()
+    const { permissions, activeOrganization, isLoading, isAuthenticated } = useAuthStore()
 
     /**
      * Check if the user has a specific permission
@@ -35,6 +35,7 @@ export function usePermissions() {
         canAll,
         permissions,
         isLoading,
+        isAuthenticated,
         hasActiveOrg: !!activeOrganization,
     }
 }

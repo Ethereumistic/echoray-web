@@ -59,30 +59,41 @@ const auditAction = v.union(
 );
 
 export default defineSchema({
-    // Include Convex Auth tables (users, sessions, etc.)
+    // Include Convex Auth tables
     ...authTables,
 
-    // User profiles - extends the auth users table
-    profiles: defineTable({
-        userId: v.id("users"), // Reference to auth user
+    // Unified Users table
+    users: defineTable({
+        name: v.optional(v.string()), // Maps to fullName
+        image: v.optional(v.string()), // Maps to avatarUrl
         email: v.optional(v.string()),
-        fullName: v.optional(v.string()),
+        emailVerificationTime: v.optional(v.number()),
+        phone: v.optional(v.string()),
+        phoneVerificationTime: v.optional(v.number()),
+        isAnonymous: v.optional(v.boolean()),
+
+        // Extended profile fields
         username: v.optional(v.string()),
-        avatarUrl: v.optional(v.string()),
-        role: v.optional(v.string()), // Legacy role field
+
+        // User Subscription (Tightly related to users)
+        subscriptionTierId: v.optional(v.id("subscriptionTiers")),
+        subscriptionStatus: v.optional(subscriptionStatus),
+        subscriptionStartedAt: v.optional(v.number()),
+        subscriptionEndsAt: v.optional(v.number()),
     })
-        .index("by_userId", ["userId"])
         .index("by_email", ["email"])
-        .index("by_username", ["username"]),
+        .index("by_username", ["username"])
+        .index("by_subscriptionTierId", ["subscriptionTierId"]),
 
     // Subscription Tiers
     subscriptionTiers: defineTable({
-        name: v.string(), // 'user', 'web', 'app', 'crm'
+        name: v.string(), // 'User', 'Web', 'App', 'CRM', 'Staff Admin'
         slug: v.string(),
+        type: v.union(v.literal("commercial"), v.literal("system")),
         priceEur: v.number(),
         isCustom: v.boolean(),
         description: v.optional(v.string()),
-        basePermissions: v.number(), // Bitwise base permissions (stored as number, up to 53 bits safe)
+        basePermissions: v.number(), // Bitwise base permissions
         features: v.optional(v.array(v.string())), // Marketing features list
         maxMembers: v.optional(v.number()), // null = unlimited
         maxOrganizations: v.number(),
@@ -98,16 +109,16 @@ export default defineSchema({
         logoUrl: v.optional(v.string()),
         website: v.optional(v.string()),
 
-        // Ownership
+        // Ownership (Orgs derive features from owner's subscription)
         ownerId: v.id("users"),
 
-        // Subscription
-        subscriptionTierId: v.id("subscriptionTiers"),
-        subscriptionStatus: subscriptionStatus,
-        subscriptionStartedAt: v.number(), // Unix timestamp
+        // Organization subscription (optional - orgs can have their own subscription)
+        subscriptionTierId: v.optional(v.id("subscriptionTiers")),
+        subscriptionStatus: v.optional(subscriptionStatus),
+        subscriptionStartedAt: v.optional(v.number()),
         subscriptionEndsAt: v.optional(v.number()),
 
-        // Custom tier config
+        // Custom config (Overrides)
         customPermissions: v.number(),
         customConfig: v.optional(v.any()),
 
@@ -115,8 +126,7 @@ export default defineSchema({
         metadata: v.optional(v.any()),
     })
         .index("by_slug", ["slug"])
-        .index("by_ownerId", ["ownerId"])
-        .index("by_subscriptionTierId", ["subscriptionTierId"]),
+        .index("by_ownerId", ["ownerId"]),
 
     // Organization Members
     organizationMembers: defineTable({
@@ -143,7 +153,6 @@ export default defineSchema({
         .index("by_org_user", ["organizationId", "userId"])
         .index("by_status", ["status"]),
 
-    // System Permissions (seed data)
     permissions: defineTable({
         code: v.string(), // e.g., 'profile.view', 'analytics.view'
         bitPosition: v.number(), // 0-63
@@ -163,6 +172,27 @@ export default defineSchema({
         .index("by_bitPosition", ["bitPosition"])
         .index("by_category", ["category"])
         .index("by_isAddon", ["isAddon"]),
+
+    // Projects - can be owned by a user (personal) or organization (shared)
+    projects: defineTable({
+        name: v.string(),
+        description: v.optional(v.string()),
+
+        // Ownership: EITHER personal OR organizational (never both)
+        ownerId: v.optional(v.id("users")),         // Personal project
+        organizationId: v.optional(v.id("organizations")), // Org project
+
+        // Project settings
+        settings: v.optional(v.object({
+            isPublic: v.optional(v.boolean()),
+            allowedFeatures: v.optional(v.array(v.string())),
+        })),
+
+        // Metadata
+        metadata: v.optional(v.any()),
+    })
+        .index("by_ownerId", ["ownerId"])
+        .index("by_organizationId", ["organizationId"]),
 
     // Roles
     roles: defineTable({

@@ -71,7 +71,7 @@ export default function DashboardPage() {
         )
     }
 
-    const displayName = currentUser?.fullName || currentUser?.email?.split('@')[0] || 'User'
+    const displayName = currentUser?.name || currentUser?.email?.split('@')[0] || 'User'
 
     return (
         <div className="flex flex-col">

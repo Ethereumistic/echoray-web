@@ -1,0 +1,80 @@
+# Echoray.io Database & Permission System
+
+**Version:** 1.0.0
+**Last Updated:** January 2026
+**Backend:** [Convex](https://www.convex.dev/)
+**Auth:** [Convex Auth](https://labs.convex.dev/auth)
+
+---
+
+## 🏛 Database Overview
+
+Echoray uses **Convex**, a real-time, document-oriented database. Unlike relational databases (SQL), Convex uses documents and references, allowing for high performance and live reactivity out of the box.
+
+### Key Schema Design
+The schema is defined in `convex/schema.ts`. We transitioned from a Supabase PostgreSQL setup to a unified document structure in Convex to minimize latency and simplify data access.
+
+### Core Tables
+
+| Table | Purpose |
+| :--- | :--- |
+| **`users`** | Unified profile and identity data. Now includes **Subscription Tier** info (`subscriptionTierId`, `status`), meaning plans are tied to the individual user. |
+| **`authAccounts`** | Internal table for Convex Auth. Links login methods to a `userId`. |
+| **`organizations`** | Workspace data. Derives its features and limits from its `ownerId`'s subscription tier. |
+| **`organizationMembers`** | Junction table. Users can have different roles in different organizations (e.g., Owner in Org A, Member in Org B). |
+| **`subscriptionTiers`** | Definition of available service tiers (Web, App, CRM) and their base permissions. |
+| **`roles`** | Custom roles defined per organization with specific bitwise permissions. |
+| **`permissions`** | Master list of all available system permissions and their bit positions. |
+
+---
+
+## 🔐 Authentication Architecture
+
+We use **Convex Auth** for secure, edge-ready authentication.
+
+### Why `authAccounts` and `users` are separate:
+The separation is a security and architectural best practice:
+1.  **Multi-Login Support:** One `user` can have multiple `authAccounts` (e.g., logging in via Google *and* Email/Password).
+2.  **Security:** `authAccounts` stores sensitive data like password hashes and provider tokens. Keeping this separate from the profile (`users`) reduces the risk of accidentally exposing credentials when querying user profiles.
+3.  **Clean Data:** Application logic only cares about the `users` table. The `authAccounts` table is largely managed by the library.
+
+---
+
+## 🧬 Permission System (Bitwise)
+
+Echoray uses a custom **Bitwise Permission System** allowing for 53+ unique granular permissions stored in a single number.
+
+### How it Works
+1.  **Permissions Table:** Every action (e.g., `members.invite`) is mapped to a `bitPosition` (0, 1, 2...).
+2.  **Bitwise Math:** Permissions are combined using the OR (`|`) operator and checked using the AND (`&`) operator.
+3.  **Hierarchy:**
+    - **Subscription Tier:** Grants base permissions (e.g., "Web" tier gets bit positions 0-4).
+    - **Roles:** Org admins define roles with additional permissions.
+    - **Overrides:** Specific users can be granted/denied specific bits regardless of their role.
+
+### Checking Permissions
+On the frontend, use the `hasPermission` helper from the auth store or the `PermissionGuard` component:
+
+```tsx
+<PermissionGuard permission="members.invite">
+  <Button>Invite Member</Button>
+</PermissionGuard>
+```
+
+---
+
+## 🛠 Database Operations (Convex)
+
+### Schema Updates
+Schema changes are made in `convex/schema.ts`. Deployment is automatic when running the dev server:
+```bash
+pnpm dlx convex dev
+```
+
+### Writing Functions
+- **Queries:** Use for fetching data. Reactive by default. (`convex/users.ts`)
+- **Mutations:** Use for modifying data. ACID compliant. (`convex/organizations.ts`)
+- **Actions:** Use for side effects (API calls, heavy computation).
+
+### Global Metadata
+We maintain an audit log in `permissionAuditLog` for tracking critical changes to roles and permissions across all organizations.

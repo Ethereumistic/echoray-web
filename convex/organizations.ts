@@ -23,11 +23,19 @@ export const listMyOrganizations = query({
             .filter((q) => q.eq(q.field("status"), "active"))
             .collect();
 
-        // Get the organizations
+        // Get the organizations with enriched tier info from owner
         const organizations = await Promise.all(
             memberships.map(async (membership) => {
                 const org = await ctx.db.get(membership.organizationId);
-                return org;
+                if (!org) return null;
+
+                const owner = await ctx.db.get(org.ownerId);
+                const tier = owner?.subscriptionTierId ? await ctx.db.get(owner.subscriptionTierId) : null;
+
+                return {
+                    ...org,
+                    subscriptionTier: tier,
+                };
             })
         );
 
@@ -56,7 +64,16 @@ export const getOrganization = query({
             throw new Error("Not a member of this organization");
         }
 
-        return await ctx.db.get(id);
+        const org = await ctx.db.get(id);
+        if (!org) return null;
+
+        const owner = await ctx.db.get(org.ownerId);
+        const tier = owner?.subscriptionTierId ? await ctx.db.get(owner.subscriptionTierId) : null;
+
+        return {
+            ...org,
+            subscriptionTier: tier,
+        };
     },
 });
 
@@ -88,7 +105,13 @@ export const getOrganizationBySlug = query({
             return null;
         }
 
-        return org;
+        const owner = await ctx.db.get(org.ownerId);
+        const tier = owner?.subscriptionTierId ? await ctx.db.get(owner.subscriptionTierId) : null;
+
+        return {
+            ...org,
+            subscriptionTier: tier,
+        };
     },
 });
 
@@ -115,25 +138,39 @@ export const createOrganization = mutation({
             throw new Error("Organization slug already exists");
         }
 
-        // Get the default "user" tier
-        const userTier = await ctx.db
-            .query("subscriptionTiers")
-            .withIndex("by_slug", (q) => q.eq("slug", "user"))
-            .first();
+        // 1. Get user's subscription tier
+        const user = await ctx.db.get(userId);
+        if (!user) throw new Error("User not found");
 
-        if (!userTier) {
-            throw new Error("Default subscription tier not found. Please seed the database.");
+        let tierId = user.subscriptionTierId;
+        if (!tierId) {
+            const defaultTier = await ctx.db
+                .query("subscriptionTiers")
+                .withIndex("by_slug", (q) => q.eq("slug", "user"))
+                .unique();
+            if (!defaultTier) throw new Error("Default tier not found. Run seed first.");
+            tierId = defaultTier._id;
         }
 
-        // Create the organization
+        const tier = await ctx.db.get(tierId);
+        if (!tier) throw new Error("Subscription tier not found");
+
+        // 2. Check organization limits
+        const ownedOrgs = await ctx.db
+            .query("organizations")
+            .withIndex("by_ownerId", (q) => q.eq("ownerId", userId))
+            .collect();
+
+        if (ownedOrgs.length >= tier.maxOrganizations) {
+            throw new Error(`Your ${tier.name} plan only allows ${tier.maxOrganizations} organization(s). Please upgrade to create more.`);
+        }
+
+        // 3. Create the organization (now without its own tier ID)
         const orgId = await ctx.db.insert("organizations", {
             name: args.name,
             slug: args.slug,
             description: args.description,
             ownerId: userId,
-            subscriptionTierId: userTier._id,
-            subscriptionStatus: "active",
-            subscriptionStartedAt: Date.now(),
             customPermissions: 0,
         });
 

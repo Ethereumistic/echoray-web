@@ -1,0 +1,85 @@
+# Bitwise Permission System
+
+Echoray uses a **Bitwise Permission System** to manage granular access across the platform. This system is efficient, scalable, and allows for complex permission checks with simple bitwise mathematics.
+
+---
+
+## 🏗 How it Works
+
+Permissions are represented by unique **bit positions** (0, 1, 2, ...). 
+A single integer (the `permissionBitset`) stores the state of all permissions for a user within a specific context (like an organization).
+
+### 1. Representation
+- Each permission corresponds to a power of 2: `2 ^ bitPosition`.
+- `profile.view` (Bit 0) = `1` (binary `0001`)
+- `profile.edit` (Bit 1) = `2` (binary `0010`)
+- `analytics.view` (Bit 2) = `4` (binary `0100`)
+
+### 2. Logic (Binary Math)
+- **Combine (OR)**: `permissions | newPermission`
+  Adding a developer role (`4`) to basic user bits (`3`) results in `7` (`0111`).
+- **Check (AND)**: `(permissions & requiredBit) !== 0`
+  Checking if bit `2` is set in `7`: `(7 & 4)` is `4`, which is true.
+- **Remove (AND NOT)**: `permissions & ~removalBit`
+
+> [!IMPORTANT]
+> **JavaScript Limit**: We use safe integers up to `2^53 - 1` (`Number.MAX_SAFE_INTEGER`). This gives us **53 unique permission slots**.
+
+---
+
+## 🛡 Internal Admin Access (`system.admin`)
+
+We reserve high bit positions for internal staff. These bits are **never** included in commercial roles or tiers.
+
+- **Bit 50**: `system.admin` (Full access to all organizations and system settings)
+- **Bit 51**: `system.support` (Internal support tools / "Login as User")
+
+### Implementing a Restricted Dashboard
+To create a dashboard area accessible only by Echoray staff:
+
+#### 1. The Helper Hook
+```tsx
+// src/hooks/use-permissions.ts
+const { can } = usePermissions();
+const isStaff = can("system.admin");
+```
+
+#### 2. The Route Guard
+```tsx
+// src/app/(admin)/layout.tsx
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const { can, isLoading } = usePermissions();
+  
+  if (isLoading) return <Loading />;
+  if (!can("system.admin")) return redirect("/dashboard");
+
+  return <>{children}</>;
+}
+```
+
+---
+
+## 🎨 Permission UI: Role Management
+
+In the **Organization Settings > Roles** UI, permissions are managed via a list of toggles.
+
+### How it is Displayed
+1.  **Fetch Master List**: The UI fetches all defined permissions from the `permissions` table.
+2.  **Toggle Logic**: Each toggle represents a bit. 
+    - If a role is edited, the `permissions` integer for that role is patched.
+3.  **Visual Hierarchy**:
+    - **Inherited Bits**: Bits granted by the **Subscription Tier** should be shown as "Always On" (non-toggleable) but visible, so admins know what is already included in their plan.
+    - **Role Bits**: Toggles allow admins to grant additional powers beyond the tier (e.g., granting "Invite Members" to a "Manager" role).
+
+---
+
+## 🧬 Current Allocation
+
+| Range | Purpose |
+| :--- | :--- |
+| **0 - 20** | **Commercial Features** (Modules, Tiers, Addons) |
+| **21 - 49** | **Reserved** (Future commercial modules) |
+| **50 - 53** | **System Administration** (Staff Only) |
+
+### Refinement
+The system is currently running with the core bits defined in `convex/seed.ts`. As the product evolves, we will fine-tune the bit positions to match new feature launches.

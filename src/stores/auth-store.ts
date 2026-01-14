@@ -2,11 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Id } from '../../convex/_generated/dataModel'
 
-/**
- * User roles for role-based access control in the dashboard.
- * DEPRECATED: Moving to bitwise permission system.
- */
-export type UserRole = 'user' | 'admin' | 'client' | 'team_member'
+// Note: Legacy role-based access has been replaced by bitwise permissions
 
 /**
  * Organization type matching Convex schema
@@ -18,10 +14,12 @@ export interface Organization {
     description?: string
     logoUrl?: string
     ownerId: Id<"users">
-    subscriptionTierId: Id<"subscriptionTiers">
-    subscriptionStatus: 'active' | 'trialing' | 'past_due' | 'cancelled' | 'paused'
-    subscriptionStartedAt: number
-    subscriptionEndsAt?: number
+    subscriptionTier?: {
+        _id: Id<"subscriptionTiers">
+        name: string
+        slug: string
+        basePermissions: number
+    }
     customPermissions: number
     customConfig?: unknown
     metadata?: unknown
@@ -33,9 +31,12 @@ export interface Organization {
 export interface UserProfile {
     id: string
     email: string | undefined
-    role: UserRole
     displayName?: string
     avatarUrl?: string
+    subscriptionTier?: {
+        name: string
+        slug: string
+    }
     createdAt?: string
 }
 
@@ -178,17 +179,29 @@ export const useAuthStore = create<AuthState>()(
 /**
  * Helper to create a profile from Convex user data
  */
-export function createProfileFromConvexUser(user: {
-    id: string
+interface ConvexUserData {
+    _id?: string
+    id?: string
     email?: string
+    name?: string
     fullName?: string
+    image?: string
     avatarUrl?: string
-}): UserProfile {
+    subscriptionTier?: {
+        name: string
+        slug: string
+    } | null
+}
+
+export function createProfileFromConvexUser(user: ConvexUserData): UserProfile {
     return {
-        id: user.id,
+        id: user._id || user.id || '',
         email: user.email,
-        role: 'user', // Default role, actual permissions come from the org
-        displayName: user.fullName || user.email?.split('@')[0],
-        avatarUrl: user.avatarUrl,
+        displayName: user.name || user.fullName || user.email?.split('@')[0],
+        avatarUrl: user.image || user.avatarUrl,
+        subscriptionTier: user.subscriptionTier ? {
+            name: user.subscriptionTier.name,
+            slug: user.subscriptionTier.slug,
+        } : undefined
     }
 }

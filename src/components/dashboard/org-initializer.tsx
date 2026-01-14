@@ -26,11 +26,25 @@ export function OrgInitializer() {
     const user = useQuery(api.users.currentUser)
 
     useEffect(() => {
-        if (user) {
-            setUserId(user.id)
-            setProfile(createProfileFromConvexUser(user))
+        // user === undefined means still loading from Convex
+        // user === null means not authenticated
+        // user === object means authenticated
+        if (user === undefined) {
+            // Still loading, keep isLoading true
+            return
         }
-    }, [user, setUserId, setProfile])
+
+        if (user === null) {
+            // Not authenticated - clear state and set loading to false
+            setUserId(null)
+            setLoading(false)
+            return
+        }
+
+        // User is authenticated
+        setUserId(user._id)
+        setProfile(createProfileFromConvexUser(user))
+    }, [user, setUserId, setProfile, setLoading])
 
     // Query organizations the user is a member of
     const organizations = useQuery(
@@ -38,10 +52,10 @@ export function OrgInitializer() {
         userId ? {} : "skip"
     )
 
-    // Query permissions for the active organization
+    // Query permissions for the active context (global or org-specific)
     const permissions = useQuery(
         api.permissions.getUserPermissions,
-        activeOrganization?._id ? { organizationId: activeOrganization._id } : "skip"
+        userId ? { organizationId: activeOrganization?._id } : "skip"
     )
 
     // Update organizations in store when query completes

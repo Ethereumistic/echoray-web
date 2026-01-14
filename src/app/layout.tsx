@@ -30,6 +30,7 @@ export const metadata: Metadata = {
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import { ConvexClientProvider } from "@/lib/convex";
 import { Toaster } from "@/components/ui/sonner";
+import { PermissionDebugger } from "@/components/debug/permission-debugger";
 
 export default function RootLayout({
 	children,
@@ -42,6 +43,7 @@ export default function RootLayout({
 				<body className={`${sans.variable} ${serif.variable} ${mono.variable} font-sans dark antialiased`}>
 					<ConvexClientProvider>
 						{children}
+						<PermissionDebugger />
 						<Toaster position="top-right" expand={false} richColors />
 					</ConvexClientProvider>
 				</body>

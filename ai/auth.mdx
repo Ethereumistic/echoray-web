@@ -56,13 +56,19 @@ The `useAuthStore` (`src/stores/auth-store.ts`) acts as the client-side source o
 
 ---
 
-## 5. Profile Management
+## 5. Unified Profile Management
 
-Unlike the Supabase "Triggers & Functions" approach, Convex handles profile management via direct queries and mutations:
+Exhoray uses a unified approach where profile data lives directly on the `users` table, rather than a separate `profiles` table. This reduces query latency and simplifies data fetching.
 
-### Profile Initialization
+### Profile Structure
+- **`name`**: User's full display name.
+- **`image`**: Avatar URL.
+- **`username`**: Unique handle for mentions/profile.
+- **`email`**: Primary contact email (verified by auth).
+
+### Initialization
 When a user signs in, the `OrgInitializer` component:
-1.  Fetches the user's profile from the `profiles` table.
+1.  Fetches the unified user document from the `users` table.
 2.  Fetches their associated organizations.
 3.  Calculates permissions for the active organization.
 4.  Hydrates the Zustand store.

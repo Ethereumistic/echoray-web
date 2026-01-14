@@ -9,10 +9,9 @@
 
 ## 🛠 Tech Stack Core
 
-| Technology | Version | Purpose |
-| :--- | :--- | :--- |
 | **Next.js** | 15.5.9 | Full-stack Framework (App Router) |
-| **React** | 19.1.4 | UI Library |
+| **Convex** | 1.18.0 | Real-time Database & Backend Functions |
+| **Convex Auth** | 0.0.x | Edge-ready Authentication |
 | **TypeScript** | 5.x | Type Safety |
 | **Tailwind CSS** | 4.x | Utility-first Styling |
 | **OpenNext** | 1.14.4 | Adapter for Cloudflare Workers |
@@ -40,9 +39,9 @@ The website is hosted on **Cloudflare Pages/Workers** using `@opennextjs/cloudfl
 ## ⌨️ Development Workflow
 
 ### Package Management
-We use **bun** exclusively.
-- **Add Component:** `bun dlx shadcn@latest add [component]`
-- **Install Deps:** `bun install`
+We use **pnpm** exclusively.
+- **Add Component:** `pnpm dlx shadcn@latest add [component]`
+- **Install Deps:** `pnpm install`
 
 ### Local Development
 Next.js is integrated with Cloudflare bindings for local dev.
@@ -102,6 +101,8 @@ When working on this codebase, remember:
 ---
 
 ## 🔗 Related Documentation
+- [Database & Permissions](./database.mdx)
+- [Bitwise Permission Logic](./bitwise.mdx)
 - [Design System](./design-system.mdx)
 - [Wrangler Configuration](../wrangler.jsonc)
 - [OpenNext Docs](https://opennext.js.org/cloudflare)

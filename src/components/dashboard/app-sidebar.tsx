@@ -18,6 +18,7 @@ import {
     Bell,
     ChevronRight,
     Plus,
+    Lock,
 } from "lucide-react"
 
 import {
@@ -45,15 +46,22 @@ import {
     DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthStore, Organization } from "@/stores/auth-store"
 import { useAuthActions } from "@convex-dev/auth/react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
+import { useQuery } from "convex/react"
+import { api } from "../../../convex/_generated/api"
 
 // --- Nav Items ---
 interface NavItem {
@@ -65,43 +73,77 @@ interface NavItem {
     organizationOnly?: boolean
 }
 
-const getNavItems = (slug?: string): NavItem[] => {
+const getNavItems = (
+    orgSlug?: string,
+    userSlug?: string,
+    canCreateProjects?: boolean,
+    organizations?: Organization[]
+): NavItem[] => {
     const items: NavItem[] = [
         { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
     ]
 
-    if (slug) {
+    // Organization workspace link (only if org is selected)
+    if (orgSlug) {
         items.push({
             title: "Workspace",
-            href: `/o/${slug}`,
+            href: `/o/${orgSlug}`,
             icon: Building2,
             organizationOnly: true
         })
     }
 
+    // Personal projects href
+    const personalProjectsHref = userSlug ? `/p/${userSlug}/projects` : "/dashboard/projects"
+
+    // Projects item - different based on permission
+    if (canCreateProjects && organizations && organizations.length > 0) {
+        // Users with project.create: Show dropdown with Personal + Org projects
+        const projectSubItems = [
+            { title: "Personal Projects", href: personalProjectsHref },
+        ]
+
+        // Add each organization's projects
+        for (const org of organizations) {
+            projectSubItems.push({
+                title: org.name,
+                href: `/o/${org.slug}/projects`,
+            })
+        }
+
+        items.push({
+            title: "Projects",
+            href: orgSlug ? `/o/${orgSlug}/projects` : personalProjectsHref,
+            icon: FolderOpen,
+            items: projectSubItems
+        })
+    } else {
+        // Free users: Simple button to personal projects (no dropdown)
+        items.push({
+            title: "Projects",
+            href: personalProjectsHref,
+            icon: FolderOpen,
+            // No items = no dropdown
+        })
+    }
+
     items.push(
         {
-            title: "Projects",
-            href: slug ? `/o/${slug}/projects` : "/dashboard/projects",
-            icon: FolderOpen,
-            items: [
-                { title: "Active Projects", href: slug ? `/o/${slug}/projects` : "/dashboard/projects/active" },
-                { title: "Archived", href: slug ? `/o/${slug}/projects/archived` : "/dashboard/projects/archived" },
-                { title: "New Project", href: slug ? `/o/${slug}/projects/new` : "/dashboard/projects/new" },
-            ]
+            title: "Documents",
+            href: orgSlug ? `/o/${orgSlug}/documents` : "/dashboard/documents",
+            icon: FileText
         },
-        { title: "Documents", href: slug ? `/o/${slug}/documents` : "/dashboard/documents", icon: FileText },
         {
             title: "Team",
-            href: slug ? `/o/${slug}/settings?tab=members` : "/dashboard/team",
+            href: orgSlug ? `/o/${orgSlug}/settings?tab=members` : "/dashboard/team",
             icon: Users,
         }
     )
 
-    if (slug) {
+    if (orgSlug) {
         items.push({
             title: "Workspace Settings",
-            href: `/o/${slug}/settings`,
+            href: `/o/${orgSlug}/settings`,
             icon: Settings
         })
     } else {
@@ -126,18 +168,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const isCollapsed = state === "collapsed"
     const { signOut: convexSignOut } = useAuthActions()
 
+    // Check if user can create organizations (based on tier limits)
+    const orgCapability = useQuery(api.users.canCreateOrganization)
+    const canCreateOrg = orgCapability?.canCreate ?? false
+
+    // Check if user can create projects (Web tier and above)
+    const projectCapability = useQuery(api.projects.canCreateProject)
+    const canCreateProjects = projectCapability?.canCreate ?? false
+
     const handleSignOut = async () => {
         await convexSignOut()
         clearAuthStore()
         window.location.href = "/"
     }
 
-    const navItems = getNavItems(activeOrganization?.slug)
+    // Get user slug for personal workspace routes
+    const userSlug = profile?.displayName?.toLowerCase().replace(/\s+/g, '-') ||
+        profile?.email?.split('@')[0] ||
+        'me'
 
-    // Role-based filtering (legacy fallback)
+    const navItems = getNavItems(activeOrganization?.slug, userSlug, canCreateProjects, organizations)
+
+    // Permission-based filtering
+    const { hasPermission } = useAuthStore()
     const filteredNavItems = navItems.filter((item) => {
         if (!item.roles) return true
-        return profile?.role && item.roles.includes(profile.role)
+        // Use permissions system instead of legacy roles
+        return item.roles.some((role) => hasPermission(role))
     })
 
     return (
@@ -157,7 +214,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <div className="flex flex-col leading-none transition-all duration-300">
                             <span className="font-bold text-lg tracking-tight">Echoray</span>
                             <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-black mt-0.5">
-                                {profile?.role || 'user'}
+                                {profile?.subscriptionTier?.name || 'Free'}
                             </span>
                         </div>
                     )}
@@ -318,12 +375,51 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         {activeOrganization?._id === org._id && <Check className="ml-auto size-4 text-primary" />}
                                     </DropdownMenuItem>
                                 ))}
-                                <DropdownMenuItem asChild className="gap-2 p-2 rounded-lg text-muted-foreground cursor-pointer">
-                                    <Link href="/dashboard/organizations/create" className="flex items-center gap-2">
-                                        <Plus className="size-4" />
-                                        <span className="text-sm">Create Organization</span>
-                                    </Link>
-                                </DropdownMenuItem>
+
+                                {/* Create Organization - conditionally locked based on tier limits */}
+                                {canCreateOrg ? (
+                                    <DropdownMenuItem asChild className="gap-2 p-2 rounded-lg text-muted-foreground cursor-pointer">
+                                        <Link href="/dashboard/organizations/create" className="flex items-center gap-2">
+                                            <Plus className="size-4" />
+                                            <span className="text-sm">Create Organization</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                ) : (
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <div className="flex items-center gap-2 p-2 rounded-lg text-muted-foreground/50 cursor-not-allowed select-none">
+                                                <Lock className="size-4" />
+                                                <span className="text-sm">Create Organization</span>
+                                                <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                                    Upgrade
+                                                </span>
+                                            </div>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                            side="right"
+                                            align="start"
+                                            className="w-72 p-4 bg-background/95 backdrop-blur-sm border border-border shadow-xl"
+                                        >
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="p-2 rounded-lg bg-amber-500/10">
+                                                        <Lock className="size-4 text-amber-500" />
+                                                    </div>
+                                                    <h4 className="font-semibold text-sm">Feature Locked</h4>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {orgCapability?.reason || "Upgrade your plan to create organizations."}
+                                                </p>
+                                                <Link
+                                                    href="/dashboard/subscription"
+                                                    className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-primary to-primary/80 rounded-lg hover:opacity-90 transition-opacity"
+                                                >
+                                                    View Upgrade Options
+                                                </Link>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
 
                                 <DropdownMenuSeparator />
 

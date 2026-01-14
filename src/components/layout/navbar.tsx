@@ -61,7 +61,7 @@ export function Navbar() {
     // Sync to store when data arrives
     React.useEffect(() => {
         if (user) {
-            setUserId(user.id)
+            setUserId(user._id)
             setProfile(createProfileFromConvexUser(user))
         }
     }, [user, setUserId, setProfile])

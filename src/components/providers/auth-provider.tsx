@@ -41,12 +41,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         if (currentUser) {
-            setUserId(currentUser.id)
+            setUserId(currentUser._id)
             setProfile(createProfileFromConvexUser({
-                id: currentUser.id,
+                id: currentUser._id,
                 email: currentUser.email,
-                fullName: currentUser.fullName,
-                avatarUrl: currentUser.avatarUrl,
+                fullName: currentUser.name,
+                avatarUrl: currentUser.image,
             }))
         } else {
             signOut()

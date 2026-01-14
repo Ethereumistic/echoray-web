@@ -116,9 +116,9 @@ export default function OrganizationDashboardPage() {
                             <Activity className="h-4 w-4 text-primary/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold capitalize">{activeOrganization.subscriptionStatus}</div>
+                            <div className="text-2xl font-bold capitalize">{activeOrganization.subscriptionTier?.name || 'Free'}</div>
                             <p className="text-xs text-muted-foreground">
-                                {activeOrganization.subscriptionTierId ? 'Premium Plan' : 'Free Plan'}
+                                {activeOrganization.subscriptionTier ? 'Active Plan' : 'No subscription'}
                             </p>
                         </CardContent>
                     </Card>
