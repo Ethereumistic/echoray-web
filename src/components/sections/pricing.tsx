@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, Calendar, Zap, Database, DollarSign, Wifi, ShoppingCart } from "lucide-react"
+import { Check, Zap, Database, DollarSign, Wifi, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
