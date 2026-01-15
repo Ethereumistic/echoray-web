@@ -10,7 +10,7 @@ import { Activity, Users, FolderOpen, Loader2, User, FileText, Settings } from "
 import { OrgQuickActions } from "@/components/dashboard/org-quick-actions"
 import Link from "next/link"
 import { api } from "../../../../../convex/_generated/api"
-import { useScopeContext } from "./layout"
+import { useScopeContext } from "@/contexts/scope-context"
 
 /**
  * Unified workspace page for both personal (p) and organization (o) scopes.

@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Share2, ArrowLeft, Construction } from 'lucide-react'
 import Link from 'next/link'
-import { useScopeContext } from '../layout'
+import { useScopeContext } from '@/contexts/scope-context'
 
 /**
  * Cross-Post - Pre-built System App

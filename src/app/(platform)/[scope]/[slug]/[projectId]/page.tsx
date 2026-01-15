@@ -75,9 +75,10 @@ import {
     FolderOpen,
 } from 'lucide-react'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { FieldSchemaEditor, FieldDefinition } from '@/components/projects/field-editor'
 import { ProjectSettings } from '@/components/projects/project-settings'
-import { useScopeContext } from '../layout'
+import { useScopeContext } from '@/contexts/scope-context'
 
 // Field schema interface for type safety (matches Convex projectFields type)
 interface FieldSchema {
@@ -141,13 +142,10 @@ const VIEW_TYPES = [
  * Unified Project Detail page for both personal (p) and organization (o) scopes.
  * Route: /p/[userId]/[projectId] or /o/[orgId]/[projectId]
  */
-export default function ProjectDetailPage({
-    params
-}: {
-    params: { scope: string; slug: string; projectId: string }
-}) {
+export default function ProjectDetailPage() {
     const { scope, slug } = useScopeContext()
-    const projectId = params.projectId
+    const params = useParams()
+    const projectId = params.projectId as string
 
     // Fetch project data - now returns { project, error }
     const projectResult = useQuery(

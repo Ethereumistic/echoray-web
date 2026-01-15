@@ -1,28 +1,8 @@
 "use client"
 
 import { useParams, notFound } from 'next/navigation'
-import { createContext, useContext, useMemo } from 'react'
-
-/**
- * Scope context for personal (p) vs organization (o) workspaces.
- * Provides type-safe access to scope-related params throughout the app.
- */
-interface ScopeContextValue {
-    scope: 'p' | 'o'
-    slug: string
-    isPersonal: boolean
-    isOrganization: boolean
-}
-
-const ScopeContext = createContext<ScopeContextValue | null>(null)
-
-export function useScopeContext() {
-    const context = useContext(ScopeContext)
-    if (!context) {
-        throw new Error('useScopeContext must be used within a ScopeProvider')
-    }
-    return context
-}
+import { useMemo } from 'react'
+import { ScopeContext, ScopeContextValue } from '@/contexts/scope-context'
 
 /**
  * Unified layout for [scope]/[slug] routes.

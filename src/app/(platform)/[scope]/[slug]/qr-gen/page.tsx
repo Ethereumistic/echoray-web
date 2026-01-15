@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { QrCode, ArrowLeft, Construction } from 'lucide-react'
 import Link from 'next/link'
-import { useScopeContext } from '../layout'
+import { useScopeContext } from '@/contexts/scope-context'
 
 /**
  * QR Code Generator - Pre-built System App

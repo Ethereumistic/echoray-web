@@ -365,13 +365,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                             setActiveOrganization(org)
                                             router.push(`/o/${org._id}`)
                                         }}
-                                        className="gap-2 p-2 rounded-lg"
+                                        className="gap-2 p-2 rounded-lg group/item"
                                     >
                                         <div className="flex size-6 items-center justify-center rounded-md border bg-muted/30">
                                             <Building2 className="size-3.5" />
                                         </div>
-                                        <span className="text-sm font-medium">{org.name}</span>
-                                        {activeOrganization?._id === org._id && <Check className="ml-auto size-4 text-primary" />}
+                                        <span className="text-sm font-medium truncate flex-1">{org.name}</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <div
+                                                role="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    router.push(`/o/${org._id}/settings`)
+                                                }}
+                                                className="opacity-0 group-hover/item:opacity-100 p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                                            >
+                                                <Settings className="size-3.5" />
+                                            </div>
+                                            {activeOrganization?._id === org._id && <Check className="size-4 text-primary" />}
+                                        </div>
                                     </DropdownMenuItem>
                                 ))}
 

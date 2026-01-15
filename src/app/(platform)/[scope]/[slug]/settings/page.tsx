@@ -11,7 +11,7 @@ import { RolesList } from "@/components/dashboard/roles-list"
 import { Settings, Users, Shield, Loader2, User } from "lucide-react"
 import { useEffect, useState } from "react"
 import { redirect } from "next/navigation"
-import { useScopeContext } from "../layout"
+import { useScopeContext } from "@/contexts/scope-context"
 
 /**
  * Unified Settings page for both personal (p) and organization (o) scopes.
@@ -123,7 +123,7 @@ export default function SettingsPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="p-0 border-t border-border/10">
-                                <MembersList />
+                                <MembersList organizationId={slug} />
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -137,7 +137,7 @@ export default function SettingsPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <RolesList />
+                                <RolesList organizationId={slug} />
                             </CardContent>
                         </Card>
                     </TabsContent>

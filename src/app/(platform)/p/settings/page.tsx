@@ -106,7 +106,7 @@ export default function PersonalSettingsPage() {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <MembersList />
+                                    <MembersList organizationId={activeOrganization._id} />
                                 </CardContent>
                             </Card>
                         </TabsContent>

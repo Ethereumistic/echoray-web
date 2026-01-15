@@ -1,22 +1,11 @@
-import { AppSidebar } from '@/components/dashboard/app-sidebar'
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { OrgInitializer } from '@/components/dashboard/org-initializer'
-
 /**
  * Layout for /dashboard routes (legacy redirect support).
+ * No longer duplicates Sidebar components as they are provided by the parent PlatformLayout.
  */
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    return (
-        <SidebarProvider>
-            <OrgInitializer />
-            <AppSidebar />
-            <SidebarInset>
-                {children}
-            </SidebarInset>
-        </SidebarProvider>
-    )
+    return <>{children}</>
 }

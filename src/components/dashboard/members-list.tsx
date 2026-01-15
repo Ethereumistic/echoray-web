@@ -1,7 +1,6 @@
 "use client"
 
 import { useQuery, useMutation } from "convex/react"
-import { useAuthStore } from "@/stores/auth-store"
 import type { Id } from "../../../convex/_generated/dataModel"
 import type { MemberWithRoles } from "@/types/permissions"
 import {
@@ -33,24 +32,23 @@ import { api } from "../../../convex/_generated/api"
 /**
  * MembersList component shows a table of all members in the current active org.
  * It includes role badges and management actions.
+ * @param organizationId - The ID of the organization to display members for
  */
-export function MembersList() {
-    const { activeOrganization } = useAuthStore()
-
+export function MembersList({ organizationId }: { organizationId: string }) {
     // Query members with Convex
     const members = useQuery(
         api.members.listMembers,
-        activeOrganization?._id ? { organizationId: activeOrganization._id } : "skip"
+        organizationId ? { organizationId: organizationId as Id<"organizations"> } : "skip"
     )
 
     const removeMember = useMutation(api.members.removeMember)
 
     const handleRemoveMember = async (userId: string) => {
-        if (!activeOrganization) return
+        if (!organizationId) return
 
         try {
             await removeMember({
-                organizationId: activeOrganization._id as Id<"organizations">,
+                organizationId: organizationId as Id<"organizations">,
                 targetUserId: userId as Id<"users">,
             })
             toast.success("Member removed")
@@ -64,7 +62,7 @@ export function MembersList() {
         // Convex queries are reactive, no manual refetch needed
     }
 
-    if (!activeOrganization) return null
+    if (!organizationId) return null
 
     const isLoading = members === undefined
 
@@ -120,7 +118,7 @@ export function MembersList() {
                                         </Avatar>
                                         <div className="flex flex-col">
                                             <span className="font-medium text-sm">
-                                                {member.user?.fullName || "Unknown User"}
+                                                {member.user?.fullName || member.user?.username || member.user?.email?.split('@')[0] || "Unknown User"}
                                             </span>
                                             <span className="text-xs text-muted-foreground lowercase">
                                                 {member.user?.email || member.user?.username || "user"}

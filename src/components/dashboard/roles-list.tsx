@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { useAuthStore } from "@/stores/auth-store"
 import type { Id } from "../../../convex/_generated/dataModel"
 import {
     Table,
@@ -29,25 +28,25 @@ import {
 
 /**
  * RolesList component allows managing organization-wide roles.
+ * @param organizationId - The ID of the organization to display roles for
  */
-export function RolesList() {
-    const { activeOrganization } = useAuthStore()
+export function RolesList({ organizationId }: { organizationId: string }) {
     const [actionLoading, setActionLoading] = useState(false)
 
     const roles = useQuery(
         api.roles.listRoles,
-        activeOrganization?._id ? { organizationId: activeOrganization._id } : "skip"
+        organizationId ? { organizationId: organizationId as Id<"organizations"> } : "skip"
     )
 
     const setDefaultRole = useMutation(api.roles.setDefaultRole)
 
     const handleSetDefault = async (roleId: string) => {
-        if (!activeOrganization) return
+        if (!organizationId) return
 
         setActionLoading(true)
         try {
             await setDefaultRole({
-                organizationId: activeOrganization._id as Id<"organizations">,
+                organizationId: organizationId as Id<"organizations">,
                 roleId: roleId as Id<"roles">
             })
 
@@ -64,7 +63,7 @@ export function RolesList() {
     const isLoading = roles === undefined
 
 
-    if (!activeOrganization) return null
+    if (!organizationId) return null
 
     return (
         <div className="space-y-4">

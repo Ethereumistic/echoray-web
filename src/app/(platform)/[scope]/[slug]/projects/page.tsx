@@ -27,7 +27,7 @@ import { Id } from '../../../../../../convex/_generated/dataModel'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/auth-store'
-import { useScopeContext } from '../layout'
+import { useScopeContext } from '@/contexts/scope-context'
 
 // Query to get organization details by ID
 function useOrganizationById(orgId: string | null) {

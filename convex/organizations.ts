@@ -251,6 +251,125 @@ export const updateOrganization = mutation({
 });
 
 /**
+ * Delete an organization and all its associated data (Cascade Delete)
+ */
+export const deleteOrganization = mutation({
+    args: { id: v.id("organizations") },
+    handler: async (ctx, { id }) => {
+        const userId = await auth.getUserId(ctx);
+        if (!userId) throw new Error("Not authenticated");
+
+        const org = await ctx.db.get(id);
+        if (!org) throw new Error("Organization not found");
+
+        // Check if user is owner or system admin/support (bits 50, 51)
+        const user = await ctx.db.get(userId);
+        if (!user) throw new Error("User not found");
+
+        let hasAccess = org.ownerId === userId;
+
+        // Check system permissions if not owner
+        if (!hasAccess && user.subscriptionTierId) {
+            const tier = await ctx.db.get(user.subscriptionTierId);
+            if (tier) {
+                const systemAdmin = (BigInt(tier.basePermissions) & (1n << 50n)) !== 0n;
+                const systemSupport = (BigInt(tier.basePermissions) & (1n << 51n)) !== 0n;
+                hasAccess = systemAdmin || systemSupport;
+            }
+        }
+
+        if (!hasAccess) {
+            throw new Error("Only the owner or a system administrator can delete this organization");
+        }
+
+        // --- CASCADE DELETION ---
+
+        // 1. Organization Members
+        const members = await ctx.db
+            .query("organizationMembers")
+            .withIndex("by_organizationId", (q) => q.eq("organizationId", id))
+            .collect();
+
+        for (const member of members) {
+            // Member roles
+            const memberRoles = await ctx.db
+                .query("memberRoles")
+                .withIndex("by_memberId", (q) => q.eq("memberId", member._id))
+                .collect();
+            for (const mr of memberRoles) await ctx.db.delete(mr._id);
+
+            // Member overrides
+            const overrides = await ctx.db
+                .query("memberPermissionOverrides")
+                .withIndex("by_memberId", (q) => q.eq("memberId", member._id))
+                .collect();
+            for (const override of overrides) await ctx.db.delete(override._id);
+
+            // Delete membership
+            await ctx.db.delete(member._id);
+        }
+
+        // 2. Roles
+        const roles = await ctx.db
+            .query("roles")
+            .withIndex("by_organizationId", (q) => q.eq("organizationId", id))
+            .collect();
+        for (const role of roles) await ctx.db.delete(role._id);
+
+        // 3. Projects and their data
+        const projects = await ctx.db
+            .query("projects")
+            .withIndex("by_organizationId", (q) => q.eq("organizationId", id))
+            .collect();
+
+        for (const project of projects) {
+            // Fields
+            const fields = await ctx.db
+                .query("projectFields")
+                .withIndex("by_project", (q) => q.eq("projectId", project._id))
+                .collect();
+            for (const f of fields) await ctx.db.delete(f._id);
+
+            // Records
+            const records = await ctx.db
+                .query("projectRecords")
+                .withIndex("by_project", (q) => q.eq("projectId", project._id))
+                .collect();
+            for (const r of records) await ctx.db.delete(r._id);
+
+            // Views
+            const views = await ctx.db
+                .query("projectViews")
+                .withIndex("by_project", (q) => q.eq("projectId", project._id))
+                .collect();
+            for (const vw of views) await ctx.db.delete(vw._id);
+
+            // Delete project
+            await ctx.db.delete(project._id);
+        }
+
+        // 4. Addons
+        const addons = await ctx.db
+            .query("organizationAddons")
+            .withIndex("by_organizationId", (q) => q.eq("organizationId", id))
+            .collect();
+        for (const addon of addons) await ctx.db.delete(addon._id);
+
+        // 5. Audit Logs
+        const auditLogs = await ctx.db
+            .query("permissionAuditLog")
+            .withIndex("by_organizationId", (q) => q.eq("organizationId", id))
+            .collect();
+        for (const log of auditLogs) await ctx.db.delete(log._id);
+
+        // 6. Delete the organization record itself
+        await ctx.db.delete(id);
+
+        return { success: true };
+    },
+});
+
+/**
  * Helper: Create system roles for a new organization
  */
 async function createSystemRoles(ctx: any, orgId: any) {
