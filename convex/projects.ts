@@ -37,8 +37,41 @@ export const listMyProjects = query({
 });
 
 /**
+ * List projects by a specific owner ID (staff admin only)
+ * Allows system.admin users to view any user's personal projects
+ */
+export const listProjectsByOwner = query({
+    args: {
+        ownerId: v.id("users"),
+    },
+    handler: async (ctx, { ownerId }) => {
+        const userId = await auth.getUserId(ctx);
+        if (!userId) return [];
+
+        // Check if user is staff admin
+        const user = await ctx.db.get(userId);
+        if (!user?.subscriptionTierId) return [];
+
+        const tier = await ctx.db.get(user.subscriptionTierId);
+        const isStaffAdmin = tier ? hasPermissionBit(tier.basePermissions, PERMISSION_BITS['system.admin']) : false;
+
+        if (!isStaffAdmin) {
+            // Non-staff can only view their own projects
+            if (ownerId !== userId) return [];
+        }
+
+        // Get personal projects for the specified user
+        return await ctx.db
+            .query("projects")
+            .withIndex("by_ownerId", (q) => q.eq("ownerId", ownerId))
+            .collect();
+    },
+});
+
+/**
  * Get a single project by ID
  * Returns { project, error } to allow graceful error handling in UI
+ * Staff admins with system.admin permission can view ANY project
  */
 export const getProject = query({
     args: { id: v.id("projects") },
@@ -51,6 +84,20 @@ export const getProject = query({
         const project = await ctx.db.get(id);
         if (!project) {
             return { project: null, error: "not_found" as const };
+        }
+
+        // Check if user is staff admin (has system.admin permission)
+        const user = await ctx.db.get(userId);
+        const isStaffAdmin = user?.subscriptionTierId
+            ? await (async () => {
+                const tier = await ctx.db.get(user.subscriptionTierId!);
+                return tier ? hasPermissionBit(tier.basePermissions, PERMISSION_BITS['system.admin']) : false;
+            })()
+            : false;
+
+        // Staff admins can view any project
+        if (isStaffAdmin) {
+            return { project, error: null, isStaffView: true };
         }
 
         // Check access: either owner or org member
@@ -78,12 +125,14 @@ export const getProject = query({
 /**
  * Create a new project
  * Requires project.create permission (Web tier and above)
+ * Staff admins can specify targetOwnerId to create on behalf of another user
  */
 export const createProject = mutation({
     args: {
         name: v.string(),
         description: v.optional(v.string()),
         organizationId: v.optional(v.id("organizations")),
+        targetOwnerId: v.optional(v.id("users")), // Staff admin only: create for another user
     },
     handler: async (ctx, args) => {
         const userId = await auth.getUserId(ctx);
@@ -93,10 +142,18 @@ export const createProject = mutation({
         const user = await ctx.db.get(userId);
         if (!user) throw new Error("User not found");
 
-        // Check project.create permission
-        let hasPermission = false;
+        // Check if user is staff admin
+        const isStaffAdmin = user?.subscriptionTierId
+            ? await (async () => {
+                const tier = await ctx.db.get(user.subscriptionTierId!);
+                return tier ? hasPermissionBit(tier.basePermissions, PERMISSION_BITS['system.admin']) : false;
+            })()
+            : false;
 
-        if (user.subscriptionTierId) {
+        // Check project.create permission (staff admins bypass this)
+        let hasPermission = isStaffAdmin;
+
+        if (!hasPermission && user.subscriptionTierId) {
             const tier = await ctx.db.get(user.subscriptionTierId);
             if (tier) {
                 hasPermission = hasPermissionBit(tier.basePermissions, PERMISSION_BITS['project.create']);
@@ -107,17 +164,22 @@ export const createProject = mutation({
             throw new Error("Your plan does not include project creation. Please upgrade to Web tier or above.");
         }
 
-        // If creating under an organization, verify membership
-        if (args.organizationId) {
-            const membership = await ctx.db
-                .query("organizationMembers")
-                .withIndex("by_org_user", (q) =>
-                    q.eq("organizationId", args.organizationId!).eq("userId", userId)
-                )
-                .first();
+        // Determine the actual owner ID (staff can override)
+        const actualOwnerId = args.targetOwnerId && isStaffAdmin ? args.targetOwnerId : userId;
 
-            if (!membership || membership.status !== "active") {
-                throw new Error("Not a member of this organization");
+        // If creating under an organization, verify membership (staff bypass)
+        if (args.organizationId) {
+            if (!isStaffAdmin) {
+                const membership = await ctx.db
+                    .query("organizationMembers")
+                    .withIndex("by_org_user", (q) =>
+                        q.eq("organizationId", args.organizationId!).eq("userId", userId)
+                    )
+                    .first();
+
+                if (!membership || membership.status !== "active") {
+                    throw new Error("Not a member of this organization");
+                }
             }
 
             // Create org project
@@ -127,11 +189,11 @@ export const createProject = mutation({
                 organizationId: args.organizationId,
             });
         } else {
-            // Create personal project
+            // Create personal project with the determined owner
             return await ctx.db.insert("projects", {
                 name: args.name,
                 description: args.description,
-                ownerId: userId,
+                ownerId: actualOwnerId,
             });
         }
     },
@@ -139,6 +201,7 @@ export const createProject = mutation({
 
 /**
  * Update a project
+ * Staff admins with system.admin can update any project
  */
 export const updateProject = mutation({
     args: {
@@ -164,22 +227,33 @@ export const updateProject = mutation({
         const project = await ctx.db.get(id);
         if (!project) throw new Error("Project not found");
 
-        // Check ownership
-        if (project.ownerId && project.ownerId !== userId) {
-            throw new Error("Not authorized");
-        }
+        // Check if user is staff admin (bypass all authorization)
+        const user = await ctx.db.get(userId);
+        const isStaffAdmin = user?.subscriptionTierId
+            ? await (async () => {
+                const tier = await ctx.db.get(user.subscriptionTierId!);
+                return tier ? hasPermissionBit(tier.basePermissions, PERMISSION_BITS['system.admin']) : false;
+            })()
+            : false;
 
-        if (project.organizationId) {
-            // TODO: Check org permissions for editing
-            const membership = await ctx.db
-                .query("organizationMembers")
-                .withIndex("by_org_user", (q) =>
-                    q.eq("organizationId", project.organizationId!).eq("userId", userId)
-                )
-                .first();
+        // Staff admins bypass authorization
+        if (!isStaffAdmin) {
+            // Check ownership
+            if (project.ownerId && project.ownerId !== userId) {
+                throw new Error("Not authorized");
+            }
 
-            if (!membership || membership.status !== "active") {
-                throw new Error("Not a member of this organization");
+            if (project.organizationId) {
+                const membership = await ctx.db
+                    .query("organizationMembers")
+                    .withIndex("by_org_user", (q) =>
+                        q.eq("organizationId", project.organizationId!).eq("userId", userId)
+                    )
+                    .first();
+
+                if (!membership || membership.status !== "active") {
+                    throw new Error("Not a member of this organization");
+                }
             }
         }
 
@@ -190,6 +264,7 @@ export const updateProject = mutation({
 
 /**
  * Delete a project
+ * Staff admins with system.admin can delete any project
  */
 export const deleteProject = mutation({
     args: { id: v.id("projects") },
@@ -200,16 +275,28 @@ export const deleteProject = mutation({
         const project = await ctx.db.get(id);
         if (!project) throw new Error("Project not found");
 
-        // Check ownership
-        if (project.ownerId && project.ownerId !== userId) {
-            throw new Error("Not authorized");
-        }
+        // Check if user is staff admin (bypass all authorization)
+        const user = await ctx.db.get(userId);
+        const isStaffAdmin = user?.subscriptionTierId
+            ? await (async () => {
+                const tier = await ctx.db.get(user.subscriptionTierId!);
+                return tier ? hasPermissionBit(tier.basePermissions, PERMISSION_BITS['system.admin']) : false;
+            })()
+            : false;
 
-        if (project.organizationId) {
-            // Only org owner can delete projects for now
-            const org = await ctx.db.get(project.organizationId);
-            if (!org || org.ownerId !== userId) {
-                throw new Error("Only the organization owner can delete projects");
+        // Staff admins bypass authorization
+        if (!isStaffAdmin) {
+            // Check ownership
+            if (project.ownerId && project.ownerId !== userId) {
+                throw new Error("Not authorized");
+            }
+
+            if (project.organizationId) {
+                // Only org owner can delete projects for now
+                const org = await ctx.db.get(project.organizationId);
+                if (!org || org.ownerId !== userId) {
+                    throw new Error("Only the organization owner can delete projects");
+                }
             }
         }
 

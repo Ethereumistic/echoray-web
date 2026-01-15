@@ -38,28 +38,43 @@ import { useAuthStore } from '@/stores/auth-store'
 export default function PersonalProjectsPage() {
     const params = useParams()
     const urlUserId = params.slug as string  // slug param now contains user ID
-    const { profile } = useAuthStore()
+    const { profile, hasPermission } = useAuthStore()
+    const isStaffAdmin = hasPermission('system.admin')
 
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [projectName, setProjectName] = useState('')
     const [projectDescription, setProjectDescription] = useState('')
     const [isCreating, setIsCreating] = useState(false)
 
-    // Fetch personal projects from Convex (no organizationId = personal)
-    const projects = useQuery(api.projects.listMyProjects, {})
+    // Check if viewing another user's projects
+    const isViewingOtherUser = profile?.id && urlUserId !== profile.id
+
+    // Fetch projects - staff admins can view any user's projects
+    const myProjects = useQuery(
+        api.projects.listMyProjects,
+        !isViewingOtherUser ? {} : "skip"
+    )
+    const otherUserProjects = useQuery(
+        api.projects.listProjectsByOwner,
+        isViewingOtherUser && isStaffAdmin ? { ownerId: urlUserId as Id<"users"> } : "skip"
+    )
+
+    // Use the appropriate projects list
+    const projects = isViewingOtherUser && isStaffAdmin ? otherUserProjects : myProjects
+
     const canCreateResult = useQuery(api.projects.canCreateProject)
     const createProject = useMutation(api.projects.createProject)
     const deleteProject = useMutation(api.projects.deleteProject)
 
     const canCreate = canCreateResult?.canCreate ?? false
     const isLoading = projects === undefined
-    const displayName = profile?.displayName || 'Personal'
+    const displayName = isViewingOtherUser ? `User ${urlUserId.slice(0, 8)}...` : (profile?.displayName || 'Personal')
 
     // Check if user is viewing someone else's personal projects route
     const isWrongUser = profile?.id && urlUserId !== profile.id
 
-    // Show warning if viewing wrong user's route
-    if (isWrongUser) {
+    // Show warning if viewing wrong user's route (unless staff admin)
+    if (isWrongUser && !isStaffAdmin) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
                 <div className="rounded-full bg-amber-500/10 p-4">
@@ -87,7 +102,8 @@ export default function PersonalProjectsPage() {
             await createProject({
                 name: projectName.trim(),
                 description: projectDescription.trim() || undefined,
-                // No organizationId = personal project
+                // Staff admins: create project for the target user when viewing their workspace
+                ...(isViewingOtherUser && isStaffAdmin ? { targetOwnerId: urlUserId as Id<"users"> } : {}),
             })
             setProjectName('')
             setProjectDescription('')
