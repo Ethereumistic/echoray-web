@@ -21,10 +21,7 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
 	title: "Echoray | Digital Excellence",
 	description: "Bringing clarity and understanding to the web's complexity.",
-	icons: {
-		icon: "/favicon.ico",
-		apple: "/apple-icon.png",
-	},
+	manifest: "/manifest.json",
 };
 
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";

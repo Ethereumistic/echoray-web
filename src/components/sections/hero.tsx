@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { HeroBackground } from "./hero-background"
 import { HeroLogoMarquee } from "./logo-cloud"
 
@@ -15,15 +14,6 @@ export function Hero() {
             </div>
 
             <div className="container relative z-10 mx-auto flex flex-col items-center text-center px-4 md:px-6">
-                {/* <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-sm font-medium">
-                        Web Development Excellence
-                    </Badge>
-                </motion.div> */}
 
                 <motion.h1
                     className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"

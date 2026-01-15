@@ -41,10 +41,9 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   const isAuthenticated = await convexAuth.isAuthenticated();
 
   if (!isAuthenticated) {
-    // Redirect to login with the intended destination
-    const searchParams = new URLSearchParams();
-    searchParams.set("redirectTo", pathname);
-    return nextjsMiddlewareRedirect(request, `/auth/login?${searchParams.toString()}`);
+    // Redirect to login - only set redirectTo for non-auth routes to prevent encoding loops
+    const redirectUrl = pathname.startsWith('/auth') ? '/auth/login' : `/auth/login?redirectTo=${encodeURIComponent(pathname)}`;
+    return nextjsMiddlewareRedirect(request, redirectUrl);
   }
 });
 

@@ -179,7 +179,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const handleSignOut = async () => {
         await convexSignOut()
         clearAuthStore()
-        window.location.href = "/"
+        router.refresh()
+        router.push('/')
     }
 
     // Get user slug for personal workspace routes
@@ -200,14 +201,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return (
         <Sidebar collapsible="icon" className="border-r border-border" {...props}>
             <SidebarHeader className="h-16 flex items-center p-2">
-                <div className="flex w-full items-center gap-3">
-                    <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shrink-0 shadow-lg shadow-primary/20">
+                <div className="flex w-full mx-auto justify-start items-center gap-3">
+                    <div className="flex  items-center justify-center ">
                         <Image
-                            src="/logo/logo.png"
+                            src="/logo/wifi-dark.png"
                             alt="Logo"
-                            width={24}
-                            height={24}
-                            className="invert brightness-0"
+                            width={40}
+                            height={36}
+                            className="mt-1.5"
                         />
                     </div>
                     {!isCollapsed && (

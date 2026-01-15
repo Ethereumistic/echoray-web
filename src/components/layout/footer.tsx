@@ -9,7 +9,7 @@ export function Footer() {
                 <div className="grid gap-12 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
                     <div className="col-span-1 md:col-span-2">
                         <Link href="/" className="mb-6 flex items-center space-x-2">
-                            <Image src="/logo/logo.png" alt="Echoray Logo" width={32} height={32} />
+                            <Image src="/logo/wifi-dark.png" alt="Echoray Logo" width={32} height={32} />
                             <span className="text-xl font-bold tracking-tight">Echoray</span>
                         </Link>
                         <p className="max-w-xs text-sm text-muted-foreground">

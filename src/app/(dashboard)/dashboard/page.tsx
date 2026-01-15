@@ -1,20 +1,18 @@
 "use client"
 
-import { useRouter } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { useConvexAuth } from 'convex/react'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FolderOpen, FileText, Users, Clock, Loader2 } from 'lucide-react'
 import { api } from '../../../../convex/_generated/api'
-import { useEffect } from 'react'
 
 /**
  * Dashboard overview page.
  * Shows a summary of the user's activity and quick actions.
+ * Note: Authentication is handled by middleware - no client-side redirect needed.
  */
 export default function DashboardPage() {
-    const router = useRouter()
     const { isAuthenticated, isLoading: isAuthLoading } = useConvexAuth()
 
     // Query current user
@@ -22,13 +20,6 @@ export default function DashboardPage() {
         api.users.currentUser,
         isAuthenticated ? {} : "skip"
     )
-
-    // Redirect if not authenticated
-    useEffect(() => {
-        if (!isAuthLoading && !isAuthenticated) {
-            router.push('/auth/login')
-        }
-    }, [isAuthLoading, isAuthenticated, router])
 
     // Stats cards data - in a real app, fetch these from your database
     const stats = [

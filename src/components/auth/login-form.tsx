@@ -36,8 +36,11 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         password,
         flow: "signIn",
       })
-      // Redirect to dashboard or intended destination
-      const redirectTo = searchParams.get('redirectTo') || '/dashboard'
+      // Redirect to dashboard or intended destination (sanitize to prevent loops)
+      const rawRedirect = searchParams.get('redirectTo')
+      const redirectTo = (rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('/auth'))
+        ? decodeURIComponent(rawRedirect)
+        : '/dashboard'
       router.push(redirectTo)
     } catch (error: unknown) {
       console.error('Login error:', error)

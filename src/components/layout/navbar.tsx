@@ -70,7 +70,7 @@ export function Navbar() {
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
             <div className="container mx-auto flex h-16 items-center px-4 md:px-6">
                 <Link href="/" className="mr-6 flex items-center space-x-2">
-                    <Image src="/logo/logo.png" alt="Echoray Logo" width={32} height={32} className="h-8 w-8 object-contain" />
+                    <Image src="/logo/wifi-dark.png" alt="Echoray Logo" width={32} height={32} className="h-8 w-8 object-contain" />
                     <span className="text-xl font-bold tracking-tight">Echoray</span>
                 </Link>
 
@@ -168,7 +168,7 @@ export function Navbar() {
                         <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                             <SheetHeader>
                                 <SheetTitle className="flex items-center gap-2">
-                                    <Image src="/logo/logo.png" alt="Echoray Logo" width={24} height={24} />
+                                    <Image src="/logo/wifi-dark.png" alt="Echoray Logo" width={24} height={24} />
                                     <span>Echoray</span>
                                 </SheetTitle>
                             </SheetHeader>

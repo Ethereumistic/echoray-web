@@ -2,12 +2,12 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Globe, ShoppingCart, Terminal, Check } from "lucide-react"
+import { ShoppingCart, Database, Check, Wifi } from "lucide-react"
 import Link from "next/link"
 
 const services = [
     {
-        icon: <Globe className="h-10 w-10" />,
+        icon: <Wifi className="h-10 w-10" />,
         question: "I need a professional website",
         description: "Fast, beautiful, and built to find you customers. We bridge the gap between your brand and the web.",
         features: ["Business Websites", "Company Portfolios", "Landing Pages", "Personal Branding"],
@@ -25,7 +25,7 @@ const services = [
         variant: "primary" as const
     },
     {
-        icon: <Terminal className="h-10 w-10" />,
+        icon: <Database className="h-10 w-10" />,
         question: "I need to manage my business",
         description: "Custom systems and CRMs that automate your work. We build the backbone of your operations.",
         features: ["Customer Management (CRM)", "Internal Tools", "Inventory Systems", "Business Automation"],
