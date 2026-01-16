@@ -93,7 +93,8 @@ export default defineSchema({
         priceEur: v.number(),
         isCustom: v.boolean(),
         description: v.optional(v.string()),
-        basePermissions: v.number(), // Bitwise base permissions
+        basePermissions: v.number(), // Bitwise: global + personal permissions
+        orgFeatures: v.optional(v.number()), // Bitwise: which o.* features orgs owned by this tier get
         features: v.optional(v.array(v.string())), // Marketing features list
         maxMembers: v.optional(v.number()), // null = unlimited
         maxOrganizations: v.number(),
@@ -104,7 +105,6 @@ export default defineSchema({
     // Organizations
     organizations: defineTable({
         name: v.string(),
-        slug: v.string(),
         description: v.optional(v.string()),
         logoUrl: v.optional(v.string()),
         website: v.optional(v.string()),
@@ -125,7 +125,6 @@ export default defineSchema({
         // Metadata
         metadata: v.optional(v.any()),
     })
-        .index("by_slug", ["slug"])
         .index("by_ownerId", ["ownerId"]),
 
     // Organization Members

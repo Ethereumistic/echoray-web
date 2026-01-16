@@ -45,8 +45,27 @@ export function InviteMemberDialog({ onSuccess }: InviteMemberDialogProps) {
         isOpen && activeOrganization?._id ? { organizationId: activeOrganization._id } : "skip"
     )
 
-    // Filter assignable roles
-    const roles = (rolesQuery || []).filter(r => r.isAssignable)
+    // Filter assignable roles based on permissions
+    const { hasPermission } = useAuthStore()
+    const canManageRoles = hasPermission('o.role.manage')
+    const canInviteAdmin = hasPermission('o.admin.invite')
+    const canInviteEditor = hasPermission('o.editor.invite')
+    const canInviteMember = hasPermission('o.member.invite')
+
+    const roles = (rolesQuery || []).filter(r => {
+        if (!r.isAssignable) return false
+
+        // Root/Admin check: If they can manage roles, they usually see everything
+        if (canManageRoles) return true
+
+        // Otherwise, check specific invite permissions
+        if (r.systemRoleType === 'admin') return canInviteAdmin
+        if (r.systemRoleType === 'moderator') return canInviteEditor
+        if (r.systemRoleType === 'member') return canInviteMember
+
+        // Custom roles: default to member invite permission
+        return canInviteMember
+    })
 
     const inviteMemberMutation = useMutation(api.members.inviteMember)
 

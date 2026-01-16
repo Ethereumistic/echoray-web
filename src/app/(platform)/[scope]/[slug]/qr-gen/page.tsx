@@ -1,7 +1,7 @@
 "use client"
 
 import { DashboardHeader } from '@/components/dashboard/header'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { QrCode, ArrowLeft, Construction } from 'lucide-react'
 import Link from 'next/link'

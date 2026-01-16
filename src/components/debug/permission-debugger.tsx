@@ -1,174 +1,442 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuthStore } from "@/stores/auth-store"
-import { motion, AnimatePresence } from "framer-motion"
-import { Shield, ChevronUp, ChevronDown, CheckCircle2, Lock, Terminal, Sparkles } from "lucide-react"
+import { useQuery, useMutation, useConvexAuth } from "convex/react"
+import { api } from "../../../convex/_generated/api"
 import { cn } from "@/lib/utils"
+import { PERMISSION_BITS } from "@/types/permissions"
 
+/**
+ * Permission Debugger - Staff/Dev tool for debugging permissions
+ * 
+ * Features:
+ * - Full context information (user, org, membership, roles)
+ * - Permission breakdown by scope (Global, Org, App, System)
+ * - Tier switching (staff only)
+ * - Bitwise representation
+ */
 export function PermissionDebugger() {
-    const { profile, activeOrganization, permissions, isAuthenticated, isLoading } = useAuthStore()
-    const [isExpanded, setIsExpanded] = useState(false)
+    const { isAuthenticated } = useConvexAuth()
+    const { profile, activeOrganization, permissions, isLoading, memberProfile } = useAuthStore()
 
-    // Don't show anything during initial load if not authenticated
+    const [isOpen, setIsOpen] = useState(false)
+    const [activeTab, setActiveTab] = useState<"context" | "permissions" | "bits">("context")
+
+    // Always fetch breakdown for toggle button display (not dependent on isOpen)
+    const breakdown = useQuery(
+        api.debug.getPermissionBreakdown,
+        isAuthenticated
+            ? { organizationId: activeOrganization?._id }
+            : "skip"
+    )
+    const allTiers = useQuery(api.debug.getAllTiers, isAuthenticated && isOpen ? {} : "skip")
+    const changeTier = useMutation(api.debug.changeTier)
+
+    // Only show in development or for staff admins
+    const isDev = process.env.NODE_ENV === "development"
+    const isStaff = permissions["system.admin"] === true
+
+    // Set body overflow when panel is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = "hidden"
+        } else {
+            document.body.style.overflow = ""
+        }
+        return () => {
+            document.body.style.overflow = ""
+        }
+    }, [isOpen])
+
     if (isLoading && !isAuthenticated) return null
     if (!isAuthenticated) return null
+    if (!isDev && !isStaff) return null
 
-    // Get tier from active organization if available, otherwise from profile
-    const tier = activeOrganization?.subscriptionTier || profile?.subscriptionTier
-    const tierName = tier?.name || "Free"
+    const handleTierChange = async (tierSlug: string) => {
+        if (!confirm(`Change your tier to "${tierSlug}"? This affects your permissions.`)) return
+        try {
+            await changeTier({ tierSlug })
+        } catch (err) {
+            console.error("Failed to change tier:", err)
+            alert("Failed to change tier. See console for details.")
+        }
+    }
 
-    // Only show the panel in development or if user is system admin
-    const isDev = process.env.NODE_ENV === 'development'
-    const isSystemAdmin = permissions['system.admin'] === true
+    // Group permissions by scope
+    const groupedPermissions = {
+        global: Object.entries(permissions).filter(([code]) =>
+            !code.startsWith("o.") && !code.startsWith("app.") && !code.startsWith("system.")
+        ),
+        org: Object.entries(permissions).filter(([code]) => code.startsWith("o.")),
+        app: Object.entries(permissions).filter(([code]) => code.startsWith("app.")),
+        system: Object.entries(permissions).filter(([code]) => code.startsWith("system.")),
+    }
 
-    // For debugging, we'll keep it visible if isDev is true
-    if (!isDev && !isSystemAdmin) return null
+    // Get tier display name (shortened) - use profile from auth-store as fallback
+    const getTierDisplay = () => {
+        // Try breakdown first (more accurate), fall back to profile from auth-store
+        const tierName = breakdown?.userTier?.name || profile?.subscriptionTier?.name
+        if (!tierName) return "..."
+        if (tierName === "Staff Admin") return "S. Admin"
+        return tierName
+    }
+
+    // Get org role display - find highest role from memberProfile
+    const getOrgRoleDisplay = () => {
+        if (!activeOrganization) return "—"
+        if (breakdown?.organizationContext?.isOwner) return "Owner"
+
+        // Use memberProfile roles from auth-store as fallback
+        const roles = breakdown?.organizationContext?.roles || memberProfile?.roles
+        if (!roles || roles.length === 0) return "Member"
+
+        // Return highest role (first one, assuming sorted by position)
+        const firstRole = roles[0]
+        return firstRole?.name || "Member"
+    }
+
+    // Get scope display - P for Personal, O for Organization
+    const getScopeDisplay = () => {
+        return activeOrganization ? "O" : "P"
+    }
 
     return (
-        <div className="fixed bottom-6 right-6 z-9999 flex flex-col items-end gap-3 pointer-events-none">
-            {/* Tier Indicator (Always Visible) */}
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                onClick={() => setIsExpanded(!isExpanded)}
+        <>
+            {/* Toggle Button - Format: [tier] | [org role] | [scope] */}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "pointer-events-auto flex items-center gap-3 px-4 py-2.5 rounded-2xl cursor-pointer transition-all duration-500",
-                    "bg-black/40 backdrop-blur-xl border border-white/10 hover:border-blue-500/50 shadow-[0_8px_32px_rgba(0,0,0,0.5)] group",
-                    isExpanded && "border-blue-500/50 bg-blue-500/10 scale-105"
+                    "fixed bottom-4 right-4 z-9999 px-3 py-2 rounded-lg text-xs font-mono transition-colors",
+                    "bg-zinc-900 border border-zinc-700 text-zinc-300 hover:bg-zinc-800",
+                    isOpen && "bg-blue-900 border-blue-600 text-blue-200"
                 )}
             >
-                <div className="relative">
-                    <div className={cn(
-                        "absolute -inset-1 rounded-full blur-sm opacity-0 group-hover:opacity-40 transition-opacity duration-500",
-                        isExpanded ? "bg-blue-400 opacity-40" : "bg-blue-400"
-                    )} />
-                    <Shield className={cn(
-                        "w-5 h-5 relative z-10 transition-all duration-500",
-                        isExpanded ? "text-blue-400 rotate-12" : "text-gray-400 group-hover:text-blue-300"
-                    )} />
-                </div>
+                🔐 {getTierDisplay()} | {getOrgRoleDisplay()} | {getScopeDisplay()}
+            </button>
 
-                <div className="flex flex-col min-w-[80px]">
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-gray-500 font-mono leading-none tracking-tight uppercase">Tier</span>
-                        <Sparkles className="w-2.5 h-2.5 text-blue-500/50" />
-                    </div>
-                    <span className="text-xs font-bold text-white uppercase tracking-widest mt-0.5">{tierName}</span>
-                </div>
+            {/* Panel */}
+            {isOpen && (
+                <div className="fixed inset-0 z-9998 flex items-end justify-end p-4">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/50"
+                        onClick={() => setIsOpen(false)}
+                    />
 
-                <div className="h-4 w-px bg-white/10 mx-1" />
-
-                <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
-                    {isExpanded ?
-                        <ChevronDown className="w-3.5 h-3.5 text-gray-400" /> :
-                        <ChevronUp className="w-3.5 h-3.5 text-gray-500 group-hover:text-gray-300" />
-                    }
-                </div>
-            </motion.div>
-
-            {/* Expanded Permissions List */}
-            <AnimatePresence>
-                {isExpanded && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95, filter: "blur(10px)" }}
-                        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95, filter: "blur(10px)" }}
-                        transition={{ type: "spring", damping: 25, stiffness: 350 }}
-                        className="pointer-events-auto w-80 max-h-[70vh] flex flex-col gap-5 p-5 rounded-4xl bg-black/60 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden"
-                    >
+                    {/* Panel Content */}
+                    <div className="relative w-full max-w-md h-[80vh] bg-zinc-950 border border-zinc-800 rounded-lg shadow-2xl flex flex-col overflow-hidden">
                         {/* Header */}
-                        <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-xl bg-blue-500/20 flex items-center justify-center border border-blue-500/20">
-                                    <Terminal className="w-4 h-4 text-blue-400" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <h3 className="text-xs font-bold text-white tracking-wide uppercase">Auth Debugger</h3>
-                                    <span className="text-[10px] text-blue-400/70 font-mono tracking-tighter">BITWISE_READY_V1</span>
-                                </div>
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900">
+                            <div>
+                                <h2 className="text-sm font-bold text-white">Permission Debugger</h2>
+                                <p className="text-xs text-zinc-500 font-mono">
+                                    {isStaff ? "STAFF_ADMIN" : "DEV_MODE"} • v1.1
+                                </p>
                             </div>
-                            <div className="animate-pulse w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="text-zinc-500 hover:text-white text-lg"
+                            >
+                                ×
+                            </button>
                         </div>
 
-                        <div className="flex flex-col gap-5 overflow-y-auto pr-2 custom-scrollbar scroll-smooth">
-                            {/* Context Section */}
-                            <div className="space-y-2.5">
-                                <p className="text-[10px] uppercase text-gray-500 font-black tracking-[0.2em] px-1">Context</p>
-                                <div className="p-4 rounded-2xl bg-white/3 border border-white/5 hover:border-white/10 transition-colors group/context">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                        <p className="text-xs text-blue-50 font-semibold truncate">
-                                            {activeOrganization?.name || "Personal Context"}
-                                        </p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[9px] text-gray-500 font-mono flex items-center justify-between">
-                                            <span>ORG_ID</span>
-                                            <span className="text-gray-400">{activeOrganization?._id ? String(activeOrganization?._id).substring(0, 16) + "..." : "---"}</span>
-                                        </p>
-                                        <p className="text-[9px] text-gray-500 font-mono flex items-center justify-between">
-                                            <span>USER_ID</span>
-                                            <span className="text-gray-400">{String(profile?.id).substring(0, 16)}...</span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Permissions Section */}
-                            <div className="space-y-2.5">
-                                <div className="flex items-center justify-between px-1">
-                                    <p className="text-[10px] uppercase text-gray-500 font-black tracking-[0.2em]">Permissions</p>
-                                    <span className="text-[9px] font-mono text-gray-600">
-                                        {Object.values(permissions).filter(Boolean).length} ACTIVE
-                                    </span>
-                                </div>
-                                <div className="grid grid-cols-1 gap-1.5">
-                                    {Object.entries(permissions).length > 0 ? (
-                                        Object.entries(permissions).sort((a, b) => b[1] ? 1 : -1).map(([code, granted]) => (
-                                            <motion.div
-                                                key={code}
-                                                layout
-                                                className={cn(
-                                                    "flex items-center justify-between px-4 py-2.5 rounded-xl border transition-all duration-300 group/perm",
-                                                    granted
-                                                        ? "bg-emerald-500/3 border-emerald-500/20 text-emerald-100 hover:border-emerald-500/40"
-                                                        : "bg-white/2 border-white/5 text-gray-500 opacity-60 grayscale"
-                                                )}
-                                            >
-                                                <span className="text-[11px] font-mono tracking-tight">{code}</span>
-                                                <div className={cn(
-                                                    "w-5 h-5 rounded-lg flex items-center justify-center transition-colors",
-                                                    granted ? "bg-emerald-500/20 text-emerald-400" : "bg-white/5 text-gray-600"
-                                                )}>
-                                                    {granted ? <CheckCircle2 className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                                                </div>
-                                            </motion.div>
-                                        ))
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-dashed border-white/10 bg-white/2">
-                                            <Lock className="w-5 h-5 text-gray-600 mb-2" />
-                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium">No permissions found</p>
-                                        </div>
+                        {/* Tabs */}
+                        <div className="flex border-b border-zinc-800 bg-zinc-900/50">
+                            {(["context", "permissions", "bits"] as const).map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={cn(
+                                        "flex-1 px-3 py-2 text-xs font-medium uppercase tracking-wide transition-colors",
+                                        activeTab === tab
+                                            ? "text-blue-400 border-b-2 border-blue-400 bg-blue-500/5"
+                                            : "text-zinc-500 hover:text-zinc-300"
                                     )}
-                                </div>
-                            </div>
+                                >
+                                    {tab}
+                                </button>
+                            ))}
                         </div>
 
-                        {/* Footer */}
-                        <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                            <div className="flex gap-3 text-[9px] font-mono text-gray-600 uppercase tracking-tighter">
-                                <span>ENV: {process.env.NODE_ENV}</span>
-                                <span>VER: 1.0.4</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[9px] font-mono text-gray-500">
-                                <span className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
-                                LIVE_SYNC
-                            </div>
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {activeTab === "context" && (
+                                <ContextTab
+                                    breakdown={breakdown}
+                                    profile={profile}
+                                    activeOrganization={activeOrganization}
+                                    allTiers={allTiers}
+                                    isStaff={isStaff}
+                                    onTierChange={handleTierChange}
+                                />
+                            )}
+
+                            {activeTab === "permissions" && (
+                                <PermissionsTab groupedPermissions={groupedPermissions} />
+                            )}
+
+                            {activeTab === "bits" && (
+                                <BitsTab permissions={permissions} />
+                            )}
                         </div>
-                    </motion.div>
+                    </div>
+                </div>
+            )}
+        </>
+    )
+}
+
+// Type definitions for the breakdown and tiers data
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type BreakdownData = any;
+
+type TierData = {
+    _id: string;
+    name: string;
+    slug: string;
+    basePermissions: number;
+    orgFeatures?: number;
+}[] | undefined;
+
+interface ContextTabProps {
+    breakdown: BreakdownData;
+    profile: { email?: string; subscriptionTier?: { name: string; slug: string } } | null;
+    activeOrganization: { _id: string; name: string } | null;
+    allTiers: TierData;
+    isStaff: boolean;
+    onTierChange: (slug: string) => void;
+}
+
+// Context Tab - Full user/org/membership info
+function ContextTab({
+    breakdown,
+    profile,
+    activeOrganization,
+    allTiers,
+    isStaff,
+    onTierChange,
+}: ContextTabProps) {
+    // Handle loading state
+    if (breakdown === undefined) {
+        return <p className="text-zinc-500 text-xs">Loading context...</p>
+    }
+
+    // Handle null (permission denied or error)
+    if (breakdown === null) {
+        return (
+            <div className="space-y-4">
+                <Section title="User">
+                    <Row label="Email" value={profile?.email || "—"} />
+                    <Row label="Tier" value={profile?.subscriptionTier?.name || "Unknown"} />
+                    <p className="text-xs text-zinc-500 mt-2 italic">
+                        Full breakdown unavailable. Ensure you have debug permissions.
+                    </p>
+                </Section>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-4">
+            {/* User Info */}
+            <Section title="User">
+                <Row label="ID" value={String(breakdown.userId).slice(0, 20) + "..."} />
+                <Row label="Email" value={breakdown.userEmail || "—"} />
+                <Row
+                    label="Tier"
+                    value={breakdown.userTier?.name || "None"}
+                    highlight={breakdown.isStaffAdmin ? "staff" : undefined}
+                />
+                <Row label="Slug" value={breakdown.userTier?.slug || "—"} mono />
+                <Row label="Base Perms" value={breakdown.userTier?.basePermissions?.toString() || "0"} mono />
+                <Row label="Org Features" value={breakdown.userTier?.orgFeatures?.toString() || "0"} mono />
+                <Row label="Max Orgs" value={breakdown.userTier?.maxOrganizations?.toString() || "0"} />
+            </Section>
+
+            {/* Tier Switcher (Staff Only) */}
+            {isStaff && allTiers && allTiers.length > 0 && (
+                <Section title="Tier Switcher (Staff Only)">
+                    <div className="flex flex-wrap gap-1">
+                        {allTiers.map((tier) => (
+                            <button
+                                key={tier._id}
+                                onClick={() => onTierChange(tier.slug)}
+                                className={cn(
+                                    "px-2 py-1 text-xs rounded font-mono transition-colors",
+                                    tier.slug === breakdown.userTier?.slug
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                                )}
+                            >
+                                {tier.slug}
+                            </button>
+                        ))}
+                    </div>
+                    <p className="text-[10px] text-red-400 mt-2">
+                        ⚠️ Changing away from staff_admin requires manual DB restore!
+                    </p>
+                </Section>
+            )}
+
+            {/* Organization Context */}
+            {activeOrganization ? (
+                <Section title="Organization Context">
+                    <Row label="Org ID" value={String(activeOrganization._id).slice(0, 20) + "..."} />
+                    <Row label="Name" value={breakdown.organizationContext?.orgName || "—"} />
+                    <Row
+                        label="You Are"
+                        value={breakdown.organizationContext?.isOwner ? "OWNER" : "MEMBER"}
+                        highlight={breakdown.organizationContext?.isOwner ? "owner" : undefined}
+                    />
+                    <Row label="Owner Email" value={breakdown.organizationContext?.ownerEmail || "—"} />
+                    <Row label="Owner Tier" value={breakdown.organizationContext?.ownerTier?.name || "—"} />
+                    <Row
+                        label="Org Features Cap"
+                        value={breakdown.organizationContext?.ownerTier?.orgFeatures?.toString() || "0"}
+                        mono
+                    />
+
+                    {/* Membership */}
+                    {breakdown.organizationContext?.membership && (
+                        <>
+                            <div className="h-px bg-zinc-800 my-2" />
+                            <Row label="Status" value={breakdown.organizationContext.membership.status} />
+                            <Row
+                                label="Computed"
+                                value={breakdown.organizationContext.membership.computedPermissions.toString()}
+                                mono
+                            />
+                        </>
+                    )}
+
+                    {/* Roles */}
+                    {breakdown.organizationContext?.roles && breakdown.organizationContext.roles.length > 0 && (
+                        <>
+                            <div className="h-px bg-zinc-800 my-2" />
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Roles</p>
+                            {breakdown.organizationContext.roles.map((role: { name: string; permissions: number; color?: string }, i: number) => (
+                                <div key={i} className="flex items-center justify-between text-xs">
+                                    <span
+                                        className="font-medium"
+                                        style={{ color: role.color || "#a1a1aa" }}
+                                    >
+                                        {role.name}
+                                    </span>
+                                    <span className="text-zinc-600 font-mono">{role.permissions}</span>
+                                </div>
+                            ))}
+                        </>
+                    )}
+                </Section>
+            ) : (
+                <Section title="Organization Context">
+                    <p className="text-xs text-zinc-500 italic">No organization selected (personal context)</p>
+                </Section>
+            )}
+        </div>
+    )
+}
+
+// Permissions Tab - Grouped by scope
+function PermissionsTab({
+    groupedPermissions,
+}: {
+    groupedPermissions: Record<string, [string, boolean][]>
+}) {
+    return (
+        <div className="space-y-4">
+            {Object.entries(groupedPermissions).map(([scope, perms]) => (
+                <Section key={scope} title={`${scope.toUpperCase()} (${perms.filter(([, v]) => v).length}/${perms.length})`}>
+                    <div className="space-y-0.5">
+                        {perms.length === 0 ? (
+                            <p className="text-xs text-zinc-600 italic">No permissions in this scope</p>
+                        ) : (
+                            perms.sort((a, b) => (b[1] ? 1 : 0) - (a[1] ? 1 : 0)).map(([code, granted]) => (
+                                <div
+                                    key={code}
+                                    className={cn(
+                                        "flex items-center justify-between px-2 py-1 rounded text-xs",
+                                        granted ? "bg-green-900/20 text-green-400" : "bg-zinc-900 text-zinc-600"
+                                    )}
+                                >
+                                    <span className="font-mono">{code}</span>
+                                    <span>{granted ? "✓" : "✗"}</span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </Section>
+            ))}
+        </div>
+    )
+}
+
+// Bits Tab - Raw bitwise representation
+function BitsTab({ permissions }: { permissions: Record<string, boolean> }) {
+    return (
+        <Section title="Bitwise Representation">
+            <div className="space-y-0.5 max-h-[50vh] overflow-y-auto">
+                {Object.entries(PERMISSION_BITS)
+                    .sort((a, b) => a[1] - b[1])
+                    .map(([code, bit]) => {
+                        const granted = permissions[code] === true
+                        return (
+                            <div
+                                key={code}
+                                className={cn(
+                                    "flex items-center justify-between px-2 py-1 rounded text-xs font-mono",
+                                    granted ? "bg-blue-900/20 text-blue-300" : "bg-zinc-900/50 text-zinc-600"
+                                )}
+                            >
+                                <span className="text-zinc-500 w-8">{bit}</span>
+                                <span className="flex-1 truncate px-2">{code}</span>
+                                <span className={granted ? "text-green-400" : "text-zinc-700"}>
+                                    {granted ? "1" : "0"}
+                                </span>
+                            </div>
+                        )
+                    })}
+            </div>
+        </Section>
+    )
+}
+
+// Helper components
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-3">
+            <h3 className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-2">{title}</h3>
+            {children}
+        </div>
+    )
+}
+
+function Row({
+    label,
+    value,
+    mono,
+    highlight,
+}: {
+    label: string
+    value: string
+    mono?: boolean
+    highlight?: "staff" | "owner"
+}) {
+    return (
+        <div className="flex items-center justify-between text-xs py-0.5">
+            <span className="text-zinc-500">{label}</span>
+            <span
+                className={cn(
+                    mono && "font-mono",
+                    highlight === "staff" && "text-red-400 font-bold",
+                    highlight === "owner" && "text-yellow-400 font-bold",
+                    !highlight && "text-zinc-300"
                 )}
-            </AnimatePresence>
+            >
+                {value}
+            </span>
         </div>
     )
 }

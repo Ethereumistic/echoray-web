@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { MoreHorizontal, Shield, UserMinus, ShieldAlert, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { useAuthStore } from "@/stores/auth-store"
 import { PermissionGuard } from "./permission-guard"
 import { InviteMemberDialog } from "./invite-member-dialog"
 import { MemberRolesDialog } from "./member-roles-dialog"
@@ -35,6 +36,7 @@ import { api } from "../../../convex/_generated/api"
  * @param organizationId - The ID of the organization to display members for
  */
 export function MembersList({ organizationId }: { organizationId: string }) {
+    const { activeOrganization, profile } = useAuthStore()
     // Query members with Convex
     const members = useQuery(
         api.members.listMembers,
@@ -53,7 +55,14 @@ export function MembersList({ organizationId }: { organizationId: string }) {
             })
             toast.success("Member removed")
         } catch (err) {
-            const message = err instanceof Error ? err.message : "Failed to remove member"
+            console.error("Error removing member:", err)
+            let message = err instanceof Error ? err.message : "Failed to remove member"
+
+            // Clean up Convex internal error messages
+            if (message.includes("Uncaught Error: ")) {
+                message = message.split("Uncaught Error: ")[1].split("\n")[0]
+            }
+
             toast.error(message)
         }
     }
@@ -75,7 +84,7 @@ export function MembersList({ organizationId }: { organizationId: string }) {
                         Manage your team members and their roles.
                     </p>
                 </div>
-                <PermissionGuard permission="members.invite">
+                <PermissionGuard permission="o.member.invite">
                     <InviteMemberDialog onSuccess={refetch} />
                 </PermissionGuard>
             </div>
@@ -156,31 +165,57 @@ export function MembersList({ organizationId }: { organizationId: string }) {
                                             <DropdownMenuContent align="end" className="w-48">
                                                 <DropdownMenuLabel>Manage Member</DropdownMenuLabel>
                                                 <DropdownMenuSeparator />
-                                                <PermissionGuard permission="roles.manage">
-                                                    <MemberRolesDialog
-                                                        member={member}
-                                                        onSuccess={refetch}
-                                                        trigger={
-                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="gap-2">
-                                                                <Shield className="h-4 w-4" />
-                                                                Change Roles
+                                                <PermissionGuard permission="o.role.manage">
+                                                    {((member.userId !== profile?.id) || activeOrganization?.ownerId === profile?.id) && (
+                                                        <>
+                                                            {/* Prevent Admins from editing other Admins or Owner */}
+                                                            {(activeOrganization?.ownerId === profile?.id ||
+                                                                !member.roles?.some(r => r?.isSystemRole && r?.systemRoleType === 'admin')) && (
+                                                                    <MemberRolesDialog
+                                                                        member={member}
+                                                                        onSuccess={refetch}
+                                                                        trigger={
+                                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="gap-2">
+                                                                                <Shield className="h-4 w-4" />
+                                                                                Change Roles
+                                                                            </DropdownMenuItem>
+                                                                        }
+                                                                    />
+                                                                )}
+                                                            <DropdownMenuItem className="gap-2">
+                                                                <ShieldAlert className="h-4 w-4" />
+                                                                Add Override
                                                             </DropdownMenuItem>
-                                                        }
-                                                    />
-                                                    <DropdownMenuItem className="gap-2">
-                                                        <ShieldAlert className="h-4 w-4" />
-                                                        Add Override
-                                                    </DropdownMenuItem>
+                                                        </>
+                                                    )}
                                                 </PermissionGuard>
-                                                <PermissionGuard permission="members.remove">
+                                                <PermissionGuard permission="o.member.remove">
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        className="gap-2 text-destructive focus:bg-destructive focus:text-destructive-foreground"
-                                                        onClick={() => handleRemoveMember(member.userId)}
-                                                    >
-                                                        <UserMinus className="h-4 w-4" />
-                                                        Remove from Team
-                                                    </DropdownMenuItem>
+                                                    {member.userId === profile?.id ? (
+                                                        <DropdownMenuItem
+                                                            className="gap-2 opacity-50 cursor-not-allowed text-muted-foreground"
+                                                            onClick={() => toast.info("Use the Leave Organization button in settings to leave.")}
+                                                        >
+                                                            <UserMinus className="h-4 w-4" />
+                                                            Remove from Team
+                                                        </DropdownMenuItem>
+                                                    ) : member.userId === activeOrganization?.ownerId ? (
+                                                        <DropdownMenuItem
+                                                            className="gap-2 opacity-50 cursor-not-allowed text-muted-foreground"
+                                                            onClick={() => toast.info("The owner cannot be removed. Transfer ownership first.")}
+                                                        >
+                                                            <UserMinus className="h-4 w-4" />
+                                                            Remove from Team
+                                                        </DropdownMenuItem>
+                                                    ) : (
+                                                        <DropdownMenuItem
+                                                            className="gap-2 text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                                                            onClick={() => handleRemoveMember(member.userId)}
+                                                        >
+                                                            <UserMinus className="h-4 w-4" />
+                                                            Remove from Team
+                                                        </DropdownMenuItem>
+                                                    )}
                                                 </PermissionGuard>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

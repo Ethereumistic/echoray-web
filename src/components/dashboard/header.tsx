@@ -4,6 +4,7 @@ import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
+import { OrgInviteNotifications } from './org-invite-notifications'
 
 interface DashboardHeaderProps {
     title?: string
@@ -38,6 +39,11 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
                         />
                     </div>
                 )}
+            </div>
+
+            {/* Right side - Notifications & User */}
+            <div className="flex items-center gap-2">
+                <OrgInviteNotifications />
             </div>
         </header>
     )

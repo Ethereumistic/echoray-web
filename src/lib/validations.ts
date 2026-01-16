@@ -8,7 +8,6 @@ import { z } from "zod"
 // Schema for organization creation/update
 export const organizationSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters").max(50),
-    slug: z.string().min(2, "Slug must be at least 2 characters").max(30).regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
     description: z.string().max(500).optional().nullable(),
 })
 

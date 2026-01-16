@@ -13,13 +13,15 @@ A multi-tenant SaaS permission system featuring:
 - **Member Overrides**: Precise permission grants or denies per member.
 
 ### Permission Resolution Order (Top-Down)
-1. **Explicit DENY override** → ❌ DENY
-2. **Explicit ALLOW override** → ✅ ALLOW  
-3. **Organization purchased addons** → ✅ ALLOW
-4. **Member's combined roles** → ✅ ALLOW if any role has the bit set
-5. **Organization subscription tier** → ✅ ALLOW if tier includes the bit
-6. **System role privileges** (Owner/Admin) → ✅ ALLOW for management tasks
-7. **Default** → ❌ DENY
+1. **Staff Admin tier** → ✅ GODMODE (all bits including system bits 50+)
+2. **Organization Owner** → ✅ All PUBLIC bits (0-49) for full org control
+3. **Explicit DENY override** → ❌ DENY
+4. **Explicit ALLOW override** → ✅ ALLOW  
+5. **Organization purchased addons** → ✅ ALLOW
+6. **Member's combined roles** → ✅ ALLOW if any role has the bit set
+7. **Organization subscription tier** → ✅ ALLOW if tier includes the bit
+8. **System role privileges** (Owner/Admin) → ✅ ALLOW for management tasks
+9. **Default** → ❌ DENY
 
 ---
 

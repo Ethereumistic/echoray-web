@@ -77,43 +77,6 @@ export const getOrganization = query({
     },
 });
 
-/**
- * Get an organization by slug
- */
-export const getOrganizationBySlug = query({
-    args: { slug: v.string() },
-    handler: async (ctx, { slug }) => {
-        const userId = await auth.getUserId(ctx);
-        if (!userId) return null;
-
-        const org = await ctx.db
-            .query("organizations")
-            .withIndex("by_slug", (q) => q.eq("slug", slug))
-            .first();
-
-        if (!org) return null;
-
-        // Check if user is a member
-        const membership = await ctx.db
-            .query("organizationMembers")
-            .withIndex("by_org_user", (q) =>
-                q.eq("organizationId", org._id).eq("userId", userId)
-            )
-            .first();
-
-        if (!membership || membership.status !== "active") {
-            return null;
-        }
-
-        const owner = await ctx.db.get(org.ownerId);
-        const tier = owner?.subscriptionTierId ? await ctx.db.get(owner.subscriptionTierId) : null;
-
-        return {
-            ...org,
-            subscriptionTier: tier,
-        };
-    },
-});
 
 /**
  * Create a new organization
@@ -121,22 +84,11 @@ export const getOrganizationBySlug = query({
 export const createOrganization = mutation({
     args: {
         name: v.string(),
-        slug: v.string(),
         description: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const userId = await auth.getUserId(ctx);
         if (!userId) throw new Error("Not authenticated");
-
-        // Check if slug is already taken
-        const existingOrg = await ctx.db
-            .query("organizations")
-            .withIndex("by_slug", (q) => q.eq("slug", args.slug))
-            .first();
-
-        if (existingOrg) {
-            throw new Error("Organization slug already exists");
-        }
 
         // 1. Get user's subscription tier
         const user = await ctx.db.get(userId);
@@ -168,7 +120,6 @@ export const createOrganization = mutation({
         // 3. Create the organization (now without its own tier ID)
         const orgId = await ctx.db.insert("organizations", {
             name: args.name,
-            slug: args.slug,
             description: args.description,
             ownerId: userId,
             customPermissions: 0,
@@ -187,19 +138,19 @@ export const createOrganization = mutation({
             computedPermissions: 0,
         });
 
-        // Get the owner role
-        const ownerRole = await ctx.db
+        // Get the admin role
+        const adminRole = await ctx.db
             .query("roles")
             .withIndex("by_org_systemRole", (q) =>
                 q.eq("organizationId", orgId).eq("isSystemRole", true)
             )
-            .filter((q) => q.eq(q.field("systemRoleType"), "owner"))
+            .filter((q) => q.eq(q.field("systemRoleType"), "admin"))
             .first();
 
-        if (ownerRole) {
+        if (adminRole) {
             await ctx.db.insert("memberRoles", {
                 memberId,
-                roleId: ownerRole._id,
+                roleId: adminRole._id,
                 assignedAt: Date.now(),
             });
         }
@@ -215,7 +166,6 @@ export const updateOrganization = mutation({
     args: {
         id: v.id("organizations"),
         name: v.optional(v.string()),
-        slug: v.optional(v.string()),
         description: v.optional(v.string()),
         logoUrl: v.optional(v.string()),
         website: v.optional(v.string()),
@@ -233,17 +183,6 @@ export const updateOrganization = mutation({
             throw new Error("Only the owner can update organization settings");
         }
 
-        // If slug is being changed, check it's not taken
-        if (updates.slug && updates.slug !== org.slug) {
-            const existingOrg = await ctx.db
-                .query("organizations")
-                .withIndex("by_slug", (q) => q.eq("slug", updates.slug!))
-                .first();
-
-            if (existingOrg) {
-                throw new Error("Organization slug already exists");
-            }
-        }
 
         await ctx.db.patch(id, updates);
         return { success: true };
@@ -370,59 +309,160 @@ export const deleteOrganization = mutation({
 });
 
 /**
- * Helper: Create system roles for a new organization
+ * Transfer ownership of an organization to another member
  */
-async function createSystemRoles(ctx: any, orgId: any) {
-    // Owner role (all permissions)
-    await ctx.db.insert("roles", {
-        organizationId: orgId,
-        name: "Owner",
-        description: "Organization owner with full control",
-        color: "#e74c3c",
-        permissions: Number.MAX_SAFE_INTEGER, // All bits set
-        position: 0,
-        isSystemRole: true,
-        systemRoleType: "owner",
-        isAssignable: false,
-        isDefault: false,
-    });
+export const transferOwnership = mutation({
+    args: {
+        organizationId: v.id("organizations"),
+        newOwnerId: v.id("users"),
+    },
+    handler: async (ctx, { organizationId, newOwnerId }) => {
+        const userId = await auth.getUserId(ctx);
+        if (!userId) throw new Error("Not authenticated");
 
-    // Admin role
+        const org = await ctx.db.get(organizationId);
+        if (!org) throw new Error("Organization not found");
+
+        // Verify current user is owner
+        if (org.ownerId !== userId) {
+            throw new Error("Only the organization owner can transfer ownership");
+        }
+
+        if (userId === newOwnerId) {
+            throw new Error("You are already the owner");
+        }
+
+        // Verify new owner is a member
+        const newOwnerMembership = await ctx.db
+            .query("organizationMembers")
+            .withIndex("by_org_user", (q) =>
+                q.eq("organizationId", organizationId).eq("userId", newOwnerId)
+            )
+            .first();
+
+        if (!newOwnerMembership || newOwnerMembership.status !== "active") {
+            throw new Error("Target user must be an active member of the organization");
+        }
+
+        // Update organization owner
+        await ctx.db.patch(organizationId, { ownerId: newOwnerId });
+
+        // Assign Admin role to the NEW owner (clearing their old roles if any)
+        const adminRole = await ctx.db
+            .query("roles")
+            .withIndex("by_org_systemRole", (q) =>
+                q.eq("organizationId", organizationId).eq("isSystemRole", true)
+            )
+            .filter((q) => q.eq(q.field("systemRoleType"), "admin"))
+            .first();
+
+        if (adminRole) {
+            // Updated New Owner Roles
+            const existingNewOwnerRoles = await ctx.db
+                .query("memberRoles")
+                .withIndex("by_memberId", (q) => q.eq("memberId", newOwnerMembership._id))
+                .collect();
+            for (const r of existingNewOwnerRoles) await ctx.db.delete(r._id);
+
+            await ctx.db.insert("memberRoles", {
+                memberId: newOwnerMembership._id,
+                roleId: adminRole._id,
+                assignedAt: Date.now(),
+                assignedBy: userId,
+            });
+
+            // Update Old Owner Roles
+            const oldOwnerMembership = await ctx.db
+                .query("organizationMembers")
+                .withIndex("by_org_user", (q) =>
+                    q.eq("organizationId", organizationId).eq("userId", userId)
+                )
+                .first();
+
+            if (oldOwnerMembership) {
+                const existingOldOwnerRoles = await ctx.db
+                    .query("memberRoles")
+                    .withIndex("by_memberId", (q) => q.eq("memberId", oldOwnerMembership._id))
+                    .collect();
+                for (const r of existingOldOwnerRoles) await ctx.db.delete(r._id);
+
+                await ctx.db.insert("memberRoles", {
+                    memberId: oldOwnerMembership._id,
+                    roleId: adminRole._id,
+                    assignedAt: Date.now(),
+                    assignedBy: userId,
+                });
+
+                // Clear computed permissions
+                await ctx.db.patch(oldOwnerMembership._id, {
+                    permissionsLastComputedAt: undefined,
+                    computedPermissions: 0,
+                });
+            }
+        }
+
+        // Also clear computed permissions for the NEW owner
+        await ctx.db.patch(newOwnerMembership._id, {
+            permissionsLastComputedAt: undefined,
+            computedPermissions: 0,
+        });
+
+        return { success: true };
+    },
+});
+
+async function createSystemRoles(ctx: any, orgId: any) {
+    // Permission bit positions (from PERMISSION_BITS):
+    // 20: o.project.view, 21: o.project.create, 22: o.project.edit, 23: o.project.delete
+    // 24: o.member.view, 25: o.member.invite, 26: o.editor.invite, 27: o.admin.invite
+    // 28: o.member.remove, 29: o.role.manage, 30: o.settings.edit
+
+    // Helper to build bitmask correctly
+    const buildMask = (bits: number[]) => {
+        let mask = 0n;
+        for (const bit of bits) mask |= (1n << BigInt(bit));
+        return Number(mask);
+    };
+
+    // Admin role: All org permissions
+    const adminPermissions = buildMask([20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]);
     await ctx.db.insert("roles", {
         organizationId: orgId,
         name: "Admin",
-        description: "Administrator with most privileges",
-        color: "#3498db",
-        permissions: 524287, // Bits 0-18
-        position: 1,
+        description: "Full org access (except owner-only settings)",
+        color: "#f59e0b", // Amber
+        permissions: adminPermissions,
+        position: 0,
         isSystemRole: true,
         systemRoleType: "admin",
         isAssignable: true,
         isDefault: false,
     });
 
-    // Moderator role
+    // Editor role: Project management + invite as editor/member
+    const editorPermissions = buildMask([20, 21, 22, 24, 25, 26]);
     await ctx.db.insert("roles", {
         organizationId: orgId,
-        name: "Moderator",
-        description: "Can manage members and content",
-        color: "#2ecc71",
-        permissions: 8191, // Bits 0-12
-        position: 2,
+        name: "Editor",
+        description: "Can manage projects and invite new members",
+        color: "#3b82f6", // Blue
+        permissions: editorPermissions,
+        position: 1,
         isSystemRole: true,
-        systemRoleType: "moderator",
+        systemRoleType: "moderator", // Backend uses 'moderator' for Editor system role
         isAssignable: true,
         isDefault: false,
     });
 
-    // Member role (default)
+    // Member role: View-only access
+    const memberPermissions = buildMask([20, 24]);
     await ctx.db.insert("roles", {
         organizationId: orgId,
         name: "Member",
-        description: "Default member role",
-        color: "#95a5a6",
-        permissions: 7, // Bits 0-2 (basic permissions)
-        position: 3,
+        description: "Standard view-only access",
+        color: "#94a3b8", // Slate
+        permissions: memberPermissions,
+        position: 2,
         isSystemRole: true,
         systemRoleType: "member",
         isAssignable: true,

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
+import type { Id } from "../../../convex/_generated/dataModel"
 import { useAuthStore } from "@/stores/auth-store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
-import { Loader2, Save, AlertTriangle, Trash2 } from "lucide-react"
+import { Loader2, Save, AlertTriangle, Trash2, LogOut } from "lucide-react"
 import { organizationSchema, type OrganizationFormValues } from "@/lib/validations"
 import { useRouter } from "next/navigation"
 import {
@@ -30,12 +31,14 @@ import {
 export function OrgSettingsForm() {
     const updateOrg = useMutation(api.organizations.updateOrganization)
     const deleteOrg = useMutation(api.organizations.deleteOrganization)
+    const removeMember = useMutation(api.members.removeMember)
     const { activeOrganization, setActiveOrganization, profile, hasPermission } = useAuthStore()
     const router = useRouter()
 
     const [isLoading, setIsLoading] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
-    const [confirmSlug, setConfirmSlug] = useState("")
+    const [confirmName, setConfirmName] = useState("")
+    const [confirmLeave, setConfirmLeave] = useState("")
     const [name, setName] = useState("")
     const [description, setDescription] = useState("")
     const [errors, setErrors] = useState<Partial<Record<keyof OrganizationFormValues, string>>>({})
@@ -54,7 +57,6 @@ export function OrgSettingsForm() {
         setErrors({})
         const validation = organizationSchema.safeParse({
             name,
-            slug: activeOrganization.slug,
             description
         })
 
@@ -93,8 +95,8 @@ export function OrgSettingsForm() {
 
     const handleDelete = async () => {
         if (!activeOrganization) return
-        if (confirmSlug !== activeOrganization.slug) {
-            toast.error("Slug confirmation does not match")
+        if (confirmName !== activeOrganization.name) {
+            toast.error("Name confirmation does not match")
             return
         }
 
@@ -113,6 +115,31 @@ export function OrgSettingsForm() {
         }
     }
 
+    const handleLeave = async () => {
+        if (!activeOrganization || !profile) return
+        if (confirmLeave !== activeOrganization.name) {
+            toast.error("Name confirmation does not match")
+            return
+        }
+
+        setIsDeleting(true)
+        try {
+            await removeMember({
+                organizationId: activeOrganization._id,
+                targetUserId: profile.id as Id<"users">
+            })
+            toast.success("You have left the organization")
+            setActiveOrganization(null)
+            router.push("/dashboard")
+        } catch (err) {
+            console.error("Error leaving organization:", err)
+            const message = err instanceof Error ? err.message : "Failed to leave organization"
+            toast.error(message)
+        } finally {
+            setIsDeleting(false)
+        }
+    }
+
     if (!activeOrganization) {
         return (
             <div className="flex items-center justify-center p-8 text-muted-foreground">
@@ -121,7 +148,7 @@ export function OrgSettingsForm() {
         )
     }
 
-    const canDelete = activeOrganization.ownerId === profile?.id || hasPermission('system.admin') || hasPermission('system.support')
+    // const canDelete = activeOrganization.ownerId === profile?.id || hasPermission('system.admin') || hasPermission('system.support')
 
     return (
         <div className="space-y-10">
@@ -147,18 +174,6 @@ export function OrgSettingsForm() {
                                 className={errors.name ? "border-destructive focus-visible:ring-destructive" : ""}
                             />
                             {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="org-slug">Slug</Label>
-                            <Input
-                                id="org-slug"
-                                value={activeOrganization.slug}
-                                disabled
-                                className="bg-muted font-mono"
-                            />
-                            <p className="text-[10px] text-muted-foreground">
-                                Slugs cannot be changed after creation to prevent broken links.
-                            </p>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="org-description">Description</Label>
@@ -192,20 +207,20 @@ export function OrgSettingsForm() {
                 </form>
             </Card>
 
-            {canDelete && (
-                <div className="mt-12 space-y-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-destructive/10 text-destructive">
-                            <AlertTriangle className="size-5" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-destructive">Danger Zone</h3>
-                            <p className="text-sm text-muted-foreground">
-                                Irreversible actions for your organization. Proceed with extreme caution.
-                            </p>
-                        </div>
+            <div className="mt-12 space-y-6">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-destructive/10 text-destructive">
+                        <AlertTriangle className="size-5" />
                     </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-destructive">Danger Zone</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Irreversible actions for your organization. Proceed with extreme caution.
+                        </p>
+                    </div>
+                </div>
 
+                {activeOrganization.ownerId === profile?.id ? (
                     <Card className="border-destructive/20 bg-destructive/5 overflow-hidden shadow-sm">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -240,14 +255,14 @@ export function OrgSettingsForm() {
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <div className="py-6 space-y-3">
-                                        <Label htmlFor="confirm-slug" className="text-xs uppercase font-bold tracking-widest text-muted-foreground/70 text-center block">
-                                            Enter the slug <span className="text-foreground select-all font-mono px-2 py-1 bg-muted rounded border border-border/50">{activeOrganization.slug}</span> below
+                                        <Label htmlFor="confirm-name" className="text-xs  font-bold tracking-widest text-muted-foreground/70 text-center block">
+                                            Enter the full name <span className="text-foreground select-all font-mono px-2 py-1 bg-muted rounded border border-border/50">{activeOrganization.name}</span> below
                                         </Label>
                                         <Input
-                                            id="confirm-slug"
-                                            placeholder="Organization Slug"
-                                            value={confirmSlug}
-                                            onChange={(e) => setConfirmSlug(e.target.value)}
+                                            id="confirm-name"
+                                            placeholder="Organization Name"
+                                            value={confirmName}
+                                            onChange={(e) => setConfirmName(e.target.value)}
                                             className="h-11 text-center font-mono border-destructive/30 focus-visible:ring-destructive"
                                         />
                                     </div>
@@ -255,7 +270,7 @@ export function OrgSettingsForm() {
                                         <Button
                                             variant="destructive"
                                             onClick={handleDelete}
-                                            disabled={isDeleting || confirmSlug !== activeOrganization.slug}
+                                            disabled={isDeleting || confirmName !== activeOrganization.name}
                                             className="w-full h-11 font-bold order-1"
                                         >
                                             {isDeleting ? (
@@ -273,8 +288,76 @@ export function OrgSettingsForm() {
                             </AlertDialog>
                         </CardFooter>
                     </Card>
-                </div>
-            )}
+                ) : (
+                    <Card className="border-destructive/20 bg-destructive/5 overflow-hidden shadow-sm">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                Leave Organization
+                            </CardTitle>
+                            <CardDescription className="text-destructive/80 text-sm">
+                                You will lose access to all projects and data within this organization.
+                                To rejoin, you will need to be re-invited by an administrator.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardFooter className="bg-destructive/10 border-t border-destructive/20 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div className="text-[11px] font-medium text-destructive/70 flex items-center gap-1.5 uppercase tracking-wider">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
+                                Action: Leave Organization
+                            </div>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" className="font-bold shadow-lg shadow-destructive/20 hover:scale-105 transition-transform">
+                                        <LogOut className="mr-2 size-4" />
+                                        Leave Organization
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="border-destructive/20 max-w-md">
+                                    <AlertDialogHeader>
+                                        <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+                                            <AlertTriangle className="size-6 text-destructive" />
+                                        </div>
+                                        <AlertDialogTitle className="text-center text-xl">Leave Organization?</AlertDialogTitle>
+                                        <AlertDialogDescription className="text-center">
+                                            Are you sure you want to leave <span className="font-bold text-foreground">{activeOrganization.name}</span>?
+                                            You will no longer be able to collaborate with this team.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <div className="py-6 space-y-3">
+                                        <Label htmlFor="confirm-leave" className="text-xs font-bold tracking-widest text-muted-foreground/70 text-center block">
+                                            Confirm by typing <span className="text-foreground select-all font-mono px-2 py-1 bg-muted rounded border border-border/50">{activeOrganization.name}</span>
+                                        </Label>
+                                        <Input
+                                            id="confirm-leave"
+                                            placeholder="Type organization name"
+                                            value={confirmLeave}
+                                            onChange={(e) => setConfirmLeave(e.target.value)}
+                                            className="h-11 text-center font-mono border-destructive/30 focus-visible:ring-destructive"
+                                        />
+                                    </div>
+                                    <AlertDialogFooter className="sm:flex-col gap-2">
+                                        <Button
+                                            variant="destructive"
+                                            onClick={handleLeave}
+                                            disabled={isDeleting || confirmLeave !== activeOrganization.name}
+                                            className="w-full h-11 font-bold order-1"
+                                        >
+                                            {isDeleting ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Leaving...
+                                                </>
+                                            ) : (
+                                                "Confirm Leaving Organization"
+                                            )}
+                                        </Button>
+                                        <AlertDialogCancel className="w-full h-11 order-2 mt-0">Stay in Organization</AlertDialogCancel>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </CardFooter>
+                    </Card>
+                )}
+            </div>
         </div>
     )
 }

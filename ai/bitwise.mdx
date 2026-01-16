@@ -34,6 +34,17 @@ We reserve high bit positions for internal staff. These bits are **never** inclu
 - **Bit 50**: `system.admin` (Full access to all organizations and system settings)
 - **Bit 51**: `system.support` (Internal support tools / "Login as User")
 
+### Permission Boundaries
+
+| User Type | Permission Mask | Bits Granted |
+| :--- | :--- | :--- |
+| **Staff Admin (tier)** | `MAX_SAFE_INTEGER` | All bits (0-53) |
+| **Organization Owner** | `PUBLIC_BITS_MASK` | Bits 0-49 only |
+| **Regular Member** | Computed from role | Based on role assignments |
+
+> [!IMPORTANT]
+> Organization owners get `PUBLIC_BITS_MASK` (bits 0-49), NOT godmode. Only Staff Admin tier users can access system bits (50+).
+
 ### Implementing a Restricted Dashboard
 To create a dashboard area accessible only by Echoray staff:
 

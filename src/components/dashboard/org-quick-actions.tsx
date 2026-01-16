@@ -38,7 +38,7 @@ export function OrgQuickActions({ onMemberInvited }: { onMemberInvited?: () => v
             title: "Invite Member",
             description: "Add a new team member to your organization.",
             icon: <UserPlus className="h-5 w-5 text-indigo-400" />,
-            permission: "members.invite",
+            permission: "o.member.invite",
             component: <InviteMemberDialog onSuccess={onMemberInvited} />,
             color: "from-indigo-500/10 to-purple-500/10 hover:border-indigo-500/30"
         },
@@ -46,15 +46,15 @@ export function OrgQuickActions({ onMemberInvited }: { onMemberInvited?: () => v
             title: "Manage Roles",
             description: "Create and customize permissions for your team.",
             icon: <Shield className="h-5 w-5 text-emerald-400" />,
-            permission: "roles.manage",
+            permission: "o.role.manage",
             href: `/o/${orgId}/settings?tab=roles`,
             color: "from-emerald-500/10 to-teal-500/10 hover:border-emerald-500/30"
         },
         {
             title: "Org Settings",
-            description: "Update organization name, slug, and description.",
+            description: "Update organization name and description.",
             icon: <Settings className="h-5 w-5 text-amber-400" />,
-            permission: "org.settings",
+            permission: "o.settings.edit",
             href: `/o/${orgId}/settings`,
             color: "from-amber-500/10 to-orange-500/10 hover:border-amber-500/30"
         },

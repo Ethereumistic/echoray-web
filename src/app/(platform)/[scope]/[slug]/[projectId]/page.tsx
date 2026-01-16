@@ -570,17 +570,7 @@ export default function ProjectDetailPage() {
     )
 }
 
-// =========================================================================
-// HELPER HOOK
-// =========================================================================
 
-function useProjectId() {
-    // Get projectId from URL params - it's the last segment after [slug]
-    const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
-    const segments = pathname.split('/').filter(Boolean)
-    // URL: /{scope}/{slug}/{projectId}
-    return segments[2] || ''
-}
 
 // =========================================================================
 // DYNAMIC FIELD INPUT COMPONENT

@@ -65,18 +65,19 @@ export function OrgInitializer() {
             return
         }
 
-        setLoading(false)
+        // Detect if active org data is stale or the org is no longer in the list
         const orgs = (organizations || []) as Organization[]
         setOrganizations(orgs)
 
-        // If no active org or the saved one is no longer in the list, pick the first one
-        // We also check for _id to ensure it's a Convex org (Supabase used 'id')
-        const isStale = !!activeOrganization && !activeOrganization._id
-        const notInList = !!activeOrganization && !orgs.find(o => o._id === activeOrganization._id)
+        const currentInList = activeOrganization ? orgs.find(o => o._id === activeOrganization._id) : null
 
-        if (!activeOrganization || isStale || notInList) {
+        if (!activeOrganization || !currentInList) {
+            // Pick first org if none active or current no longer exists
             const firstOrg = orgs.length > 0 ? orgs[0] : null
             setActiveOrganization(firstOrg)
+        } else if (JSON.stringify(currentInList) !== JSON.stringify(activeOrganization)) {
+            // Update active org if data changed (e.g. ownerId transferred)
+            setActiveOrganization(currentInList)
         }
     }, [organizations, activeOrganization, setActiveOrganization, setLoading, setOrganizations])
 

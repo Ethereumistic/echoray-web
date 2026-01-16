@@ -27,7 +27,6 @@ export default function CreateOrganizationPage() {
 
     const [isLoading, setIsLoading] = useState(false)
     const [name, setName] = useState("")
-    const [slug, setSlug] = useState("")
     const [description, setDescription] = useState("")
     const [errors, setErrors] = useState<Partial<Record<keyof OrganizationFormValues, string>>>({})
 
@@ -40,22 +39,13 @@ export default function CreateOrganizationPage() {
         if (errors.name) {
             setErrors(prev => ({ ...prev, name: undefined }))
         }
-
-        // Only auto-generate slug if it was empty or matched the previous name conversion
-        const suggestedSlug = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-        setSlug(suggestedSlug)
-
-        // Clear slug error if it exists
-        if (errors.slug) {
-            setErrors(prev => ({ ...prev, slug: undefined }))
-        }
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setErrors({})
 
-        const validation = organizationSchema.safeParse({ name, slug, description })
+        const validation = organizationSchema.safeParse({ name, description })
 
         if (!validation.success) {
             const fieldErrors: Partial<Record<keyof OrganizationFormValues, string>> = {}
@@ -72,7 +62,6 @@ export default function CreateOrganizationPage() {
         try {
             await createOrg({
                 name,
-                slug,
                 description: description || undefined,
             })
 
@@ -133,30 +122,6 @@ export default function CreateOrganizationPage() {
                             {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="slug" className={errors.slug ? "text-destructive" : ""}>Workspace Slug</Label>
-                            <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground text-sm font-mono">echoray.io/o/</span>
-                                <Input
-                                    id="slug"
-                                    placeholder="echoray-ltd"
-                                    value={slug}
-                                    onChange={(e) => {
-                                        setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, ''))
-                                        if (errors.slug) setErrors(prev => ({ ...prev, slug: undefined }))
-                                    }}
-                                    required
-                                    className={`bg-background/50 font-mono ${errors.slug ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                                />
-                            </div>
-                            {errors.slug ? (
-                                <p className="text-xs text-destructive">{errors.slug}</p>
-                            ) : (
-                                <p className="text-[10px] text-muted-foreground">
-                                    This will be used in your unique URL. Only lowercase letters, numbers, and hyphens.
-                                </p>
-                            )}
-                        </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="description" className={errors.description ? "text-destructive" : ""}>Description (Optional)</Label>

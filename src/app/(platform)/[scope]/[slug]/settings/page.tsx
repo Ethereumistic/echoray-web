@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { OrgSettingsForm } from "@/components/dashboard/org-settings-form"
 import { MembersList } from "@/components/dashboard/members-list"
 import { RolesList } from "@/components/dashboard/roles-list"
-import { Settings, Users, Shield, Loader2, User } from "lucide-react"
+import { Settings, Users, Shield, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { redirect } from "next/navigation"
 import { useScopeContext } from "@/contexts/scope-context"
@@ -21,7 +21,7 @@ import { useScopeContext } from "@/contexts/scope-context"
  * - Organization: Shows org-specific settings tabs
  */
 export default function SettingsPage() {
-    const { scope, slug, isPersonal, isOrganization } = useScopeContext()
+    const { scope, slug, isPersonal } = useScopeContext()
     const searchParams = useSearchParams()
     const router = useRouter()
     const {

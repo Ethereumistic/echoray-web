@@ -150,13 +150,13 @@ export const createProject = mutation({
             })()
             : false;
 
-        // Check project.create permission (staff admins bypass this)
+        // Check p.project.create permission (staff admins bypass this)
         let hasPermission = isStaffAdmin;
 
         if (!hasPermission && user.subscriptionTierId) {
             const tier = await ctx.db.get(user.subscriptionTierId);
-            if (tier) {
-                hasPermission = hasPermissionBit(tier.basePermissions, PERMISSION_BITS['project.create']);
+            if (tier && tier.basePermissions != null) {
+                hasPermission = hasPermissionBit(tier.basePermissions, PERMISSION_BITS['p.project.create']);
             }
         }
 
@@ -351,7 +351,9 @@ export const canCreateProject = query({
             return { canCreate: false, reason: "Subscription tier not found" };
         }
 
-        const hasPermission = hasPermissionBit(tier.basePermissions, PERMISSION_BITS['project.create']);
+        // Use new scoped permission code 'p.project.create' for personal projects
+        const hasPermission = tier.basePermissions != null &&
+            hasPermissionBit(tier.basePermissions, PERMISSION_BITS['p.project.create']);
 
         if (!hasPermission) {
             return {

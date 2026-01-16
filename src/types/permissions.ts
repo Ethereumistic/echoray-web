@@ -23,47 +23,42 @@ export type PermissionCategory =
     | 'billing';
 
 /**
- * Maps permission codes to their bit positions as defined in 005_initial_seed.sql
+ * Maps permission codes to their bit positions
+ * Must match convex/permissions.ts and seed data
+ * 
+ * Scopes:
+ * - Global (bits 0-19): Tier-level permissions
+ * - Org (bits 20-39): Organization role permissions  
+ * - App (bits 40-49): Mini-app access
+ * - System (bits 50+): Staff only
  */
 export const PERMISSION_BITS = {
-    // Basic
+    // === GLOBAL/TIER PERMISSIONS (Bits 0-19) ===
     'profile.view': 0,
     'profile.edit': 1,
+    'org.create': 2,
+    'p.project.create': 3,
 
-    // Web tier
-    'analytics.view': 2,
-    'export.csv': 3,
-    'integrations.basic': 4,
+    // === ORGANIZATION ROLE PERMISSIONS (Bits 20-39) ===
+    'o.project.view': 20,
+    'o.project.create': 21,
+    'o.project.edit': 22,
+    'o.project.delete': 23,
+    'o.member.view': 24,
+    'o.member.invite': 25,
+    'o.editor.invite': 26,
+    'o.admin.invite': 27,
+    'o.member.remove': 28,
+    'o.admin.remove': 29,
+    'o.role.manage': 30,
+    'o.settings.edit': 31,
 
-    // App tier
-    'analytics.advanced': 5,
-    'api.access': 6,
-    'export.pdf': 7,
-    'webhooks.manage': 8,
+    // === APP PERMISSIONS (Bits 40-49) ===
+    'app.invoice': 40,
+    'app.qr': 41,
+    'app.crosspost': 42,
 
-    // CRM tier
-    'crm.contacts': 9,
-    'crm.deals': 10,
-    'crm.automation': 11,
-
-    // Admin permissions
-    'org.settings': 12,
-    'members.invite': 13,
-    'members.remove': 14,
-    'roles.manage': 15,
-    'billing.view': 16,
-    'billing.manage': 17,
-
-    // Addons
-    'integrations.zapier': 18,
-    'integrations.slack': 19,
-    'storage.extended': 20,
-    'support.priority': 21,
-
-    // Project permissions (Web tier and above)
-    'project.create': 22,
-
-    // System Admin (Bits 50+)
+    // === SYSTEM PERMISSIONS (Bits 50+) ===
     'system.admin': 50,
     'system.support': 51,
 } as const;

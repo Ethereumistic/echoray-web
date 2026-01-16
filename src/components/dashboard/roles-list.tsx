@@ -74,7 +74,7 @@ export function RolesList({ organizationId }: { organizationId: string }) {
                         Define hierarchies and permissions for your team.
                     </p>
                 </div>
-                <PermissionGuard permission="roles.manage">
+                <PermissionGuard permission="o.role.manage">
                     <Button size="sm">
                         <Plus className="mr-2 h-4 w-4" />
                         Create Role
@@ -160,7 +160,7 @@ export function RolesList({ organizationId }: { organizationId: string }) {
                                                 DEFAULT
                                             </Badge>
                                         ) : (
-                                            <PermissionGuard permission="roles.manage">
+                                            <PermissionGuard permission="o.role.manage">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -183,7 +183,7 @@ export function RolesList({ organizationId }: { organizationId: string }) {
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Role Actions</DropdownMenuLabel>
                                                 <DropdownMenuSeparator />
-                                                <PermissionGuard permission="roles.manage">
+                                                <PermissionGuard permission="o.role.manage">
                                                     <DropdownMenuItem className="gap-2">
                                                         <Edit2 className="h-4 w-4" />
                                                         Edit Permissions

@@ -10,7 +10,6 @@ import type { Id } from '../../convex/_generated/dataModel'
 export interface Organization {
     _id: Id<"organizations">
     name: string
-    slug: string
     description?: string
     logoUrl?: string
     ownerId: Id<"users">

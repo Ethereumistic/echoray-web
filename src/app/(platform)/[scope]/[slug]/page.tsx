@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
 import { useAuthStore } from "@/stores/auth-store"
 import { useQuery } from "convex/react"
 import { DashboardHeader } from "@/components/dashboard/header"
@@ -17,7 +16,7 @@ import { useScopeContext } from "@/contexts/scope-context"
  * Route: /p/[userId] or /o/[orgId]
  */
 export default function WorkspacePage() {
-    const { scope, slug, isPersonal, isOrganization } = useScopeContext()
+    const { slug, isPersonal } = useScopeContext()
 
     if (isPersonal) {
         return <PersonalWorkspaceContent slug={slug} />
@@ -170,7 +169,7 @@ function OrganizationWorkspaceContent({ slug }: { slug: string }) {
         <div className="flex flex-col">
             <DashboardHeader
                 title={`${activeOrganization.name} Dashboard`}
-                description={`Workspace overview for ${activeOrganization.slug}`}
+                description={`Workspace overview`}
             />
 
             <main className="flex-1 p-6 space-y-8">

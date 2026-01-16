@@ -20,6 +20,19 @@ import { Shield, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Role, MemberWithRoles } from "@/types/permissions"
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { AlertTriangle, Crown } from "lucide-react"
 
 interface MemberRolesDialogProps {
     member: MemberWithRoles
@@ -46,6 +59,10 @@ export function MemberRolesDialog({ member, onSuccess, trigger }: MemberRolesDia
     const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(() =>
         member.roles?.filter((r): r is Role => r !== null).map(r => r._id) || []
     )
+    const [confirmTransfer, setConfirmTransfer] = useState("")
+    const [isTransferring, setIsTransferring] = useState(false)
+    const { profile, setActiveOrganization } = useAuthStore()
+    const transferOwnership = useMutation(api.organizations.transferOwnership)
 
     const handleToggleRole = (roleId: string) => {
         setSelectedRoleIds(prev =>
@@ -74,6 +91,37 @@ export function MemberRolesDialog({ member, onSuccess, trigger }: MemberRolesDia
             toast.error(message)
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const handleTransfer = async () => {
+        if (!activeOrganization || !member) return
+        const expectedConfirm = `transfer to ${member.user?.fullName || 'member'}`
+        if (confirmTransfer !== expectedConfirm) {
+            toast.error("Confirmation text does not match")
+            return
+        }
+
+        setIsTransferring(true)
+        try {
+            await transferOwnership({
+                organizationId: activeOrganization._id,
+                newOwnerId: member.userId as Id<"users">
+            })
+            toast.success(`Ownership transferred to ${member.user?.fullName}`)
+            setIsOpen(false)
+            // Need to update local state since we are no longer owner
+            setActiveOrganization({
+                ...activeOrganization,
+                ownerId: member.userId as Id<"users">
+            })
+            onSuccess?.()
+        } catch (err) {
+            console.error("Error transferring ownership:", err)
+            const message = err instanceof Error ? err.message : "Failed to transfer ownership"
+            toast.error(message)
+        } finally {
+            setIsTransferring(false)
         }
     }
 
@@ -111,8 +159,6 @@ export function MemberRolesDialog({ member, onSuccess, trigger }: MemberRolesDia
                                         id={`role-${role._id}`}
                                         checked={selectedRoleIds.includes(role._id)}
                                         onCheckedChange={() => handleToggleRole(role._id)}
-                                    // Disable system roles like owner to prevent accidental removal?
-                                    // For now let the RPC handle the security logic.
                                     />
                                     <div className="grid gap-1.5 leading-none">
                                         <label
@@ -138,7 +184,61 @@ export function MemberRolesDialog({ member, onSuccess, trigger }: MemberRolesDia
                     )}
                 </div>
 
-                <DialogFooter>
+                {activeOrganization?.ownerId === profile?.id && member.userId !== profile?.id && (
+                    <div className="pt-4 border-t border-destructive/20 mt-2">
+                        <div className="flex items-center gap-2 text-destructive mb-3">
+                            <AlertTriangle className="size-4" />
+                            <span className="text-[11px] font-bold uppercase tracking-wider">Danger Zone</span>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="w-full border-destructive/30 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 gap-2 h-9 text-xs"
+                                >
+                                    <Crown className="size-4" />
+                                    Transfer Ownership to Member
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="border-destructive/20 max-w-sm">
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle className="flex items-center gap-2">
+                                        <Crown className="size-5 text-amber-500" />
+                                        Transfer Ownership?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription className="text-xs">
+                                        You are about to transfer full control of <span className="font-bold text-foreground">{activeOrganization?.name}</span> to <span className="font-bold text-foreground">{member.user?.fullName || 'this member'}</span>.
+                                        You will be demoted to **Admin**.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="py-4 space-y-2">
+                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground/70">
+                                        Type <span className="text-foreground select-all font-mono">transfer to {member.user?.fullName}</span> to confirm
+                                    </Label>
+                                    <Input
+                                        placeholder="Confirmation text"
+                                        value={confirmTransfer}
+                                        onChange={(e) => setConfirmTransfer(e.target.value)}
+                                        className="h-9 text-sm"
+                                    />
+                                </div>
+                                <AlertDialogFooter className="flex-col sm:flex-col gap-2">
+                                    <Button
+                                        variant="destructive"
+                                        className="w-full h-10 font-bold"
+                                        onClick={handleTransfer}
+                                        disabled={isTransferring || confirmTransfer !== `transfer to ${member.user?.fullName}`}
+                                    >
+                                        {isTransferring ? <Loader2 className="animate-spin size-4" /> : "Confirm Ownership Transfer"}
+                                    </Button>
+                                    <AlertDialogCancel className="w-full h-10 mt-0">Cancel</AlertDialogCancel>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                )}
+
+                <DialogFooter className="bg-muted/30 -mx-6 -mb-6 p-4 mt-6 border-t">
                     <Button variant="ghost" onClick={() => setIsOpen(false)} disabled={isLoading}>
                         Cancel
                     </Button>

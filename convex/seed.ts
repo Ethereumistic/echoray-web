@@ -9,67 +9,159 @@ export const seedData = mutation({
     args: {},
     handler: async (ctx) => {
         // 1. Seed Subscription Tiers
+        // basePermissions = tier-level permissions (global + personal)
+        // orgFeatures = which o.* features this tier unlocks for orgs they own
         const tiers = [
-            // Commercial Tiers
-            // User tier: maxOrganizations: 0 means free users cannot create organizations
-            { name: "User", slug: "user", type: "commercial", priceEur: 0, isCustom: false, basePermissions: 3, maxMembers: 1, maxOrganizations: 0 },
-            // Web tier and above: can create projects (bit 22 = 4194304)
-            { name: "Web", slug: "web", type: "commercial", priceEur: 99, isCustom: false, basePermissions: 4194335, maxMembers: 5, maxOrganizations: 1 },
-            { name: "App", slug: "app", type: "commercial", priceEur: 299, isCustom: false, basePermissions: 4194815, maxMembers: 20, maxOrganizations: 5 },
-            { name: "CRM", slug: "crm", type: "commercial", priceEur: 0, isCustom: true, basePermissions: 4198399, maxOrganizations: 10 },
-
-            // System Tiers (Internal)
+            // User (Free): Basic profile only
+            {
+                name: "User",
+                slug: "user",
+                type: "commercial",
+                priceEur: 0,
+                isCustom: false,
+                basePermissions: 0b11, // bits 0-1: profile.view, profile.edit
+                orgFeatures: 0, // Cannot own orgs
+                maxMembers: 1,
+                maxOrganizations: 0
+            },
+            // Web (€99): Org creation, personal/org projects, basic features
+            {
+                name: "Web",
+                slug: "web",
+                type: "commercial",
+                priceEur: 99,
+                isCustom: false,
+                basePermissions: 0b1111, // bits 0-3: profile.*, org.create, p.project.create
+                orgFeatures: 0b111111111111 * (2 ** 20), // bits 20-31: all o.* features
+                maxMembers: 5,
+                maxOrganizations: 1
+            },
+            // App (€299): Advanced analytics, API, more orgs
+            {
+                name: "App",
+                slug: "app",
+                type: "commercial",
+                priceEur: 299,
+                isCustom: false,
+                basePermissions: 0b1111, // bits 0-3
+                orgFeatures: 0b111111111111 * (2 ** 20), // bits 20-31
+                maxMembers: 20,
+                maxOrganizations: 5
+            },
+            // CRM: All CRM features + apps
+            {
+                name: "CRM",
+                slug: "crm",
+                type: "commercial",
+                priceEur: 0,
+                isCustom: true,
+                basePermissions: 0b1111, // bits 0-3
+                orgFeatures: 0b1111111111111111111111 * (2 ** 20), // bits 20-41
+                maxOrganizations: 10
+            },
+            // Staff Admin: Everything
             {
                 name: "Staff Admin",
                 slug: "staff_admin",
                 type: "system",
                 priceEur: 0,
                 isCustom: true,
-                basePermissions: Number.MAX_SAFE_INTEGER, // Everything!
+                basePermissions: Number.MAX_SAFE_INTEGER,
+                orgFeatures: Number.MAX_SAFE_INTEGER,
                 maxOrganizations: 100
             },
         ];
 
-        // Clear existing tiers and permissions
+        // === MIGRATION: Save user tier assignments before deleting tiers ===
+        const users = await ctx.db.query("users").collect();
+        const userTierMap: Map<string, string> = new Map(); // userId -> tierSlug
+
         const existingTiers = await ctx.db.query("subscriptionTiers").collect();
+        const tierIdToSlug: Map<string, string> = new Map();
+        for (const tier of existingTiers) {
+            tierIdToSlug.set(tier._id, tier.slug);
+        }
+
+        // Save which tier slug each user was on
+        for (const user of users) {
+            if (user.subscriptionTierId) {
+                const tierSlug = tierIdToSlug.get(user.subscriptionTierId);
+                if (tierSlug) {
+                    userTierMap.set(user._id, tierSlug);
+                }
+            }
+        }
+
+        // Clear existing tiers and permissions
         for (const t of existingTiers) await ctx.db.delete(t._id);
 
         const existingPerms = await ctx.db.query("permissions").collect();
         for (const p of existingPerms) await ctx.db.delete(p._id);
 
+        // Clear projects and related data
+        const existingViews = await ctx.db.query("projectViews").collect();
+        for (const v of existingViews) await ctx.db.delete(v._id);
+
+        const existingRecords = await ctx.db.query("projectRecords").collect();
+        for (const r of existingRecords) await ctx.db.delete(r._id);
+
+        const existingFields = await ctx.db.query("projectFields").collect();
+        for (const f of existingFields) await ctx.db.delete(f._id);
+
+        const existingProjects = await ctx.db.query("projects").collect();
+        for (const p of existingProjects) await ctx.db.delete(p._id);
+
+        // Insert new tiers and build slug -> newId map
+        const tierSlugToNewId: Map<string, string> = new Map();
         for (const tier of tiers) {
-            await ctx.db.insert("subscriptionTiers", tier as any);
+            const newId = await ctx.db.insert("subscriptionTiers", tier as any);
+            tierSlugToNewId.set(tier.slug, newId);
         }
 
-        // 2. Seed System Permissions
+        // === MIGRATION: Reassign all users to their correct tier ===
+        const defaultTierId = tierSlugToNewId.get("user")!;
+        let usersUpdated = 0;
+
+        for (const user of users) {
+            const previousSlug = userTierMap.get(user._id);
+            const newTierId = previousSlug
+                ? tierSlugToNewId.get(previousSlug) || defaultTierId
+                : defaultTierId;
+
+            await ctx.db.patch(user._id, { subscriptionTierId: newTierId as any });
+            usersUpdated++;
+        }
+
+        console.log(`Migrated ${usersUpdated} users to new tier IDs`);
+
+        // 2. Seed Permissions with Scoped Naming
         const permissions = [
-            { code: "profile.view", bitPosition: 0, name: "View Profile", category: "basic", isAddon: false, isDangerous: false },
-            { code: "profile.edit", bitPosition: 1, name: "Edit Own Profile", category: "basic", isAddon: false, isDangerous: false },
-            { code: "analytics.view", bitPosition: 2, name: "View Analytics", category: "analytics", minTier: "web", isAddon: false, isDangerous: false },
-            { code: "export.csv", bitPosition: 3, name: "Export CSV", category: "export", minTier: "web", isAddon: false, isDangerous: false },
-            { code: "integrations.basic", bitPosition: 4, name: "Basic Integrations", category: "integrations", minTier: "web", isAddon: false, isDangerous: false },
-            { code: "analytics.advanced", bitPosition: 5, name: "Advanced Analytics", category: "analytics", minTier: "app", isAddon: false, isDangerous: false },
-            { code: "api.access", bitPosition: 6, name: "API Access", category: "api", minTier: "app", isAddon: false, isDangerous: false },
-            { code: "export.pdf", bitPosition: 7, name: "Export PDF", category: "export", minTier: "app", isAddon: false, isDangerous: false },
-            { code: "webhooks.manage", bitPosition: 8, name: "Manage Webhooks", category: "api", minTier: "app", isAddon: false, isDangerous: false },
-            { code: "crm.contacts", bitPosition: 9, name: "CRM Contacts", category: "crm", minTier: "crm", isAddon: false, isDangerous: false },
-            { code: "crm.deals", bitPosition: 10, name: "CRM Deals", category: "crm", minTier: "crm", isAddon: false, isDangerous: false },
-            { code: "crm.automation", bitPosition: 11, name: "CRM Automation", category: "crm", minTier: "crm", isAddon: false, isDangerous: false },
-            { code: "org.settings", bitPosition: 12, name: "Manage Organization Settings", category: "admin", isAddon: false, isDangerous: false },
-            { code: "members.invite", bitPosition: 13, name: "Invite Members", category: "admin", isAddon: false, isDangerous: false },
-            { code: "members.remove", bitPosition: 14, name: "Remove Members", category: "admin", isAddon: false, isDangerous: false },
-            { code: "roles.manage", bitPosition: 15, name: "Manage Roles", category: "admin", isAddon: false, isDangerous: false },
-            { code: "billing.view", bitPosition: 16, name: "View Billing", category: "billing", isAddon: false, isDangerous: false },
-            { code: "billing.manage", bitPosition: 17, name: "Manage Billing", category: "billing", isAddon: false, isDangerous: false },
-            { code: "integrations.zapier", bitPosition: 18, name: "Zapier Integration", category: "integrations", minTier: "web", isAddon: true, isDangerous: false },
-            { code: "integrations.slack", bitPosition: 19, name: "Slack Integration", category: "integrations", minTier: "web", isAddon: true, isDangerous: false },
-            { code: "storage.extended", bitPosition: 20, name: "Extended Storage (100GB)", category: "storage", minTier: "web", isAddon: true, isDangerous: false },
-            { code: "support.priority", bitPosition: 21, name: "Priority Support", category: "support", minTier: "web", isAddon: true, isDangerous: false },
+            // === GLOBAL/TIER PERMISSIONS (Bits 0-19) ===
+            { code: "profile.view", bitPosition: 0, name: "View Profiles", category: "global", isAddon: false, isDangerous: false },
+            { code: "profile.edit", bitPosition: 1, name: "Edit Own Profile", category: "global", isAddon: false, isDangerous: false },
+            { code: "org.create", bitPosition: 2, name: "Create Organizations", category: "global", minTier: "web", isAddon: false, isDangerous: false },
+            { code: "p.project.create", bitPosition: 3, name: "Create Personal Projects", category: "personal", minTier: "web", isAddon: false, isDangerous: false },
 
-            // Project permissions (Web tier and above)
-            { code: "project.create", bitPosition: 22, name: "Create Projects", category: "projects", minTier: "web", isAddon: false, isDangerous: false },
+            // === ORGANIZATION ROLE PERMISSIONS (Bits 20-39) ===
+            { code: "o.project.view", bitPosition: 20, name: "View Org Projects", category: "org", isAddon: false, isDangerous: false },
+            { code: "o.project.create", bitPosition: 21, name: "Create Org Projects", category: "org", isAddon: false, isDangerous: false },
+            { code: "o.project.edit", bitPosition: 22, name: "Edit Org Projects", category: "org", isAddon: false, isDangerous: false },
+            { code: "o.project.delete", bitPosition: 23, name: "Delete Org Projects", category: "org", isAddon: false, isDangerous: false },
+            { code: "o.member.view", bitPosition: 24, name: "View Members", category: "org", isAddon: false, isDangerous: false },
+            { code: "o.member.invite", bitPosition: 25, name: "Invite as Member", category: "org", isAddon: false, isDangerous: false },
+            { code: "o.editor.invite", bitPosition: 26, name: "Invite as Editor", category: "org", isAddon: false, isDangerous: false },
+            { code: "o.admin.invite", bitPosition: 27, name: "Invite as Admin", category: "org", isAddon: false, isDangerous: true },
+            { code: "o.member.remove", bitPosition: 28, name: "Remove Members", category: "org", isAddon: false, isDangerous: false },
+            { code: "o.admin.remove", bitPosition: 29, name: "Remove Admins", category: "org", isAddon: false, isDangerous: true },
+            { code: "o.role.manage", bitPosition: 30, name: "Manage Roles", category: "org", isAddon: false, isDangerous: true },
+            { code: "o.settings.edit", bitPosition: 31, name: "Edit Org Settings", category: "org", isAddon: false, isDangerous: true },
 
-            // System Admin Bits (Internal Staff Only)
+            // === APP PERMISSIONS (Bits 40-49) ===
+            { code: "app.invoice", bitPosition: 40, name: "Invoice Generator", category: "app", minTier: "web", isAddon: true, isDangerous: false },
+            { code: "app.qr", bitPosition: 41, name: "QR Generator", category: "app", minTier: "web", isAddon: true, isDangerous: false },
+            { code: "app.crosspost", bitPosition: 42, name: "Cross-poster", category: "app", minTier: "app", isAddon: true, isDangerous: false },
+
+            // === SYSTEM PERMISSIONS (Bits 50+) ===
             { code: "system.admin", bitPosition: 50, name: "Full System Access", category: "system", isAddon: false, isDangerous: true },
             { code: "system.support", bitPosition: 51, name: "Assume User Identity", category: "system", isAddon: false, isDangerous: true },
         ];
@@ -200,3 +292,139 @@ export const assignStaffAdmin = mutation({
     },
 });
 
+/**
+ * Fixup: Repair roles for all organizations after bitwise logic update
+ */
+export const fixupRoles = mutation({
+    args: {},
+    handler: async (ctx) => {
+        const orgs = await ctx.db.query("organizations").collect();
+        let rolesFixed = 0;
+
+        // Helper to build bitmask correctly (copied from organizations.ts)
+        const buildMask = (bits: number[]) => {
+            let mask = 0n;
+            for (const bit of bits) mask |= (1n << BigInt(bit));
+            return Number(mask);
+        };
+
+        for (const org of orgs) {
+            const roles = await ctx.db
+                .query("roles")
+                .withIndex("by_organizationId", (q) => q.eq("organizationId", org._id))
+                .collect();
+
+            for (const role of roles) {
+                let newPermissions = role.permissions;
+
+                if (role.isSystemRole) {
+                    if (role.systemRoleType === "admin") {
+                        // Admins: Projects, Member View/Invite/Remove, Editor Invite. 
+                        // NO Role Manage, NO Settings Edit, NO Admin Invite, NO Admin Remove.
+                        newPermissions = buildMask([20, 21, 22, 23, 24, 25, 26, 28]);
+                    } else if (role.systemRoleType === "moderator") {
+                        // Editors: Projects (View/Create/Edit), Member View/Invite
+                        newPermissions = buildMask([20, 21, 22, 24, 25]);
+                    } else if (role.systemRoleType === "member") {
+                        // Members: Project View, Member View
+                        newPermissions = buildMask([20, 24]);
+                    }
+                }
+
+                if (newPermissions !== role.permissions) {
+                    await ctx.db.patch(role._id, { permissions: newPermissions });
+                    rolesFixed++;
+                }
+            }
+        }
+
+        return { success: true, rolesFixed };
+    },
+});
+
+/**
+ * Cleanup: Remove all 'left' membership records
+ * Use this to fix duplicate membership issues from the old status-based approach
+ */
+export const cleanupLeftMemberships = mutation({
+    args: {},
+    handler: async (ctx) => {
+        // Find all memberships with "left" status
+        const leftMemberships = await ctx.db
+            .query("organizationMembers")
+            .filter((q) => q.eq(q.field("status"), "left"))
+            .collect();
+
+        let deletedCount = 0;
+
+        for (const membership of leftMemberships) {
+            // Delete member roles
+            const memberRoles = await ctx.db
+                .query("memberRoles")
+                .withIndex("by_memberId", (q) => q.eq("memberId", membership._id))
+                .collect();
+            for (const mr of memberRoles) {
+                await ctx.db.delete(mr._id);
+            }
+
+            // Delete permission overrides
+            const overrides = await ctx.db
+                .query("memberPermissionOverrides")
+                .withIndex("by_memberId", (q) => q.eq("memberId", membership._id))
+                .collect();
+            for (const override of overrides) {
+                await ctx.db.delete(override._id);
+            }
+
+            // Delete the membership
+            await ctx.db.delete(membership._id);
+            deletedCount++;
+        }
+
+        return {
+            success: true,
+            deletedCount,
+            message: `Cleaned up ${deletedCount} stale membership record(s)`
+        };
+    },
+});
+
+/**
+ * Assign a user to a specific subscription tier by email and tier slug
+ * Use after seedData to restore user tier assignments
+ */
+export const assignUserTier = mutation({
+    args: {
+        email: v.string(),
+        tierSlug: v.string(), // 'user', 'web', 'app', 'crm', 'staff_admin'
+    },
+    handler: async (ctx, { email, tierSlug }) => {
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_email", (q) => q.eq("email", email))
+            .unique();
+
+        if (!user) throw new Error(`User not found: ${email}`);
+
+        const tier = await ctx.db
+            .query("subscriptionTiers")
+            .withIndex("by_slug", (q) => q.eq("slug", tierSlug))
+            .unique();
+
+        if (!tier) throw new Error(`Tier not found: ${tierSlug}`);
+
+        await ctx.db.patch(user._id, {
+            subscriptionTierId: tier._id,
+        });
+
+        return {
+            success: true,
+            message: `User ${email} is now on tier: ${tier.name}`,
+            tier: {
+                name: tier.name,
+                basePermissions: tier.basePermissions,
+                orgFeatures: tier.orgFeatures,
+            }
+        };
+    },
+});
