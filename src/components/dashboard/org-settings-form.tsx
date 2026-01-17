@@ -27,6 +27,8 @@ import {
 
 /**
  * Form to manage the current active organization's settings.
+ * Shows editable form for owners and users with o.settings.edit permission.
+ * Shows read-only display for other members.
  */
 export function OrgSettingsForm() {
     const updateOrg = useMutation(api.organizations.updateOrganization)
@@ -42,6 +44,10 @@ export function OrgSettingsForm() {
     const [name, setName] = useState("")
     const [description, setDescription] = useState("")
     const [errors, setErrors] = useState<Partial<Record<keyof OrganizationFormValues, string>>>({})
+
+    // Check if user can edit settings (owner or has o.settings.edit permission)
+    const isOwner = activeOrganization?.ownerId === profile?.id
+    const canEditSettings = isOwner || hasPermission('o.settings.edit') || hasPermission('system.admin')
 
     useEffect(() => {
         if (activeOrganization) {
@@ -148,64 +154,87 @@ export function OrgSettingsForm() {
         )
     }
 
-    // const canDelete = activeOrganization.ownerId === profile?.id || hasPermission('system.admin') || hasPermission('system.support')
-
     return (
         <div className="space-y-10">
-            <Card className="border-border/50 shadow-sm">
-                <form onSubmit={handleUpdate}>
+            {/* Show editable form or read-only display based on permissions */}
+            {canEditSettings ? (
+                <Card className="border-border/50 shadow-sm">
+                    <form onSubmit={handleUpdate}>
+                        <CardHeader>
+                            <CardTitle>Global Settings</CardTitle>
+                            <CardDescription>
+                                Manage your organization&apos;s public profile and basic information.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="org-name">Organization Name</Label>
+                                <Input
+                                    id="org-name"
+                                    value={name}
+                                    onChange={(e) => {
+                                        setName(e.target.value)
+                                        if (errors.name) setErrors(prev => ({ ...prev, name: undefined }))
+                                    }}
+                                    required
+                                    className={errors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                                />
+                                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="org-description">Description</Label>
+                                <Textarea
+                                    id="org-description"
+                                    value={description}
+                                    onChange={(e) => {
+                                        setDescription(e.target.value)
+                                        if (errors.description) setErrors(prev => ({ ...prev, description: undefined }))
+                                    }}
+                                    className={`min-h-[100px] bg-background/50 ${errors.description ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                                />
+                                {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
+                            </div>
+                        </CardContent>
+                        <CardFooter className="flex justify-end border-t border-border/50 pt-6">
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="mr-2 h-4 w-4" />
+                                        Save Changes
+                                    </>
+                                )}
+                            </Button>
+                        </CardFooter>
+                    </form>
+                </Card>
+            ) : (
+                /* Read-only display for users without edit permission */
+                <Card className="border-border/50 shadow-sm">
                     <CardHeader>
-                        <CardTitle>Global Settings</CardTitle>
+                        <CardTitle>Organization Information</CardTitle>
                         <CardDescription>
-                            Manage your organization&apos;s public profile and basic information.
+                            View your organization&apos;s details. Contact an administrator to make changes.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="org-name">Organization Name</Label>
-                            <Input
-                                id="org-name"
-                                value={name}
-                                onChange={(e) => {
-                                    setName(e.target.value)
-                                    if (errors.name) setErrors(prev => ({ ...prev, name: undefined }))
-                                }}
-                                required
-                                className={errors.name ? "border-destructive focus-visible:ring-destructive" : ""}
-                            />
-                            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Organization Name</Label>
+                            <p className="text-lg font-medium">{activeOrganization.name}</p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="org-description">Description</Label>
-                            <Textarea
-                                id="org-description"
-                                value={description}
-                                onChange={(e) => {
-                                    setDescription(e.target.value)
-                                    if (errors.description) setErrors(prev => ({ ...prev, description: undefined }))
-                                }}
-                                className={`min-h-[100px] bg-background/50 ${errors.description ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                            />
-                            {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
+                            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Description</Label>
+                            <p className="text-sm text-muted-foreground">
+                                {activeOrganization.description || "No description provided."}
+                            </p>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex justify-end border-t border-border/50 pt-6">
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                <>
-                                    <Save className="mr-2 h-4 w-4" />
-                                    Save Changes
-                                </>
-                            )}
-                        </Button>
-                    </CardFooter>
-                </form>
-            </Card>
+                </Card>
+            )}
 
             <div className="mt-12 space-y-6">
                 <div className="flex items-center gap-3">

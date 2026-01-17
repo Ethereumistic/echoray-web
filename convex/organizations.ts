@@ -177,12 +177,54 @@ export const updateOrganization = mutation({
         const org = await ctx.db.get(id);
         if (!org) throw new Error("Organization not found");
 
-        // Check if user is owner or has org.settings permission
-        if (org.ownerId !== userId) {
-            // TODO: Check permissions
-            throw new Error("Only the owner can update organization settings");
+        // Check if user is owner, has o.settings.edit permission, or is system admin
+        let hasAccess = org.ownerId === userId;
+
+        if (!hasAccess) {
+            // Check membership and permissions
+            const membership = await ctx.db
+                .query("organizationMembers")
+                .withIndex("by_org_user", (q) =>
+                    q.eq("organizationId", id).eq("userId", userId)
+                )
+                .first();
+
+            if (membership && membership.status === "active") {
+                // Get member's roles and check for o.settings.edit (bit 31)
+                const memberRoles = await ctx.db
+                    .query("memberRoles")
+                    .withIndex("by_memberId", (q) => q.eq("memberId", membership._id))
+                    .collect();
+
+                for (const mr of memberRoles) {
+                    const role = await ctx.db.get(mr.roleId);
+                    if (role) {
+                        // Check if role has o.settings.edit permission (bit 31)
+                        const hasSettingsEdit = (BigInt(role.permissions) & (1n << 31n)) !== 0n;
+                        if (hasSettingsEdit) {
+                            hasAccess = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Also check for system admin
+            if (!hasAccess) {
+                const user = await ctx.db.get(userId);
+                if (user?.subscriptionTierId) {
+                    const tier = await ctx.db.get(user.subscriptionTierId);
+                    if (tier) {
+                        const isSystemAdmin = (BigInt(tier.basePermissions) & (1n << 50n)) !== 0n;
+                        hasAccess = isSystemAdmin;
+                    }
+                }
+            }
         }
 
+        if (!hasAccess) {
+            throw new Error("You don't have permission to update organization settings");
+        }
 
         await ctx.db.patch(id, updates);
         return { success: true };

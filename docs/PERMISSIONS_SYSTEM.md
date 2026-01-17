@@ -18,6 +18,10 @@ The system uses a **bitwise representation** for permissions, stored as 64-bit i
 - **Editor**: Can only invite Members. Cannot invite other Editors.
 - **Member**: Baseline access. No invitation/removal powers.
 
+## 1. Important Notes
+
+- The **Owner** of an organization is stored in `organizations.ownerId` and also by default has the **admin role**.
+
 ## 2. Core Logic (Convex)
 
 The source of truth for permissions resides in `convex/permissions.ts`.

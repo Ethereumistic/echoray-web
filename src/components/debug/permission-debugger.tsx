@@ -33,7 +33,7 @@ export function PermissionDebugger() {
     const allTiers = useQuery(api.debug.getAllTiers, isAuthenticated && isOpen ? {} : "skip")
     const changeTier = useMutation(api.debug.changeTier)
 
-    // Only show in development or for staff admins
+    // Show for all authenticated users (staff or dev mode for distinguishing UI)
     const isDev = process.env.NODE_ENV === "development"
     const isStaff = permissions["system.admin"] === true
 
@@ -51,7 +51,7 @@ export function PermissionDebugger() {
 
     if (isLoading && !isAuthenticated) return null
     if (!isAuthenticated) return null
-    if (!isDev && !isStaff) return null
+    // Note: Always show for authenticated users now (for production testing)
 
     const handleTierChange = async (tierSlug: string) => {
         if (!confirm(`Change your tier to "${tierSlug}"? This affects your permissions.`)) return
