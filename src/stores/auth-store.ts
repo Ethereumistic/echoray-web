@@ -73,6 +73,13 @@ export interface OrganizationMember {
 }
 
 /**
+ * Workspace context type
+ */
+export type WorkspaceContext =
+    | { type: 'personal'; userId: string }
+    | { type: 'organization'; orgId: Id<"organizations">; orgName: string }
+
+/**
  * Auth store state interface.
  */
 interface AuthState {
@@ -83,6 +90,7 @@ interface AuthState {
     activeOrganization: Organization | null
     memberProfile: (OrganizationMember & { roles: Role[] }) | null
     permissions: Record<string, boolean>
+    currentContext: WorkspaceContext
     isLoading: boolean
     isAuthenticated: boolean
 
@@ -91,6 +99,7 @@ interface AuthState {
     setProfile: (profile: UserProfile | null) => void
     setOrganizations: (orgs: Organization[]) => void
     setActiveOrganization: (org: Organization | null) => void
+    setCurrentContext: (context: WorkspaceContext) => void
     setMemberProfile: (member: (OrganizationMember & { roles: Role[] }) | null) => void
     setPermissions: (permissions: Record<string, boolean>) => void
     setLoading: (isLoading: boolean) => void
@@ -114,6 +123,7 @@ export const useAuthStore = create<AuthState>()(
             activeOrganization: null,
             memberProfile: null,
             permissions: {},
+            currentContext: { type: 'personal', userId: '' },
             isLoading: true,
             isAuthenticated: false,
 
@@ -139,6 +149,19 @@ export const useAuthStore = create<AuthState>()(
 
             setPermissions: (permissions) =>
                 set({ permissions }),
+
+            setCurrentContext: (currentContext) => {
+                set({ currentContext })
+                // Synchronize activeOrganization
+                if (currentContext.type === 'organization') {
+                    const org = get().organizations.find(o => o._id === currentContext.orgId)
+                    if (org) {
+                        set({ activeOrganization: org })
+                    }
+                } else {
+                    set({ activeOrganization: null })
+                }
+            },
 
             setLoading: (isLoading) =>
                 set({ isLoading }),
@@ -169,7 +192,8 @@ export const useAuthStore = create<AuthState>()(
                 profile: state.profile,
                 activeOrganization: state.activeOrganization,
                 memberProfile: state.memberProfile,
-                permissions: state.permissions
+                permissions: state.permissions,
+                currentContext: state.currentContext
             }),
         }
     )

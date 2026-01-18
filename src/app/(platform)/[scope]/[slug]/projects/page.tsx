@@ -298,7 +298,7 @@ export default function ProjectsPage() {
                                         {canCreateResult?.reason || "Upgrade your plan to create projects."}
                                     </p>
                                     <Link
-                                        href="/dashboard/subscription"
+                                        href="/p/billing"
                                         className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-linear-to-r from-primary to-primary/80 rounded-lg hover:opacity-90 transition-opacity"
                                     >
                                         View Upgrade Options
@@ -400,7 +400,7 @@ export default function ProjectsPage() {
                                             {canCreateResult?.reason || "Upgrade your plan to create projects."}
                                         </p>
                                         <Link
-                                            href="/dashboard/subscription"
+                                            href="/p/billing"
                                             className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-linear-to-r from-primary to-primary/80 rounded-lg hover:opacity-90 transition-opacity"
                                         >
                                             View Upgrade Options

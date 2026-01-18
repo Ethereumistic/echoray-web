@@ -56,101 +56,174 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useAuthStore, Organization } from "@/stores/auth-store"
+import { useAuthStore, Organization, UserProfile, WorkspaceContext } from "@/stores/auth-store"
 import { useAuthActions } from "@convex-dev/auth/react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 
-// --- Nav Items ---
+// --- Types ---
+interface SubNavItem {
+    title: string
+    href: string
+    icon?: React.ComponentType<{ className?: string }>
+    locked?: boolean
+    upgradeMessage?: string
+}
+
 interface NavItem {
     title: string
     href: string
     icon: React.ComponentType<{ className?: string }>
-    roles?: string[]
-    items?: { title: string; href: string }[]
-    organizationOnly?: boolean
+    items?: SubNavItem[]
 }
 
-const getNavItems = (
-    orgId?: string,
-    userId?: string,
-    canCreateProjects?: boolean,
-    organizations?: Organization[]
-): NavItem[] => {
-    const items: NavItem[] = [
-        { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
+// --- Navigation Builders ---
+
+const getPersonalNavItems = (userId: string, tier: string): NavItem[] => {
+    const tools: SubNavItem[] = [
+        { title: "Notes", href: `/p/${userId}/notes` },
     ]
 
-    // Organization workspace link (only if org is selected)
-    if (orgId) {
-        items.push({
-            title: "Workspace",
-            href: `/o/${orgId}`,
-            icon: Building2,
-            organizationOnly: true
-        })
-    }
-
-    // Personal projects href
-    const personalProjectsHref = userId ? `/p/${userId}/projects` : "/dashboard/projects"
-
-    // Projects item - different based on permission
-    if (canCreateProjects && organizations && organizations.length > 0) {
-        // Users with project.create: Show dropdown with Personal + Org projects
-        const projectSubItems = [
-            { title: "Personal Projects", href: personalProjectsHref },
-        ]
-
-        // Add each organization's projects
-        for (const org of organizations) {
-            projectSubItems.push({
-                title: org.name,
-                href: `/o/${org._id}/projects`,
-            })
-        }
-
-        items.push({
-            title: "Projects",
-            href: orgId ? `/o/${orgId}/projects` : personalProjectsHref,
-            icon: FolderOpen,
-            items: projectSubItems
-        })
+    // Based on tier (placeholder logic, adjust based on actual tier slugs)
+    if (tier === 'Pro' || tier === 'Enterprise' || tier === 'Admin') {
+        tools.push(
+            { title: "Analytics", href: `/p/${userId}/analytics` },
+            { title: "Calendar", href: `/p/${userId}/calendar` }
+        )
     } else {
-        // Free users: Simple button to personal projects (no dropdown)
-        items.push({
-            title: "Projects",
-            href: personalProjectsHref,
-            icon: FolderOpen,
-            // No items = no dropdown
-        })
+        // Locked items for upsell
+        tools.push(
+            { title: "Analytics", href: "/p/billing", locked: true, upgradeMessage: "Upgrade to Pro for Analytics" },
+            { title: "Calendar", href: "/p/billing", locked: true, upgradeMessage: "Upgrade to Pro for Calendar" }
+        )
     }
 
-    items.push(
+    return [
+        { title: "Overview", href: `/p/${userId}`, icon: LayoutDashboard },
         {
-            title: "Documents",
-            href: orgId ? `/o/${orgId}/documents` : "/dashboard/documents",
-            icon: FileText
+            title: "Tools & Apps",
+            href: `/p/${userId}/tools`,
+            icon: Wallet,
+            items: tools
         },
-        {
-            title: "Team",
-            href: orgId ? `/o/${orgId}/settings?tab=members` : "/dashboard/team",
-            icon: Users,
-        }
-    )
+        { title: "Documents", href: `/p/${userId}/documents`, icon: FileText },
+        { title: "Settings", href: "/p/settings", icon: Settings }
+    ]
+}
 
-    if (orgId) {
-        items.push({
-            title: "Workspace Settings",
-            href: `/o/${orgId}/settings`,
-            icon: Settings
-        })
-    } else {
-        items.push({ title: "Settings", href: "/p/settings", icon: Settings })
+const getOrgNavItems = (orgId: string, orgTier: string): NavItem[] => {
+    const apps: SubNavItem[] = [
+        { title: "CRM", href: `/o/${orgId}/crm` },
+    ]
+
+    if (orgTier !== 'Free') {
+        apps.push(
+            { title: "Analytics", href: `/o/${orgId}/analytics` },
+            { title: "Chat", href: `/o/${orgId}/chat` }
+        )
     }
 
-    return items
+    return [
+        { title: "Overview", href: `/o/${orgId}`, icon: LayoutDashboard },
+        { title: "Projects", href: `/o/${orgId}/projects`, icon: FolderOpen },
+        {
+            title: "Apps & Tools",
+            href: `/o/${orgId}/apps`,
+            icon: Wallet,
+            items: apps
+        },
+        { title: "Documents", href: `/o/${orgId}/documents`, icon: FileText },
+        { title: "Team", href: `/o/${orgId}/settings?tab=members`, icon: Users },
+        { title: "Workspace Settings", href: `/o/${orgId}/settings`, icon: Settings }
+    ]
+}
+
+// --- Context Switcher Component ---
+
+function ContextSwitcher({
+    currentContext,
+    organizations,
+    profile,
+    onContextChange,
+    isCollapsed
+}: {
+    currentContext: WorkspaceContext
+    organizations: Organization[]
+    profile: UserProfile | null
+    onContextChange: (context: WorkspaceContext) => void
+    isCollapsed: boolean
+}) {
+    const initials = profile?.displayName?.charAt(0).toUpperCase() || "U"
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <SidebarMenuButton size="lg" className="ring-1 -m ring-border/50 shadow-xs h-14">
+                    {/* <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        {currentContext.type === 'organization' ? (
+                            <Building2 className="size-6" />
+                        ) : (
+                            <Avatar className="h-8 w-8 rounded-lg">
+                                <AvatarImage src={profile?.avatarUrl} />
+                                <AvatarFallback className="rounded-lg bg-primary/10 text-primary font-bold">
+                                    {initials}
+                                </AvatarFallback>
+                            </Avatar>
+                        )}
+                    </div> */}
+                    {!isCollapsed && (
+                        <div className="grid flex-1 text-left text-sm leading-tight ml-2">
+                            <span className="truncate font-bold">
+                                {currentContext.type === 'organization' ? currentContext.orgName : "Personal Workspace"}
+                            </span>
+                            <span className="truncate text-[10px] text-muted-foreground uppercase tracking-widest font-black">
+                                {currentContext.type === 'organization' ? "Organization" : "Personal"}
+                            </span>
+                        </div>
+                    )}
+                    {!isCollapsed && <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />}
+                </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                className="w-64 rounded-xl p-2"
+                side="bottom"
+                align="start"
+                sideOffset={4}
+            >
+                <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-black uppercase text-muted-foreground tracking-widest">
+                    Workspaces
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                    onClick={() => onContextChange({ type: 'personal', userId: profile?.id || 'me' })}
+                    className="gap-2 p-2 rounded-lg cursor-pointer"
+                >
+                    <div className="flex size-6 items-center justify-center rounded-md border bg-muted/30">
+                        <Users className="size-3.5" />
+                    </div>
+                    <span className="text-sm font-medium flex-1">Personal Workspace</span>
+                    {currentContext.type === 'personal' && <Check className="size-4 text-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {organizations.map((org) => (
+                    <DropdownMenuItem
+                        key={org._id}
+                        onClick={() => onContextChange({ type: 'organization', orgId: org._id, orgName: org.name })}
+                        className="gap-2 p-2 rounded-lg cursor-pointer"
+                    >
+                        <div className="flex size-6 items-center justify-center rounded-md border bg-muted/30">
+                            <Building2 className="size-3.5" />
+                        </div>
+                        <span className="text-sm font-medium flex-1">{org.name}</span>
+                        {currentContext.type === 'organization' && currentContext.orgId === org._id && (
+                            <Check className="size-4 text-primary" />
+                        )}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
 }
 
 // --- Organizations (Mock) ---
@@ -161,20 +234,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         profile,
         organizations,
         activeOrganization,
-        setActiveOrganization,
-        signOut: clearAuthStore
+        currentContext,
+        setCurrentContext,
+        signOut: clearAuthStore,
+        hasPermission
     } = useAuthStore()
     const { state, isMobile } = useSidebar()
     const isCollapsed = state === "collapsed"
     const { signOut: convexSignOut } = useAuthActions()
-
-    // Check if user can create organizations (based on tier limits)
-    const orgCapability = useQuery(api.users.canCreateOrganization)
-    const canCreateOrg = orgCapability?.canCreate ?? false
-
-    // Check if user can create projects (Web tier and above)
-    const projectCapability = useQuery(api.projects.canCreateProject)
-    const canCreateProjects = projectCapability?.canCreate ?? false
 
     const handleSignOut = async () => {
         await convexSignOut()
@@ -183,41 +250,53 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         router.push('/')
     }
 
-    // Get user ID for personal workspace routes (immutable)
-    const userId = profile?.id || 'me'
+    // Determine current nav items
+    const navItems = React.useMemo(() => {
+        if (currentContext.type === 'organization') {
+            return getOrgNavItems(currentContext.orgId, activeOrganization?.subscriptionTier?.name || 'Free')
+        } else {
+            return getPersonalNavItems(profile?.id || 'me', profile?.subscriptionTier?.name || 'Free')
+        }
+    }, [currentContext, profile, activeOrganization])
 
-    const navItems = getNavItems(activeOrganization?._id, userId, canCreateProjects, organizations)
-
-    // Permission-based filtering
-    const { hasPermission } = useAuthStore()
-    const filteredNavItems = navItems.filter((item) => {
-        if (!item.roles) return true
-        // Use permissions system instead of legacy roles
-        return item.roles.some((role) => hasPermission(role))
-    })
+    // Filter based on existing routes/permissions if needed
+    // (For now following the plan's direct routes)
+    const filteredNavItems = navItems
 
     return (
-        <Sidebar collapsible="icon" className="border-r border-border" {...props}>
-            <SidebarHeader className="h-16 flex items-center p-2">
-                <div className="flex w-full mx-auto justify-start items-center gap-3">
-                    <div className="flex  items-center justify-center ">
+        <Sidebar collapsible="icon" className="border-r border-border " {...props}>
+            <SidebarHeader className="px-2 gap-2 ">
+                <div className="flex w-full items-center gap-3 px-2 h-14 border-b border-border">
+                    <Link href="/" className=" flex items-center gap-3 hover:opacity-80 transition-opacity">
                         <Image
                             src="/logo/wifi-dark.png"
                             alt="Logo"
-                            width={40}
+                            width={36}
                             height={36}
-                            className="mt-1.5"
+                            className="mt-0.5"
                         />
-                    </div>
-                    {!isCollapsed && (
-                        <div className="flex flex-col leading-none transition-all duration-300">
-                            <span className="font-bold text-lg tracking-tight">Echoray</span>
-                            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-black mt-0.5">
-                                {profile?.subscriptionTier?.name || 'Free'}
-                            </span>
-                        </div>
-                    )}
+                        {!isCollapsed && <span className="font-bold text-lg tracking-tight">Echoray</span>}
+                    </Link>
                 </div>
+
+                <div className="px-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 group-data-[collapsible=icon]:hidden">
+                    Workspaces
+                </div>
+
+                <ContextSwitcher
+                    currentContext={currentContext}
+                    organizations={organizations || []}
+                    profile={profile}
+                    onContextChange={(context) => {
+                        setCurrentContext(context)
+                        if (context.type === 'organization') {
+                            router.push(`/o/${context.orgId}`)
+                        } else {
+                            router.push(`/p/${profile?.id || 'me'}`)
+                        }
+                    }}
+                    isCollapsed={isCollapsed}
+                />
             </SidebarHeader>
 
             <SidebarContent className="-px-2 gap-4">
@@ -258,8 +337,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                                     {item.items.map((subItem) => (
                                                         <SidebarMenuSubItem key={subItem.href}>
                                                             <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
-                                                                <Link href={subItem.href}>
+                                                                <Link
+                                                                    href={subItem.locked ? "#" : subItem.href}
+                                                                    className={cn(subItem.locked && "opacity-50 cursor-not-allowed pointer-events-none")}
+                                                                >
                                                                     <span>{subItem.title}</span>
+                                                                    {subItem.locked && (
+                                                                        <Lock className="ml-auto size-3 text-amber-500" />
+                                                                    )}
                                                                 </Link>
                                                             </SidebarMenuSubButton>
                                                         </SidebarMenuSubItem>
@@ -321,7 +406,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
-                                className="w-(--radix-dropdown-menu-trigger-width) min-w-64 rounded-xl p-2"
+                                className="w-64 rounded-xl p-2"
                                 side={isMobile ? "bottom" : "right"}
                                 align="end"
                                 sideOffset={4}
@@ -343,119 +428,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
                                 <DropdownMenuSeparator />
 
-                                {activeOrganization && (
-                                    <DropdownMenuItem
-                                        onClick={() => router.push(`/o/${activeOrganization._id}/settings`)}
-                                        className="gap-2 p-2 rounded-lg text-primary bg-primary/5 border border-primary/10"
-                                    >
-                                        <div className="flex size-6 items-center justify-center rounded-md border border-primary/20 bg-primary/10">
-                                            <Settings className="size-3.5" />
-                                        </div>
-                                        <span className="text-sm font-semibold">Workspace Settings</span>
-                                    </DropdownMenuItem>
-                                )}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-black uppercase text-muted-foreground tracking-widest">
-                                    Switch Workspace
-                                </DropdownMenuLabel>
-                                {organizations?.map((org) => (
-                                    <DropdownMenuItem
-                                        key={org._id}
-                                        onClick={() => {
-                                            setActiveOrganization(org)
-                                            router.push(`/o/${org._id}`)
-                                        }}
-                                        className="gap-2 p-2 rounded-lg group/item"
-                                    >
-                                        <div className="flex size-6 items-center justify-center rounded-md border bg-muted/30">
-                                            <Building2 className="size-3.5" />
-                                        </div>
-                                        <span className="text-sm font-medium truncate flex-1">{org.name}</span>
-                                        <div className="flex items-center gap-1.5">
-                                            <div
-                                                role="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    router.push(`/o/${org._id}/settings`)
-                                                }}
-                                                className="opacity-0 group-hover/item:opacity-100 p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-all duration-200"
-                                            >
-                                                <Settings className="size-3.5" />
-                                            </div>
-                                            {activeOrganization?._id === org._id && <Check className="size-4 text-primary" />}
-                                        </div>
-                                    </DropdownMenuItem>
-                                ))}
-
-                                {/* Create Organization - conditionally locked based on tier limits */}
-                                {canCreateOrg ? (
-                                    <DropdownMenuItem asChild className="gap-2 p-2 rounded-lg text-muted-foreground cursor-pointer">
-                                        <Link href="/o/create" className="flex items-center gap-2">
-                                            <Plus className="size-4" />
-                                            <span className="text-sm">Create Organization</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                ) : (
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <div className="flex items-center gap-2 p-2 rounded-lg text-muted-foreground/50 cursor-not-allowed select-none">
-                                                <Lock className="size-4" />
-                                                <span className="text-sm">Create Organization</span>
-                                                <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                                                    Upgrade
-                                                </span>
-                                            </div>
-                                        </PopoverTrigger>
-                                        <PopoverContent
-                                            side="right"
-                                            align="start"
-                                            className="w-72 p-4 bg-background/95 backdrop-blur-sm border border-border shadow-xl"
-                                        >
-                                            <div className="space-y-3">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="p-2 rounded-lg bg-amber-500/10">
-                                                        <Lock className="size-4 text-amber-500" />
-                                                    </div>
-                                                    <h4 className="font-semibold text-sm">Feature Locked</h4>
-                                                </div>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {orgCapability?.reason || "Upgrade your plan to create organizations."}
-                                                </p>
-                                                <Link
-                                                    href="/dashboard/subscription"
-                                                    className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-primary to-primary/80 rounded-lg hover:opacity-90 transition-opacity"
-                                                >
-                                                    View Upgrade Options
-                                                </Link>
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                )}
-
-                                <DropdownMenuSeparator />
-
                                 <DropdownMenuItem asChild>
-                                    <Link href="/dashboard/notifications" className="flex items-center gap-2 p-2 rounded-lg cursor-pointer">
+                                    <Link href="/p/notifications" className="flex items-center gap-2 p-2 rounded-lg cursor-pointer">
                                         <Bell className="size-4" />
                                         <span>Notifications</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                    <Link href="/dashboard/billing" className="flex items-center gap-2 p-2 rounded-lg cursor-pointer">
+                                    <Link href="/p/billing" className="flex items-center gap-2 p-2 rounded-lg cursor-pointer">
                                         <Wallet className="size-4" />
-                                        <span>Billing</span>
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link href="/dashboard/subscription" className="flex items-center gap-2 p-2 rounded-lg cursor-pointer">
-                                        <CreditCard className="size-4" />
-                                        <span>Subscription</span>
+                                        <span>Billing & Subscription</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
                                     <Link href="/p/settings" className="flex items-center gap-2 p-2 rounded-lg cursor-pointer">
                                         <Settings className="size-4" />
-                                        <span>Settings</span>
+                                        <span>Personal Settings</span>
                                     </Link>
                                 </DropdownMenuItem>
 

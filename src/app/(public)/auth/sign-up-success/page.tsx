@@ -8,7 +8,7 @@ import {
 
 export default function SignUpSuccessPage() {
   return (
-    <div className="w-full max-w-sm p-6 md:p-10">
+    <div className="w-full max-w-xl p-6 md:p-10">
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>

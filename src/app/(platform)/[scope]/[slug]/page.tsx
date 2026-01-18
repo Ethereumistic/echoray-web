@@ -50,7 +50,7 @@ function PersonalWorkspaceContent({ slug }: { slug: string }) {
             title: 'Settings',
             description: 'Manage your personal settings',
             icon: Settings,
-            href: '/dashboard/settings',
+            href: '/p/settings',
         },
     ]
 

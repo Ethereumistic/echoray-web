@@ -17,7 +17,7 @@ import { useScopeContext } from "@/contexts/scope-context"
  * Unified Settings page for both personal (p) and organization (o) scopes.
  * Route: /p/[userId]/settings or /o/[orgId]/settings
  * 
- * - Personal: Redirects to /dashboard/settings
+ * - Personal: Redirects to /p/settings
  * - Organization: Shows org-specific settings tabs
  */
 export default function SettingsPage() {
@@ -36,7 +36,7 @@ export default function SettingsPage() {
 
     // Personal settings redirect to dashboard settings
     if (isPersonal) {
-        redirect('/dashboard/settings')
+        redirect('/p/settings')
     }
 
     useEffect(() => {

@@ -81,7 +81,7 @@ export default defineSchema({
         subscriptionStartedAt: v.optional(v.number()),
         subscriptionEndsAt: v.optional(v.number()),
     })
-        .index("by_email", ["email"])
+        .index("email", ["email"])  // Required by Convex Auth
         .index("by_username", ["username"])
         .index("by_subscriptionTierId", ["subscriptionTierId"]),
 
