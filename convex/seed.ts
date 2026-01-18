@@ -265,7 +265,7 @@ export const assignStaffAdmin = mutation({
         // Find user by email
         const user = await ctx.db
             .query("users")
-            .withIndex("by_email", (q) => q.eq("email", email))
+            .withIndex("email", (q) => q.eq("email", email))
             .first();
 
         if (!user) throw new Error(`User not found with email: ${email}`);
@@ -401,7 +401,7 @@ export const assignUserTier = mutation({
     handler: async (ctx, { email, tierSlug }) => {
         const user = await ctx.db
             .query("users")
-            .withIndex("by_email", (q) => q.eq("email", email))
+            .withIndex("email", (q) => q.eq("email", email))
             .unique();
 
         if (!user) throw new Error(`User not found: ${email}`);

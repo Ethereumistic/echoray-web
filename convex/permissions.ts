@@ -1,4 +1,4 @@
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { auth } from "./auth";
 import { Id } from "./_generated/dataModel";
@@ -95,7 +95,7 @@ export function clearPermissionBit(permissions: number, bitPosition: number): nu
 /**
  * Check if a user is a system administrator (Staff Admin)
  */
-export async function isSystemAdmin(ctx: any, userId: Id<"users">): Promise<boolean> {
+export async function isSystemAdmin(ctx: QueryCtx, userId: Id<"users">): Promise<boolean> {
     const user = await ctx.db.get(userId);
     if (!user || !user.subscriptionTierId) return false;
 
@@ -169,7 +169,7 @@ export const getUserPermissions = query({
  * 3. System bits only for Staff Admins
  */
 export async function computeMemberPermissions(
-    ctx: any,
+    ctx: QueryCtx,
     userId: Id<"users">,
     organizationId: Id<"organizations">
 ): Promise<number> {
@@ -188,7 +188,7 @@ export async function computeMemberPermissions(
     // Get membership
     const membership = await ctx.db
         .query("organizationMembers")
-        .withIndex("by_org_user", (q: any) =>
+        .withIndex("by_org_user", (q) =>
             q.eq("organizationId", organizationId).eq("userId", userId)
         )
         .first();
@@ -218,7 +218,7 @@ export async function computeMemberPermissions(
         // Get member's role permissions
         const memberRoles = await ctx.db
             .query("memberRoles")
-            .withIndex("by_memberId", (q: any) => q.eq("memberId", membership._id))
+            .withIndex("by_memberId", (q) => q.eq("memberId", membership._id))
             .collect();
 
         for (const mr of memberRoles) {
@@ -247,8 +247,8 @@ export async function computeMemberPermissions(
     // Apply member-specific overrides (but still capped by org features)
     const overrides = await ctx.db
         .query("memberPermissionOverrides")
-        .withIndex("by_memberId", (q: any) => q.eq("memberId", membership._id))
-        .filter((q: any) =>
+        .withIndex("by_memberId", (q) => q.eq("memberId", membership._id))
+        .filter((q) =>
             q.or(
                 q.eq(q.field("expiresAt"), undefined),
                 q.gt(q.field("expiresAt"), Date.now())

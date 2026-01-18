@@ -150,7 +150,7 @@ export const inviteMember = mutation({
         // Check if user already exists by email
         const targetUser = await ctx.db
             .query("users")
-            .withIndex("by_email", (q) => q.eq("email", email))
+            .withIndex("email", (q) => q.eq("email", email))
             .first();
 
         // If user doesn't exist yet, we can't fully invite them in this simple flow
@@ -231,7 +231,7 @@ export const removeMember = mutation({
             if (targetMembership) {
                 const targetRoles = await ctx.db
                     .query("memberRoles")
-                    .withIndex("by_memberId", (q: any) => q.eq("memberId", targetMembership._id))
+                    .withIndex("by_memberId", (q) => q.eq("memberId", targetMembership._id))
                     .collect();
 
                 let targetIsAdmin = false;
@@ -320,7 +320,7 @@ export const updateMemberRoles = mutation({
         // Get caller's membership and roles
         const callerMembership = await ctx.db
             .query("organizationMembers")
-            .withIndex("by_org_user", (q: any) =>
+            .withIndex("by_org_user", (q) =>
                 q.eq("organizationId", member.organizationId).eq("userId", userId)
             )
             .first();
@@ -336,7 +336,7 @@ export const updateMemberRoles = mutation({
         // Get caller's roles
         const callerRoles = await ctx.db
             .query("memberRoles")
-            .withIndex("by_memberId", (q: any) => q.eq("memberId", callerMembership._id))
+            .withIndex("by_memberId", (q) => q.eq("memberId", callerMembership._id))
             .collect();
 
         let callerIsAdmin = false;
@@ -350,7 +350,7 @@ export const updateMemberRoles = mutation({
         // Get target's current roles
         const targetRoles = await ctx.db
             .query("memberRoles")
-            .withIndex("by_memberId", (q: any) => q.eq("memberId", memberId))
+            .withIndex("by_memberId", (q) => q.eq("memberId", memberId))
             .collect();
 
         let targetIsAdmin = false;
