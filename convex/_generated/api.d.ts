@@ -18,7 +18,6 @@ import type * as http from "../http.js";
 import type * as members from "../members.js";
 import type * as organizations from "../organizations.js";
 import type * as permissions from "../permissions.js";
-import type * as projects from "../projects.js";
 import type * as repos from "../repos.js";
 import type * as roles from "../roles.js";
 import type * as seed from "../seed.js";
@@ -42,7 +41,6 @@ declare const fullApi: ApiFromModules<{
   members: typeof members;
   organizations: typeof organizations;
   permissions: typeof permissions;
-  projects: typeof projects;
   repos: typeof repos;
   roles: typeof roles;
   seed: typeof seed;

@@ -297,37 +297,8 @@ export const deleteOrganization = mutation({
             .collect();
         for (const role of roles) await ctx.db.delete(role._id);
 
-        // 3. Projects and their data
-        const projects = await ctx.db
-            .query("projects")
-            .withIndex("by_organizationId", (q) => q.eq("organizationId", id))
-            .collect();
-
-        for (const project of projects) {
-            // Fields
-            const fields = await ctx.db
-                .query("projectFields")
-                .withIndex("by_project", (q) => q.eq("projectId", project._id))
-                .collect();
-            for (const f of fields) await ctx.db.delete(f._id);
-
-            // Records
-            const records = await ctx.db
-                .query("projectRecords")
-                .withIndex("by_project", (q) => q.eq("projectId", project._id))
-                .collect();
-            for (const r of records) await ctx.db.delete(r._id);
-
-            // Views
-            const views = await ctx.db
-                .query("projectViews")
-                .withIndex("by_project", (q) => q.eq("projectId", project._id))
-                .collect();
-            for (const vw of views) await ctx.db.delete(vw._id);
-
-            // Delete project
-            await ctx.db.delete(project._id);
-        }
+        // 3. Organization data cleanup (Members, Roles, etc. already handled by their own logic)
+        // Projects removed as they are being decommissioned fresh.
 
         // 4. Addons
         const addons = await ctx.db
@@ -466,8 +437,8 @@ async function createSystemRoles(ctx: any, orgId: any) {
         return Number(mask);
     };
 
-    // Admin role: All org permissions
-    const adminPermissions = buildMask([20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]);
+    // Admin role: Member/Role/Settings permissions
+    const adminPermissions = buildMask([24, 25, 26, 27, 28, 29, 30]);
     await ctx.db.insert("roles", {
         organizationId: orgId,
         name: "Admin",
@@ -481,8 +452,8 @@ async function createSystemRoles(ctx: any, orgId: any) {
         isDefault: false,
     });
 
-    // Editor role: Project management + invite as editor/member
-    const editorPermissions = buildMask([20, 21, 22, 24, 25, 26]);
+    // Editor role: Member view/invite
+    const editorPermissions = buildMask([24, 25, 26]);
     await ctx.db.insert("roles", {
         organizationId: orgId,
         name: "Editor",
@@ -497,7 +468,7 @@ async function createSystemRoles(ctx: any, orgId: any) {
     });
 
     // Member role: View-only access
-    const memberPermissions = buildMask([20, 24]);
+    const memberPermissions = buildMask([24]);
     await ctx.db.insert("roles", {
         organizationId: orgId,
         name: "Member",

@@ -7,7 +7,6 @@ import {
     LayoutDashboard,
     Settings,
     Users,
-    FolderOpen,
     FileText,
     LogOut,
     Building2,
@@ -19,6 +18,11 @@ import {
     ChevronRight,
     Plus,
     Lock,
+    CloudUpload,
+    MessageSquare,
+    BarChart3,
+    Calendar,
+    Users2,
 } from "lucide-react"
 
 import {
@@ -34,6 +38,7 @@ import {
     SidebarMenuSub,
     SidebarMenuSubItem,
     SidebarMenuSubButton,
+    SidebarMenuAction,
     useSidebar,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
@@ -83,28 +88,29 @@ interface NavItem {
 
 const getPersonalNavItems = (userId: string, tier: string): NavItem[] => {
     const tools: SubNavItem[] = [
-        { title: "Notes", href: `/p/${userId}/notes` },
+        { title: "Upload", href: `/p/${userId}/upload`, icon: CloudUpload },
+        { title: "Notes", href: `/p/${userId}/notes`, icon: FileText },
     ]
 
     // Based on tier (placeholder logic, adjust based on actual tier slugs)
     if (tier === 'Pro' || tier === 'Enterprise' || tier === 'Admin') {
         tools.push(
-            { title: "Analytics", href: `/p/${userId}/analytics` },
-            { title: "Calendar", href: `/p/${userId}/calendar` }
+            { title: "Analytics", href: `/p/${userId}/analytics`, icon: BarChart3 },
+            { title: "Calendar", href: `/p/${userId}/calendar`, icon: Calendar }
         )
     } else {
         // Locked items for upsell
         tools.push(
-            { title: "Analytics", href: "/p/billing", locked: true, upgradeMessage: "Upgrade to Pro for Analytics" },
-            { title: "Calendar", href: "/p/billing", locked: true, upgradeMessage: "Upgrade to Pro for Calendar" }
+            { title: "Analytics", href: "/p/billing", locked: true, upgradeMessage: "Upgrade to Pro for Analytics", icon: BarChart3 },
+            { title: "Calendar", href: "/p/billing", locked: true, upgradeMessage: "Upgrade to Pro for Calendar", icon: Calendar }
         )
     }
 
     return [
         { title: "Overview", href: `/p/${userId}`, icon: LayoutDashboard },
         {
-            title: "Tools & Apps",
-            href: `/p/${userId}/tools`,
+            title: "Apps & Tools",
+            href: `/p/${userId}/apps`,
             icon: Wallet,
             items: tools
         },
@@ -115,19 +121,19 @@ const getPersonalNavItems = (userId: string, tier: string): NavItem[] => {
 
 const getOrgNavItems = (orgId: string, orgTier: string): NavItem[] => {
     const apps: SubNavItem[] = [
-        { title: "CRM", href: `/o/${orgId}/crm` },
+        { title: "Upload", href: `/o/${orgId}/upload`, icon: CloudUpload },
+        { title: "CRM", href: `/o/${orgId}/crm`, icon: Users2 },
     ]
 
     if (orgTier !== 'Free') {
         apps.push(
-            { title: "Analytics", href: `/o/${orgId}/analytics` },
-            { title: "Chat", href: `/o/${orgId}/chat` }
+            { title: "Analytics", href: `/o/${orgId}/analytics`, icon: BarChart3 },
+            { title: "Chat", href: `/o/${orgId}/chat`, icon: MessageSquare }
         )
     }
 
     return [
         { title: "Overview", href: `/o/${orgId}`, icon: LayoutDashboard },
-        { title: "Projects", href: `/o/${orgId}/projects`, icon: FolderOpen },
         {
             title: "Apps & Tools",
             href: `/o/${orgId}/apps`,
@@ -317,20 +323,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         className="group/collapsible"
                                     >
                                         <SidebarMenuItem>
-                                            <CollapsibleTrigger asChild>
-                                                <SidebarMenuButton
-                                                    tooltip={item.title}
-                                                    className={cn(
-                                                        "transition-all duration-200",
-                                                        isActive
-                                                            ? "text-primary font-bold"
-                                                            : "text-muted-foreground hover:text-foreground"
-                                                    )}
-                                                >
+                                            <SidebarMenuButton
+                                                asChild
+                                                tooltip={item.title}
+                                                isActive={isActive}
+                                                className={cn(
+                                                    "transition-all duration-200",
+                                                    isActive
+                                                        ? "text-primary font-bold"
+                                                        : "text-muted-foreground hover:text-foreground"
+                                                )}
+                                            >
+                                                <Link href={item.href}>
                                                     <item.icon className={cn("size-4", isActive ? "text-primary" : "")} />
                                                     <span>{item.title}</span>
-                                                    <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                                                </SidebarMenuButton>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                            <CollapsibleTrigger asChild>
+                                                <SidebarMenuAction className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90">
+                                                    <ChevronRight className="size-4" />
+                                                    <span className="sr-only">Toggle</span>
+                                                </SidebarMenuAction>
                                             </CollapsibleTrigger>
                                             <CollapsibleContent>
                                                 <SidebarMenuSub>
@@ -339,8 +352,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                                             <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
                                                                 <Link
                                                                     href={subItem.locked ? "#" : subItem.href}
-                                                                    className={cn(subItem.locked && "opacity-50 cursor-not-allowed pointer-events-none")}
+                                                                    className={cn(
+                                                                        "flex items-center gap-2",
+                                                                        subItem.locked && "opacity-50 cursor-not-allowed pointer-events-none"
+                                                                    )}
                                                                 >
+                                                                    {subItem.icon && <subItem.icon className="size-3.5" />}
                                                                     <span>{subItem.title}</span>
                                                                     {subItem.locked && (
                                                                         <Lock className="ml-auto size-3 text-amber-500" />

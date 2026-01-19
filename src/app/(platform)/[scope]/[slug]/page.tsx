@@ -5,7 +5,7 @@ import { useAuthStore } from "@/stores/auth-store"
 import { useQuery } from "convex/react"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, Users, FolderOpen, Loader2, User, FileText, Settings } from "lucide-react"
+import { Activity, Users, Loader2, User, FileText, Settings } from "lucide-react"
 import { OrgQuickActions } from "@/components/dashboard/org-quick-actions"
 import Link from "next/link"
 import { api } from "../../../../../convex/_generated/api"
@@ -34,12 +34,6 @@ function PersonalWorkspaceContent({ slug }: { slug: string }) {
     const displayName = profile?.displayName || 'Personal'
 
     const quickLinks = [
-        {
-            title: 'Projects',
-            description: 'View and manage your personal projects',
-            icon: FolderOpen,
-            href: `/p/${slug}/projects`,
-        },
         {
             title: 'Documents',
             description: 'Access your personal documents',
@@ -182,19 +176,6 @@ function OrganizationWorkspaceContent({ slug }: { slug: string }) {
                 </section>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-sm ring-1 ring-border/20 transition-all hover:bg-card/70">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Projects</CardTitle>
-                            <FolderOpen className="h-4 w-4 text-primary/70" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">0</div>
-                            <p className="text-xs text-muted-foreground">
-                                Active projects in this workspace
-                            </p>
-                        </CardContent>
-                    </Card>
-
                     <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-sm ring-1 ring-border/20 transition-all hover:bg-card/70">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Team Members</CardTitle>

@@ -31,8 +31,8 @@ export const seedData = mutation({
                 type: "commercial",
                 priceEur: 99,
                 isCustom: false,
-                basePermissions: 0b1111, // bits 0-3: profile.*, org.create, p.project.create
-                orgFeatures: 0b111111111111 * (2 ** 20), // bits 20-31: all o.* features
+                basePermissions: 0b111, // bits 0-2: profile.*, org.create
+                orgFeatures: 0b11111111 * (2 ** 24), // bits 24-31: all o.* features (excluding projects)
                 maxMembers: 5,
                 maxOrganizations: 1
             },
@@ -43,8 +43,8 @@ export const seedData = mutation({
                 type: "commercial",
                 priceEur: 299,
                 isCustom: false,
-                basePermissions: 0b1111, // bits 0-3
-                orgFeatures: 0b111111111111 * (2 ** 20), // bits 20-31
+                basePermissions: 0b111, // bits 0-2
+                orgFeatures: 0b11111111 * (2 ** 24), // bits 24-31
                 maxMembers: 20,
                 maxOrganizations: 5
             },
@@ -55,8 +55,8 @@ export const seedData = mutation({
                 type: "commercial",
                 priceEur: 0,
                 isCustom: true,
-                basePermissions: 0b1111, // bits 0-3
-                orgFeatures: 0b1111111111111111111111 * (2 ** 20), // bits 20-41
+                basePermissions: 0b111, // bits 0-2
+                orgFeatures: 0b111111111111111111 * (2 ** 24), // bits 24-41
                 maxOrganizations: 10
             },
             // Staff Admin: Everything
@@ -98,19 +98,6 @@ export const seedData = mutation({
         const existingPerms = await ctx.db.query("permissions").collect();
         for (const p of existingPerms) await ctx.db.delete(p._id);
 
-        // Clear projects and related data
-        const existingViews = await ctx.db.query("projectViews").collect();
-        for (const v of existingViews) await ctx.db.delete(v._id);
-
-        const existingRecords = await ctx.db.query("projectRecords").collect();
-        for (const r of existingRecords) await ctx.db.delete(r._id);
-
-        const existingFields = await ctx.db.query("projectFields").collect();
-        for (const f of existingFields) await ctx.db.delete(f._id);
-
-        const existingProjects = await ctx.db.query("projects").collect();
-        for (const p of existingProjects) await ctx.db.delete(p._id);
-
         // Insert new tiers and build slug -> newId map
         const tierSlugToNewId: Map<string, string> = new Map();
         for (const tier of tiers) {
@@ -140,13 +127,8 @@ export const seedData = mutation({
             { code: "profile.view", bitPosition: 0, name: "View Profiles", category: "global", isAddon: false, isDangerous: false },
             { code: "profile.edit", bitPosition: 1, name: "Edit Own Profile", category: "global", isAddon: false, isDangerous: false },
             { code: "org.create", bitPosition: 2, name: "Create Organizations", category: "global", minTier: "web", isAddon: false, isDangerous: false },
-            { code: "p.project.create", bitPosition: 3, name: "Create Personal Projects", category: "personal", minTier: "web", isAddon: false, isDangerous: false },
 
             // === ORGANIZATION ROLE PERMISSIONS (Bits 20-39) ===
-            { code: "o.project.view", bitPosition: 20, name: "View Org Projects", category: "org", isAddon: false, isDangerous: false },
-            { code: "o.project.create", bitPosition: 21, name: "Create Org Projects", category: "org", isAddon: false, isDangerous: false },
-            { code: "o.project.edit", bitPosition: 22, name: "Edit Org Projects", category: "org", isAddon: false, isDangerous: false },
-            { code: "o.project.delete", bitPosition: 23, name: "Delete Org Projects", category: "org", isAddon: false, isDangerous: false },
             { code: "o.member.view", bitPosition: 24, name: "View Members", category: "org", isAddon: false, isDangerous: false },
             { code: "o.member.invite", bitPosition: 25, name: "Invite as Member", category: "org", isAddon: false, isDangerous: false },
             { code: "o.editor.invite", bitPosition: 26, name: "Invite as Editor", category: "org", isAddon: false, isDangerous: false },
@@ -319,15 +301,15 @@ export const fixupRoles = mutation({
 
                 if (role.isSystemRole) {
                     if (role.systemRoleType === "admin") {
-                        // Admins: Projects, Member View/Invite/Remove, Editor Invite. 
+                        // Admins: Member View/Invite/Remove, Editor Invite. 
                         // NO Role Manage, NO Settings Edit, NO Admin Invite, NO Admin Remove.
-                        newPermissions = buildMask([20, 21, 22, 23, 24, 25, 26, 28]);
+                        newPermissions = buildMask([24, 25, 26, 28]);
                     } else if (role.systemRoleType === "moderator") {
-                        // Editors: Projects (View/Create/Edit), Member View/Invite
-                        newPermissions = buildMask([20, 21, 22, 24, 25]);
+                        // Editors: Member View/Invite
+                        newPermissions = buildMask([24, 25]);
                     } else if (role.systemRoleType === "member") {
-                        // Members: Project View, Member View
-                        newPermissions = buildMask([20, 24]);
+                        // Members: Member View
+                        newPermissions = buildMask([24]);
                     }
                 }
 

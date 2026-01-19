@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Button } from "./button"
 
 export interface UploadFile {
     file: File
@@ -108,177 +109,194 @@ export function UploadCard({
         e.target.value = ""
     }, [maxFileSize, onFilesSelected])
 
+    // Content height anchors
+    const TILE_HEIGHT = 100
+    const GAP = 8
+    const GRID_HEIGHT = (TILE_HEIGHT * 3) + (GAP * 2)
+    const LIST_HEIGHT = (TILE_HEIGHT * 2) + GAP
+    const ACTION_ROW_HEIGHT = TILE_HEIGHT
+
+    // Content height anchors - Pixel Perfect Constants
+    const TILE_H = 100
+    const G = 8
+    const GRID_H = (TILE_H * 3) + (G * 2) // 316px
+    const TOP_SLICE_H = (TILE_H * 2) + G   // 208px
+    const BTM_SLICE_H = TILE_H             // 100px
+
     return (
         <div
             className={cn(
-                "overflow-hidden rounded-2xl border border-border/50 bg-card/30 backdrop-blur-xl shadow-2xl ",
+                "overflow-hidden rounded-xl border border-white/10 bg-[#0A0A0B]/80 backdrop-blur-3xl shadow-2xl transition-all duration-500",
                 className
             )}
             {...props}
         >
-            <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-border/50">
-                {/* Column 1: Destination Selector (3/12) */}
-                <div className="md:col-span-3 p-6 bg-muted/20">
-                    <div className="flex flex-col h-full">
-                        <div className="mb-6">
-                            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80">
-                                1. Destination
-                            </h3>
-                            <p className="text-xs text-muted-foreground mt-1">Select where files will be stored</p>
+            <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-white/5 h-full">
+                {/* Column 1: Destination Selector (The Constraint) */}
+                <div className="w-full md:w-[28%] p-8 bg-black/20 flex flex-col">
+                    <div className="h-10 flex flex-col justify-center mb-8">
+                        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/50">
+                            1. Destination
+                        </h3>
+                        <div className="text-[10px] text-white/30 mt-1 font-bold">
+                            Target: /{selectedFolder === "custom" ? (customFolder || "custom") : selectedFolder}/
                         </div>
+                    </div>
 
-                        <div className="flex-1">
-                            <FolderSelector
-                                selectedFolder={selectedFolder}
-                                onFolderChange={onFolderChange}
-                                customFolder={customFolder}
-                                onCustomFolderChange={onCustomFolderChange}
-                                disabled={disabled || uploading}
-                                variant="vertical"
-                            />
-                        </div>
+                    <div style={{ height: GRID_H }}>
+                        <FolderSelector
+                            selectedFolder={selectedFolder}
+                            onFolderChange={onFolderChange}
+                            customFolder={customFolder}
+                            onCustomFolderChange={onCustomFolderChange}
+                            disabled={disabled || uploading}
+                            variant="vertical"
+                        />
                     </div>
                 </div>
 
-                {/* Column 2: Upload Area (5/12) */}
-                <div className="md:col-span-5 p-8 relative flex flex-col items-center justify-center min-h-[300px]">
-                    <div className="mb-6 text-center w-full absolute top-8">
-                        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80">
+                {/* Column 2: Upload Area (Source) */}
+                <div className="w-full md:w-[44%] p-8 flex flex-col bg-white/2">
+                    <div className="h-10 flex flex-col justify-center mb-8 text-center">
+                        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/50">
                             2. Source
                         </h3>
+                        <p className="text-[10px] text-white/30 mt-1 font-bold">Select or drop files</p>
                     </div>
 
                     <div
+                        style={{ height: GRID_H }}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         className={cn(
-                            "relative w-full h-full mt-12 pb- flex flex-col items-center justify-center rounded-2xl border-2 border-dashed transition-all duration-300",
+                            "relative w-full flex flex-col rounded-xl border-2 border-dashed transition-all duration-700 overflow-hidden",
                             isDragging
-                                ? "border-primary bg-primary/10 scale-[1.02] shadow-[0_0_20px_rgba(var(--primary),0.2)]"
-                                : "border-border/60 hover:border-primary/50 hover:bg-primary/5",
+                                ? "border-primary bg-primary/10 scale-[1.01] shadow-[0_0_60px_rgba(var(--primary),0.1)]"
+                                : "border-white/10 bg-white/1 hover:border-primary/30 hover:bg-white/3",
                             disabled && "opacity-50 cursor-not-allowed"
                         )}
                     >
-                        <motion.div
-                            animate={{
-                                y: isDragging ? -10 : 0,
-                                scale: isDragging ? 1.1 : 1,
-                            }}
-                            className={cn(
-                                "mb-4 rounded-full p-5 shadow-lg transition-colors duration-300",
-                                isDragging ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground"
-                            )}
-                        >
-                            <Upload className="h-10 w-10" />
-                        </motion.div>
+                        {/* Top 2 Tiles Aligned Content (208px) */}
+                        <div style={{ height: TOP_SLICE_H }} className="flex flex-col items-center justify-center p-6 text-center">
+                            <motion.div
+                                animate={{
+                                    y: isDragging ? -12 : 0,
+                                    scale: isDragging ? 1.1 : 1,
+                                }}
+                                className={cn(
+                                    "mb-4 flex h-14 w-14 items-center justify-center rounded-xl shadow-2xl transition-all duration-700",
+                                    isDragging ? "bg-primary text-white scale-110" : "bg-white/5 text-white/40"
+                                )}
+                            >
+                                <Upload className="h-6 w-6" />
+                            </motion.div>
 
-                        <div className="text-center px-4">
-                            <p className="text-base font-medium">
-                                {isDragging ? "Release to stage files" : "Drag & drop files"}
+                            <p className="text-lg font-black tracking-tight text-white/90">
+                                {isDragging ? "Release Files" : "Drag files here"}
                             </p>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                or click to browse files
+                            <p className="mt-2 text-xs font-medium text-white/20 max-w-[180px] leading-relaxed">
+                                Staged items appear in review
                             </p>
                         </div>
 
-                        <input
-                            type="file"
-                            multiple={multiple}
-                            accept={accept}
-                            onChange={handleFileInput}
-                            disabled={disabled || uploading}
-                            className="absolute inset-0 cursor-pointer opacity-0"
-                            aria-label="Upload files"
-                        />
-
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            disabled={disabled || uploading}
-                            className="mt-6 rounded-full bg-primary px-8 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/40 disabled:opacity-50"
-                            onClick={(e) => {
-                                e.preventDefault()
-                                const input = e.currentTarget.parentElement?.querySelector('input[type="file"]') as HTMLInputElement
-                                input?.click()
-                            }}
-                        >
-                            Browse Device
-                        </motion.button>
+                        {/* Bottom Tile Aligned Action (100px) */}
+                        <div style={{ height: BTM_SLICE_H }} className="flex items-center justify-center px-10 border-t border-white/5">
+                            <input
+                                type="file"
+                                multiple={multiple}
+                                accept={accept}
+                                onChange={handleFileInput}
+                                disabled={disabled || uploading}
+                                className="absolute inset-0 cursor-pointer opacity-0"
+                            />
+                            <Button
+                                className="w-full h-14 text-xs font-bold uppercase tracking-[0.2em] "
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    const input = e.currentTarget.parentElement?.querySelector('input[type="file"]') as HTMLInputElement
+                                    input?.click()
+                                }}
+                            >
+                                Browse Files
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Column 3: Staged Files & Action (4/12) */}
-                <div className="md:col-span-4 p-6 flex flex-col bg-muted/10 h-full">
-                    <div className="mb-4">
+                {/* Column 3: Staged Files & Action (Review) */}
+                <div className="w-full md:w-[28%] p-8 flex flex-col h-full">
+                    <div className="h-10 flex flex-col justify-center mb-8">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80">
-                                3. Review
-                            </h3>
-                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                                {uploadQueue.length} files
-                            </span>
+                            <div>
+                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/50">
+                                    3. Review
+                                </h3>
+                                <p className="text-[10px] text-white/30 mt-1 font-bold">Staging queue</p>
+                            </div>
+                            <div className="h-7 w-7 flex items-center justify-center rounded-full bg-primary/10 border border-primary/20">
+                                <span className="text-[10px] font-black text-primary">
+                                    {uploadQueue.length}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    <ScrollArea className="flex-1 -mr-2 pr-4">
-                        <div className="space-y-3 pb-4">
-                            <AnimatePresence initial={false}>
-                                {uploadQueue.length > 0 ? (
-                                    uploadQueue.map((file) => (
-                                        <FileListItem
-                                            key={file.id}
-                                            uploadFile={file}
-                                            onRemove={() => onRemove(file.id)}
-                                            onRename={(newName) => onRename(file.id, newName)}
-                                        />
-                                    ))
-                                ) : (
-                                    <div className="p-16 mt-8 flex flex-col items-center justify-center text-center border border-dashed rounded-xl border-border/40">
-                                        <File className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                                        <p className="text-sm text-muted-foreground">No files staged yet</p>
-                                        <p className="text-xs text-muted-foreground/60 mt-1">Files you drag or browse will appear here</p>
-                                    </div>
-                                )}
-                            </AnimatePresence>
+                    <div style={{ height: GRID_H }} className="flex flex-col">
+                        {/* Upper Slice: List Container (208px) */}
+                        <div style={{ height: TOP_SLICE_H }} className="flex flex-col mb-2 overflow-hidden rounded-4xl bg-white/2 border border-white/5 p-3">
+                            <ScrollArea className="h-full pr-1">
+                                <div className="space-y-2 pb-2">
+                                    <AnimatePresence initial={false} mode="popLayout">
+                                        {uploadQueue.length > 0 ? (
+                                            uploadQueue.map((file) => (
+                                                <FileListItem
+                                                    key={file.id}
+                                                    uploadFile={file}
+                                                    onRemove={() => onRemove(file.id)}
+                                                    onRename={(newName) => onRename(file.id, newName)}
+                                                />
+                                            ))
+                                        ) : (
+                                            <div className="h-[160px] flex flex-col items-center justify-center text-center p-6 opacity-20">
+                                                <div className="w-10 h-10 rounded-full border border-dashed border-white/20 flex items-center justify-center mb-3">
+                                                    <File className="h-4 w-4" />
+                                                </div>
+                                                <p className="text-[10px] font-black uppercase tracking-tighter">Empty</p>
+                                            </div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </ScrollArea>
                         </div>
-                    </ScrollArea>
 
-                    <div className="mt-6 pt-6 border-t border-border/50">
-                        {uploadQueue.some(f => f.status === "pending") && (
-                            <motion.button
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={onUpload}
-                                disabled={uploading || uploadQueue.length === 0}
-                                className="w-full flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-primary to-primary/80 py-4 text-sm font-bold text-white shadow-xl shadow-primary/20 transition-all hover:shadow-primary/40 disabled:opacity-50 disabled:grayscale"
-                            >
-                                {uploading ? (
-                                    <>
-                                        <motion.div
-                                            animate={{ rotate: 360 }}
-                                            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                                        >
+                        {/* Bottom Slice: Action (100px) */}
+                        <div style={{ height: BTM_SLICE_H }} className="flex items-center">
+                            {uploadQueue.some(f => f.status === "pending") ? (
+                                <motion.button
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    whileHover={{ scale: 1.01 }}
+                                    whileTap={{ scale: 0.99 }}
+                                    onClick={onUpload}
+                                    disabled={uploading}
+                                    className="w-full flex items-center justify-center gap-3 rounded-2xl bg-primary h-14 text-xs font-black uppercase tracking-[0.2em] text-white shadow-[0_20px_40px_rgba(var(--primary),0.2)] transition-all"
+                                >
+                                    {uploading ? (
+                                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
                                             <Upload className="h-4 w-4" />
                                         </motion.div>
-                                        Uploading...
-                                    </>
-                                ) : (
-                                    <>
+                                    ) : (
                                         <Check className="h-4 w-4" />
-                                        Submit {uploadQueue.filter(f => f.status === "pending").length} Files
-                                    </>
-                                )}
-                            </motion.button>
-                        )}
-
-                        {uploadQueue.length > 0 && !uploadQueue.some(f => f.status === "pending") && !uploading && (
-                            <div className="text-center py-2 text-sm text-green-500 font-medium flex items-center justify-center gap-2">
-                                <Check className="h-4 w-4" /> All files processed
-                            </div>
-                        )}
+                                    )}
+                                    {uploading ? "Processing..." : `Confirm Upload`}
+                                </motion.button>
+                            ) : (
+                                <div className="w-full h-14 rounded-2xl border border-white/10 bg-white/2 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
+                                    Queue Empty
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -323,10 +341,10 @@ export function FolderSelector({
                                 onClick={() => onFolderChange(tab.value)}
                                 disabled={disabled}
                                 className={cn(
-                                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl text-[11px] font-bold transition-all duration-300 border",
+                                    "flex flex-col items-center justify-center gap-2 h-[100px] rounded-2xl text-xs font-black transition-all duration-300 border",
                                     isActive
-                                        ? "bg-primary/10 text-primary border-primary/50 shadow-lg shadow-primary/5"
-                                        : "bg-background/40 hover:bg-background/60 text-muted-foreground border-border/30"
+                                        ? "bg-primary/10 text-primary border-primary/40 shadow-lg shadow-primary/5"
+                                        : "bg-white/2 hover:bg-white/5 text-white/40 border-white/5"
                                 )}
                             >
                                 <span className="text-xl opacity-80">{tab.label.split(" ")[0]}</span>
@@ -344,10 +362,10 @@ export function FolderSelector({
                                 onClick={() => onFolderChange(tab.value)}
                                 disabled={disabled}
                                 className={cn(
-                                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl text-[11px] font-bold transition-all duration-300 border",
+                                    "flex flex-col items-center justify-center gap-2 h-[100px] rounded-2xl text-xs font-black transition-all duration-300 border",
                                     isActive
-                                        ? "bg-primary/10 text-primary border-primary/50 shadow-lg shadow-primary/5"
-                                        : "bg-background/40 hover:bg-background/60 text-muted-foreground border-border/30"
+                                        ? "bg-primary/10 text-primary border-primary/40 shadow-lg shadow-primary/5"
+                                        : "bg-white/2 hover:bg-white/5 text-white/40 border-white/5"
                                 )}
                             >
                                 <span className="text-xl opacity-80">{tab.label.split(" ")[0]}</span>
@@ -361,10 +379,10 @@ export function FolderSelector({
                         onClick={() => onFolderChange("custom")}
                         disabled={disabled}
                         className={cn(
-                            "flex flex-col items-center justify-center gap-2 p-4 rounded-xl text-[11px] font-bold transition-all duration-300 border",
+                            "flex flex-col items-center justify-center gap-2 h-[100px] rounded-2xl text-xs font-black transition-all duration-300 border",
                             selectedFolder === "custom"
-                                ? "bg-primary/10 text-primary border-primary/50 shadow-lg shadow-primary/5"
-                                : "bg-background/40 hover:bg-background/60 text-muted-foreground border-border/30"
+                                ? "bg-primary/10 text-primary border-primary/40 shadow-lg shadow-primary/5"
+                                : "bg-white/2 hover:bg-white/5 text-white/40 border-white/5"
                         )}
                     >
                         <span className="text-xl opacity-80">✏️</span>
@@ -380,15 +398,12 @@ export function FolderSelector({
                                 if (selectedFolder !== "custom") onFolderChange("custom")
                             }}
                             disabled={disabled}
-                            className="h-full min-h-[42px] text-xs bg-muted/40 border-border/30 focus:bg-background transition-all rounded-xl placeholder:text-center"
+                            className="h-full min-h-[100px] text-center text-xs bg-white/2 border-white/5 focus:bg-white/5 transition-all rounded-2xl placeholder:opacity-20"
                         />
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 px-1 text-[9px] text-muted-foreground italic opacity-60">
-                    <div className="w-1 h-1 rounded-full bg-primary" />
-                    Target: /{selectedFolder === "custom" ? (customFolder || "custom") : selectedFolder}/
-                </div>
+
             </div>
         )
     }
