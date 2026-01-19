@@ -579,7 +579,7 @@ if (!MAPPING_ENABLED && !MAPPING_BETA_USERS.includes(userId)) {
 **Week 3:** Gradual rollout (10% → 25% → 50%)
 **Week 4:** Full release to all users
 
-### Monitoring
+### Monitoring (DO NOT WORK ON THAT YET THIS IS A FUTURE FEATURE NOT IN MVP!)
 
 **Key Metrics:**
 - Projects created per day
@@ -630,53 +630,188 @@ if (!MAPPING_ENABLED && !MAPPING_BETA_USERS.includes(userId)) {
 ### File Structure
 
 ```
-app/
-├── m/                              # Mapping routes
-│   ├── page.tsx                    # Project list
-│   ├── new/page.tsx               # Create project
-│   └── [projectId]/
-│       ├── page.tsx               # Project view
-│       ├── template/page.tsx      # Edit template
-│       ├── views/[viewId]/        # Saved views
-│       └── card/
-│           ├── new/page.tsx       # Create card
-│           └── [cardId]/page.tsx  # Edit card
+src/
+├── app/
+│   ├── (admin)/                   # Admin routes
+│   ├── (platform)/                # Main platform routes
+│   │   └── [scope]/               # Scope: 'p' (personal) or 'o' (organization)
+│   │       └── [slug]/            # User ID or org slug
+│   │           └── mapper/        # Mapper micro-app
+│   │               ├── page.tsx   # Mapper projects list
+│   │               │              # Route: /p/m576hw45x5ehhs0k03avxrb8a17z73zf/mapper
+│   │               ├── new/
+│   │               │   └── page.tsx  # Create new mapper project
+│   │               └── [mapperId]/   # Specific mapper project
+│   │                   ├── page.tsx  # Project view (Table/Grid/Kanban/etc)
+│   │                   │             # Route: /p/{userId}/mapper/{mapperId}
+│   │                   ├── template/
+│   │                   │   └── page.tsx  # Edit template (add/remove fields)
+│   │                   ├── settings/
+│   │                   │   └── page.tsx  # Project settings
+│   │                   ├── views/
+│   │                   │   └── [viewId]/
+│   │                   │       └── page.tsx  # Saved custom views
+│   │                   └── card/
+│   │                       ├── new/
+│   │                       │   └── page.tsx  # Create new card
+│   │                       └── [cardId]/
+│   │                           ├── page.tsx  # View/edit card
+│   │                           └── edit/
+│   │                               └── page.tsx  # Edit mode
+│   └── (public)/                  # Public routes
+│
+├── components/
+│   ├── apps/
+│   │   └── mapper/                # Mapper-specific components
+│   │       ├── field-types/       # All 42 field components
+│   │       │   ├── text-field.tsx
+│   │       │   ├── long-text-field.tsx
+│   │       │   ├── rich-text-field.tsx
+│   │       │   ├── url-field.tsx
+│   │       │   ├── email-field.tsx
+│   │       │   ├── phone-field.tsx
+│   │       │   ├── number-field.tsx
+│   │       │   ├── currency-field.tsx
+│   │       │   ├── percentage-field.tsx
+│   │       │   ├── rating-field.tsx
+│   │       │   ├── date-field.tsx
+│   │       │   ├── datetime-field.tsx
+│   │       │   ├── time-field.tsx
+│   │       │   ├── duration-field.tsx
+│   │       │   ├── timestamp-field.tsx
+│   │       │   ├── dropdown-field.tsx
+│   │       │   ├── multiselect-field.tsx
+│   │       │   ├── status-field.tsx
+│   │       │   ├── tags-field.tsx
+│   │       │   ├── checkbox-field.tsx
+│   │       │   ├── toggle-field.tsx
+│   │       │   ├── location-name-field.tsx
+│   │       │   ├── location-map-field.tsx
+│   │       │   ├── coordinates-field.tsx
+│   │       │   ├── full-address-field.tsx
+│   │       │   ├── file-field.tsx
+│   │       │   ├── document-field.tsx
+│   │       │   ├── image-field.tsx
+│   │       │   ├── video-field.tsx
+│   │       │   ├── user-reference-field.tsx
+│   │       │   ├── org-reference-field.tsx
+│   │       │   ├── custom-relation-field.tsx
+│   │       │   ├── formula-field.tsx
+│   │       │   ├── auto-number-field.tsx
+│   │       │   ├── barcode-qr-field.tsx
+│   │       │   ├── color-picker-field.tsx
+│   │       │   ├── json-field.tsx
+│   │       │   ├── markdown-field.tsx
+│   │       │   ├── lookup-field.tsx
+│   │       │   ├── rollup-field.tsx
+│   │       │   ├── button-field.tsx
+│   │       │   ├── collaboration-field.tsx
+│   │       │   └── field-input.tsx       # Main field input router
+│   │       │   └── field-display.tsx     # Main field display router
+│   │       ├── views/
+│   │       │   ├── table-view.tsx        # Spreadsheet-like table
+│   │       │   ├── grid-view.tsx         # Card grid layout
+│   │       │   ├── kanban-view.tsx       # Kanban board
+│   │       │   ├── calendar-view.tsx     # Calendar view
+│   │       │   └── gallery-view.tsx      # Image gallery view
+│   │       ├── project-list.tsx          # List of all mapper projects
+│   │       ├── project-card.tsx          # Single project card component
+│   │       ├── template-builder.tsx      # Build/edit card template
+│   │       ├── field-editor.tsx          # Edit individual field config
+│   │       ├── field-type-selector.tsx   # Modal to select field type
+│   │       ├── card-form.tsx             # Create/edit card form
+│   │       ├── card-preview.tsx          # Read-only card preview
+│   │       ├── filter-builder.tsx        # Build complex filters
+│   │       ├── sort-builder.tsx          # Configure sorting
+│   │       ├── view-switcher.tsx         # Switch between views
+│   │       ├── bulk-actions.tsx          # Bulk edit/delete
+│   │       ├── export-dialog.tsx         # Export to CSV/JSON
+│   │       ├── import-dialog.tsx         # Import from CSV
+│   │       └── mapper-sidebar.tsx        # Sidebar navigation
+│   │
+│   ├── analytics/                 # Shared analytics components
+│   ├── calendar/                  # Shared calendar components
+│   ├── chat/                      # Shared chat components
+│   └── ...                        # Other shared components
+│
+├── convex/
+│   └── mapping/                   # Mapper backend functions
+│       ├── projects.ts            # Project CRUD
+│       │   ├── create()           # Create project
+│       │   ├── list()             # List projects by scope
+│       │   ├── get()              # Get single project
+│       │   ├── update()           # Update project
+│       │   ├── archive()          # Archive project
+│       │   └── delete()           # Hard delete
+│       ├── templates.ts           # Template management
+│       │   ├── upsert()           # Create/update template
+│       │   ├── getByProject()     # Get template for project
+│       │   ├── addField()         # Add field to template
+│       │   ├── updateField()      # Update field config
+│       │   ├── removeField()      # Remove field
+│       │   └── reorderFields()    # Change field order
+│       ├── cards.ts               # Card CRUD & operations
+│       │   ├── create()           # Create card
+│       │   ├── list()             # List cards with filters
+│       │   ├── get()              # Get single card
+│       │   ├── update()           # Update card values
+│       │   ├── bulkUpdate()       # Update multiple cards
+│       │   ├── delete()           # Delete card
+│       │   ├── bulkDelete()       # Delete multiple cards
+│       │   ├── duplicate()        # Duplicate card
+│       │   └── reorder()          # Change card order
+│       ├── views.ts               # View configuration
+│       │   ├── create()           # Save custom view
+│       │   ├── list()             # List views for project
+│       │   ├── get()              # Get view config
+│       │   ├── update()           # Update view
+│       │   ├── delete()           # Delete view
+│       │   └── setDefault()       # Set as default view
+│       ├── activity.ts            # Activity logging
+│       │   ├── log()              # Log activity
+│       │   ├── getByCard()        # Get card activity
+│       │   ├── getByProject()     # Get project activity
+│       │   └── addComment()       # Add comment
+│       ├── formulas.ts            # Formula evaluation
+│       │   ├── evaluate()         # Evaluate formula
+│       │   ├── validate()         # Validate formula syntax
+│       │   └── getDependencies()  # Get field dependencies
+│       ├── import.ts              # Import operations
+│       │   ├── validateCSV()      # Validate CSV format
+│       │   ├── importCSV()        # Import cards from CSV
+│       │   └── importJSON()       # Import from JSON
+│       └── export.ts              # Export operations
+│           ├── exportCSV()        # Export to CSV
+│           ├── exportJSON()       # Export to JSON
+│           └── exportExcel()      # Export to Excel (future)
+│
+└── lib/
+    ├── mapper/                    # Mapper utilities
+    │   ├── field-types.ts         # TypeScript types for all 42 fields
+    │   ├── field-config.ts        # Config schemas for each type
+    │   ├── field-validation.ts    # Validation functions
+    │   ├── field-defaults.ts      # Smart default configs
+    │   ├── formula-engine.ts      # Formula parser & evaluator
+    │   ├── currencies.ts          # Currency definitions & formatting
+    │   ├── field-icons.ts         # Icon mapping for field types
+    │   └── mapper-utils.ts        # Helper functions
+    └── ...                        # Other shared utilities
+```
 
-components/
-└── mapping/
-    ├── field-types/               # All 42 field components
-    │   ├── text.tsx
-    │   ├── currency.tsx
-    │   ├── image.tsx
-    │   └── ...
-    ├── views/
-    │   ├── table-view.tsx
-    │   ├── grid-view.tsx
-    │   ├── kanban-view.tsx
-    │   ├── calendar-view.tsx
-    │   └── gallery-view.tsx
-    ├── project-list.tsx
-    ├── template-builder.tsx
-    ├── card-form.tsx
-    ├── field-selector.tsx
-    ├── filter-builder.tsx
-    └── export-dialog.tsx
+### Route Examples:
+```
+Personal Projects:
+/p/m576hw45x5ehhs0k03avxrb8a17z73zf/mapper
+/p/m576hw45x5ehhs0k03avxrb8a17z73zf/mapper/new
+/p/m576hw45x5ehhs0k03avxrb8a17z73zf/mapper/kd7a21bs510hq8z49wewp5s24h7z7td9
+/p/m576hw45x5ehhs0k03avxrb8a17z73zf/mapper/kd7a21bs510hq8z49wewp5s24h7z7td9/template
+/p/m576hw45x5ehhs0k03avxrb8a17z73zf/mapper/kd7a21bs510hq8z49wewp5s24h7z7td9/card/new
+/p/m576hw45x5ehhs0k03avxrb8a17z73zf/mapper/kd7a21bs510hq8z49wewp5s24h7z7td9/card/abc123
 
-convex/
-└── mapping/
-    ├── projects.ts                # Project CRUD
-    ├── templates.ts               # Template management
-    ├── cards.ts                   # Card CRUD
-    ├── views.ts                   # View management
-    ├── activity.ts                # Activity logging
-    └── formulas.ts                # Formula evaluation
-
-lib/
-├── field-types.ts                 # Type definitions
-├── field-config.ts                # Config schemas
-├── field-validation.ts            # Validation logic
-├── formula-engine.ts              # Formula evaluation
-└── currencies.ts                  # Currency definitions
+Organization Projects:
+/o/acme-corp/mapper
+/o/acme-corp/mapper/project-xyz
+/o/acme-corp/mapper/project-xyz/template
 ```
 
 ### Key Dependencies
@@ -684,19 +819,22 @@ lib/
 ```json
 {
   "dependencies": {
-    "@tiptap/react": "^2.1.0",           // Rich text editor
-    "@tiptap/starter-kit": "^2.1.0",     
-    "react-phone-number-input": "^3.3.0", // Phone input
-    "date-fns": "^3.0.0",                // Date utilities
-    "qrcode": "^1.5.3",                  // QR code generation
-    "react-markdown": "^9.0.0",          // Markdown preview
-    "mathjs": "^12.0.0",                 // Formula evaluation
+    "@tiptap/react": "^3.15.3",           // Rich text editor
+    "@tiptap/starter-kit": "^3.15.3",     
+    "react-phone-number-input": "^3.4.14", // Phone input
+    "date-fns": "^4.1.0",                // Date utilities
+    "qrcode": "^1.5.4",                  // QR code generation
+    "react-markdown": "^10.1.0",          // Markdown preview
+    "mathjs": "^15.1.0",                 // Formula evaluation
     "@dnd-kit/core": "^6.1.0",           // Drag and drop (Kanban)
-    "papaparse": "^5.4.1",               // CSV parsing
+    "papaparse": "^5.5.3",               // CSV parsing
     "xlsx": "^0.18.5"                    // Excel import/export
   }
 }
+
+ALL DEPENDECIES ARE INSTALLED ALREADY!
 ```
+
 ---
 ## Conclusion
 

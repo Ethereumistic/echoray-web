@@ -322,4 +322,83 @@ export default defineSchema({
         .index("by_repo", ["repoId"])
         .index("by_user", ["uploadedBy"])
         .index("by_status", ["status"]),
+
+    // ========================================
+    // MAPPER MICRO-APP TABLES
+    // ========================================
+
+    // Mapper Projects - Top-level containers for custom data structures
+    mapping_projects: defineTable({
+        name: v.string(),
+        description: v.optional(v.string()),
+        icon: v.optional(v.string()),
+        type: v.union(v.literal("personal"), v.literal("organization")),
+        ownerId: v.union(v.id("users"), v.id("organizations")),
+        defaultView: v.string(), // "table", "grid", "kanban", etc.
+        createdBy: v.id("users"),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+        archived: v.boolean(),
+        cardCount: v.number(), // Denormalized for performance
+    })
+        .index("by_owner", ["ownerId", "archived"])
+        .index("by_createdBy", ["createdBy"])
+        .index("by_type", ["type", "archived"]),
+
+    // Mapper Templates - Define the structure of cards (42 field types)
+    mapping_templates: defineTable({
+        projectId: v.id("mapping_projects"),
+        name: v.string(),
+        fields: v.array(v.object({
+            id: v.string(), // Unique field ID
+            name: v.string(), // Display name
+            type: v.string(), // One of 42 field types (text, number, date, etc.)
+            required: v.boolean(),
+            config: v.any(), // Type-specific configuration (e.g., currency type, dropdown options)
+            order: v.number(), // Display order
+        })),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index("by_project", ["projectId"]),
+
+    // Mapper Cards - Individual data records
+    mapping_cards: defineTable({
+        projectId: v.id("mapping_projects"),
+        templateId: v.id("mapping_templates"),
+        values: v.any(), // Dynamic field values stored as JSON { fieldId: value }
+        createdBy: v.id("users"),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+        order: v.number(), // For manual ordering
+        archived: v.boolean(),
+    })
+        .index("by_project", ["projectId", "archived"])
+        .index("by_project_order", ["projectId", "order"])
+        .index("by_template", ["templateId"])
+        .index("by_createdBy", ["createdBy"]),
+
+    // Mapper Views - Saved view configurations (table, grid, kanban, etc.)
+    mapping_views: defineTable({
+        projectId: v.id("mapping_projects"),
+        name: v.string(),
+        type: v.union(
+            v.literal("table"),
+            v.literal("grid"),
+            v.literal("kanban"),
+            v.literal("calendar"),
+            v.literal("gallery")
+        ),
+        config: v.object({
+            filters: v.optional(v.array(v.any())), // Filter conditions
+            sorts: v.optional(v.array(v.any())), // Sort configurations
+            visibleFields: v.optional(v.array(v.string())), // Which fields to show
+            groupBy: v.optional(v.string()), // Field ID to group by (for kanban)
+        }),
+        isDefault: v.boolean(),
+        createdBy: v.id("users"),
+        createdAt: v.number(),
+    })
+        .index("by_project", ["projectId"])
+        .index("by_project_default", ["projectId", "isDefault"]),
 });

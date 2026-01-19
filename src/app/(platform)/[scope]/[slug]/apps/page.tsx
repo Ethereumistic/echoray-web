@@ -16,6 +16,7 @@ import {
     Zap,
     ArrowUpRight,
     Lock,
+    Database,
     type LucideIcon
 } from 'lucide-react'
 import Link from 'next/link'
@@ -58,6 +59,15 @@ export default function AppsPage() {
             icon: FileText,
             category: 'Productivity',
             href: `/${scope}/${slug}/notes`,
+        },
+        {
+            id: 'mapper',
+            title: 'Mapper',
+            description: 'Build custom databases with 42 field types for any use case.',
+            icon: Database,
+            category: 'Productivity',
+            href: `/${scope}/${slug}/mapper`,
+            isNew: true
         },
         {
             id: 'crm',
