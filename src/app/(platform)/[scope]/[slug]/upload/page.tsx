@@ -1,69 +1,117 @@
 "use client"
 
 import { DashboardHeader } from '@/components/dashboard/header'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Upload, ArrowLeft, Construction } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useScopeContext } from '@/contexts/scope-context'
+import { useMutation, useQuery } from 'convex/react'
+import { api } from '../../../../../../convex/_generated/api'
+import { Id } from '../../../../../../convex/_generated/dataModel'
+import { UploadInterface } from '@/components/upload/upload-interface'
+import { Card, CardContent } from '@/components/ui/card'
+import { useEffect } from 'react'
 
 /**
- * File Upload - Pre-built System App
+ * File Upload - System App
  * Route: /p/[userId]/upload or /o/[orgId]/upload
  * 
- * This route takes precedence over [projectId] due to Next.js route specificity.
+ * Handles file uploads to GitHub repos via Convex → GitHub → jsDelivr CDN
  */
 export default function UploadPage() {
-    const { scope, slug } = useScopeContext()
+    const { scope, slug, isPersonal } = useScopeContext()
+    const currentUser = useQuery(api.users.currentUser)
+    const ensureRepoExists = useMutation(api.repos.ensureRepoExists)
+
+    // Determine entity ID based on scope
+    const entityId = isPersonal
+        ? (currentUser?._id as Id<"users"> | undefined)
+        : undefined // TODO: Get org ID from slug
+
+    // Get or create repo for this entity
+    const repo = useQuery(
+        api.repos.getRepoByEntity,
+        entityId ? { entityId } : "skip"
+    )
+
+    // Ensure repo exists when component mounts
+    useEffect(() => {
+        if (!entityId || repo !== null) return
+
+        // Create repo if it doesn't exist
+        const createRepo = async () => {
+            try {
+                await ensureRepoExists({
+                    type: isPersonal ? "personal" : "organization",
+                    entityId: entityId!,
+                })
+            } catch (error) {
+                console.error("Failed to create repo:", error)
+            }
+        }
+
+        createRepo()
+    }, [entityId, repo, isPersonal, ensureRepoExists])
+
+    // Loading state
+    if (!currentUser || entityId === undefined) {
+        return (
+            <div className="flex flex-col">
+                <DashboardHeader
+                    title="File Upload"
+                    description="Upload and manage your files"
+                />
+                <main className="flex-1 p-6 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </main>
+            </div>
+        )
+    }
+
+    // Authorization check for personal scope
+    // In personal scope, slug is the user ID
+    if (isPersonal && currentUser._id !== slug) {
+        return (
+            <div className="flex flex-col">
+                <DashboardHeader
+                    title="Unauthorized"
+                    description="You don't have access to this upload page"
+                />
+                <main className="flex-1 p-6">
+                    <Card className="border-destructive/50 bg-destructive/5">
+                        <CardContent className="pt-6">
+                            <p className="text-destructive">You can only upload files to your own profile.</p>
+                            <Link href={`/p/${currentUser._id}/upload`}>
+                                <Button className="mt-4">
+                                    Go to your upload page
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                </main>
+            </div>
+        )
+    }
 
     return (
         <div className="flex flex-col">
             <DashboardHeader
                 title="File Upload"
-                description="Upload and manage your files"
+                description="Upload files to your GitHub CDN repository"
             />
 
-            <main className="flex-1 p-6 space-y-6">
-                {/* Back Link */}
-                <div className="flex items-center gap-2">
-                    <Link href={`/${scope}/${slug}`}>
-                        <Button variant="ghost" size="sm">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Workspace
-                        </Button>
-                    </Link>
-                </div>
-
-                {/* Coming Soon Card */}
-                <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-16">
-                        <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                            <Upload className="h-10 w-10 text-primary" />
-                        </div>
-                        <div className="flex items-center gap-2 mb-4">
-                            <Construction className="h-5 w-5 text-amber-500" />
-                            <h3 className="text-lg font-semibold">Coming Soon</h3>
-                        </div>
-                        <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-                            Securely upload, organize, and share files with your team.
-                            Support for images, documents, videos, and more.
-                        </p>
-                        <div className="flex flex-wrap gap-2 justify-center">
-                            <span className="px-3 py-1 rounded-full bg-muted text-xs font-medium">
-                                Drag & Drop
-                            </span>
-                            <span className="px-3 py-1 rounded-full bg-muted text-xs font-medium">
-                                Bulk Upload
-                            </span>
-                            <span className="px-3 py-1 rounded-full bg-muted text-xs font-medium">
-                                Auto-Organization
-                            </span>
-                            <span className="px-3 py-1 rounded-full bg-muted text-xs font-medium">
-                                CDN Hosting
-                            </span>
-                        </div>
-                    </CardContent>
-                </Card>
+            <main className="flex-1 p-6 space-y-6 ">
+                {/* Upload Interface */}
+                {repo?._id ? (
+                    <UploadInterface repoId={repo._id} repoStatus={repo.status} />
+                ) : (
+                    <Card>
+                        <CardContent className="flex items-center gap-3 pt-6">
+                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                            <p className="text-muted-foreground">Initializing repository...</p>
+                        </CardContent>
+                    </Card>
+                )}
             </main>
         </div>
     )

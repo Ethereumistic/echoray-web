@@ -20,6 +20,7 @@ import { toast } from 'sonner'
 
 import { AnimatePresence, motion } from 'framer-motion'
 import { LogIn } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
 
 /**
  * SignUpForm with Email Verification
@@ -35,6 +36,15 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { signIn } = useAuthActions()
+
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuthStore()
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isAuthLoading && step === 'signup') {
+      router.push('/dashboard')
+    }
+  }, [isAuthenticated, isAuthLoading, router, step])
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,12 +64,16 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     }
 
     try {
+      // 1. Create the account with password
       await signIn("password", {
         email,
         password,
         flow: "signUp",
         name: displayName,
       })
+
+      // 2. Trigger verification email manually since it's no longer automatic on password provider
+      await signIn("resend-otp-verify", { email })
 
       setStep({ email })
       toast.success('Account created! Check your email for the verification code.')
@@ -86,12 +100,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     setError(null)
 
     try {
-      const formData = new FormData()
-      formData.append('email', typeof step === 'object' ? step.email : email)
-      formData.append('code', code)
-      formData.append('flow', 'email-verification')
-
-      await signIn("password", formData)
+      await signIn("resend-otp-verify", {
+        email: typeof step === 'object' ? step.email : email,
+        code,
+      })
 
       toast.success('Email verified! Welcome to Echoray!')
       router.push('/dashboard')

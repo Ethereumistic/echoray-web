@@ -414,4 +414,56 @@ export default defineSchema({
         .index("by_actorId", ["actorId"])
         .index("by_targetUserId", ["targetUserId"])
         .index("by_action", ["action"]),
+
+    // GitHub Repositories for file uploads
+    repos: defineTable({
+        type: v.union(v.literal("personal"), v.literal("organization")),
+        entityId: v.union(v.id("users"), v.id("organizations")),
+        githubRepoName: v.string(), // e.g., "p-m57anw9d97pr8wt114en16gr1h7z76r3"
+        githubRepoUrl: v.string(),  // Full GitHub URL
+        createdAt: v.number(),
+        status: v.union(
+            v.literal("pending"),
+            v.literal("active"),
+            v.literal("failed")
+        ),
+    })
+        .index("by_entity", ["entityId"])
+        .index("by_status", ["status"]),
+
+    // File uploads (V2 - Direct browser to GitHub)
+    uploads: defineTable({
+        repoId: v.id("repos"),
+        uploadedBy: v.id("users"),
+        fileName: v.string(),
+        fileType: v.union(
+            v.literal("file"),
+            v.literal("document"),
+            v.literal("image"),
+            v.literal("video")
+        ),
+        filePath: v.string(), // "document/test.pdf"
+
+        // V2 fields (no Convex storage, direct GitHub upload)
+        fileSize: v.optional(v.number()), // bytes
+        mimeType: v.optional(v.string()), // e.g., "application/pdf"
+        uploadProgress: v.optional(v.number()), // 0-100 percentage
+
+        githubCommitSha: v.optional(v.string()),
+        cdnUrl: v.optional(v.string()), // jsDelivr URL
+
+        // V2 status flow: preparing → uploading_to_github → completed/failed
+        status: v.union(
+            v.literal("preparing"), // Getting GitHub token
+            v.literal("uploading_to_github"), // Browser uploading to GitHub
+            v.literal("completed"),
+            v.literal("failed")
+        ),
+        uploadedAt: v.number(),
+        completedAt: v.optional(v.number()),
+        error: v.optional(v.string()),
+    })
+        .index("by_repo", ["repoId"])
+        .index("by_user", ["uploadedBy"])
+        .index("by_status", ["status"]),
 });

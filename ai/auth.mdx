@@ -1,82 +1,91 @@
 # Convex Authentication System Architecture
 
-This document provides a comprehensive analysis of the Echoray authentication system using Convex Auth, covering implementation details, session management, and integrated profile sync.
-
-## 1. Authentication Flow Overview
-
-The system uses **Convex Auth** (@convex-dev/auth) for end-to-end authentication, leveraging Convex's built-in session management and reactive data layer.
-
-### Routes Organization
-- **Public Routes (`/`, `/services`, etc.)**: Accessible without authentication.
-- **Auth Routes (`/auth/*`)**: For login, signup, and recovery flows.
-- **Protected Routes (`/dashboard/*`)**: Enforced via `middleware.ts` using `convexAuthNextjsMiddleware`.
+This document provides a comprehensive analysis of the Echoray authentication system using Convex Auth, covering implementation details, the two-step OTP verification flow, and integrated profile management.
 
 ---
 
-## 2. Technical Stack & Best Practices
+## 1. Authentication Overview
 
-### Convex Auth Integration
-- ✅ **First-Class Integration**: Uses `@convex-dev/auth/server` for edge-compatible session handling and server-side redirects.
-- ✅ **Route Protection**: Implemented at the Edge/Middleware level, preventing unauthorized access before the page even begins to render.
-- ✅ **Unified Data Layer**: Auth data lives directly in the Convex database (`users`, `sessions`, `accounts` tables), making it reactive and easy to join with application data.
-- ✅ **Secure Sessions**: Convex Auth manages sessions securely via signed cookies handled by the `ConvexAuthNextjsServerProvider`.
+Echoray uses **Convex Auth** (`@convex-dev/auth`) as the core authentication engine. We've implemented a custom **Two-Step OTP (One-Time Password)** flow for enhanced security and email verification.
 
-### Password Security
-- ✅ **Standard Hashing**: Passwords are secure hashed and stored in the `users` table via the `Password` provider.
-- ✅ **Validation**: Zod-based validation in the frontend ensures password complexity and length constraints (see `src/lib/validations.ts`).
+### Key Technologies
+- **Convex Auth**: Session management, user tables, and password hashing.
+- **Resend**: Transactional email delivery via the `@convex-dev/resend` component.
+- **Native Crypto**: Secure, non-sequential 6-digit OTP generation using the Web Crypto API.
 
 ---
 
-## 3. Session & State Management
+## 2. Authentication Flows
 
-### Middleware (Server-Side)
-The `src/middleware.ts` uses `convexAuthNextjsMiddleware`. This:
-1.  **Verifies JWT**: Checks the session cookie validity on every request.
-2.  **Redirects**: Automatically sends unauthenticated users from `/dashboard` or `/o/[slug]` to `/auth/login`.
-3.  **Auth Store Access**: Provides an `isAuthenticated()` check to determining access during the request.
+All authentication actions are split into two steps to ensure email ownership and security.
 
-### Auth Store (Zustand)
-The `useAuthStore` (`src/stores/auth-store.ts`) acts as the client-side source of truth:
-1.  **Profile Persistence**: Caches the user profile to allow for instant UI rendering.
-2.  **Reactive Updates**: Updated by `OrgInitializer` when Convex data changes.
-3.  **Cross-Component Access**: Provides easy access to `userId`, `activeOrganization`, and `permissions` throughout the React tree.
+### A. Sign Up Flow
+1. **Registration**: User submits the Sign Up form (`src/components/auth/sign-up-form.tsx`).
+2. **OTP Generation**: The system creates a user and triggers a verification email via `convex/ResendOTP.ts`.
+3. **Verification**: User enters the **6-digit code**. The UI auto-submits upon typing the final digit using the `OTPInput` component.
+4. **Completion**: Upon successful verification, the user is redirected to the dashboard.
 
----
+### B. Sign In Flow (Unverified Support)
+- **Standard Login**: Verified users log in normally with email/password.
+- **Unverified Login**: If a user logs in but hasn't verified their email, they are automatically redirected to the OTP verification step securely, without needing to re-register.
 
-## 4. Key Auth Flows
-
-### Sign Up / Sign In
-- **Location**: `src/components/auth/sign-up-form.tsx` and `login-form.tsx`
-- **Hook**: `useAuthActions()` from `@convex-dev/auth/react`
-- **Method**: `signIn("password", { email, password, flow: "signUp" | "signIn" })`
-
-### Session Lifecycle
-- **persistent**: Sessions remain valid across browser restarts via cookie persistence.
-- **Sign Out**: `signOut()` from `useAuthActions()` clears the session both on the client and in the Convex database.
+### C. Password Reset Flow
+1. **Request**: User enters their email in the Forgot Password form.
+2. **OTP Email**: An 8-digit code (if configured, currently **6-digit** for consistency) is sent via the `ResendOTPPasswordReset` provider.
+3. **Reset**: User enters the code along with their new password. The UI validates password matching and length before auto-submitting.
 
 ---
 
-## 5. Unified Profile Management
+## 3. Email Infrastructure
 
-Exhoray uses a unified approach where profile data lives directly on the `users` table, rather than a separate `profiles` table. This reduces query latency and simplifies data fetching.
+### Configuration
+- **Domain**: `mail.echoray.io`
+- **Sender**: `Echoray <core@mail.echoray.io>`
+- **Delivery**: Queued via `@convex-dev/resend` for high reliability.
 
-### Profile Structure
-- **`name`**: User's full display name.
-- **`image`**: Avatar URL.
-- **`username`**: Unique handle for mentions/profile.
-- **`email`**: Primary contact email (verified by auth).
+### Security & Throttling
+- **OTP Length**: 6 digits (Industry standard).
+- **Expiration**: 
+  - Verification Codes: **24 hours**.
+  - Password Reset Codes: **10 minutes**.
+- **Rate Limiting**: A **60-second cooldown** is enforced per email address to prevent spamming and Resend API abuse.
 
-### Initialization
-When a user signs in, the `OrgInitializer` component:
-1.  Fetches the unified user document from the `users` table.
-2.  Fetches their associated organizations.
-3.  Calculates permissions for the active organization.
-4.  Hydrates the Zustand store.
+### Branding & Design
+- **Consistent Visuals**: All emails use a **hardcoded dark theme** to prevent "flash of white" or color inversion in mobile email clients.
+- **Colors**: 
+  - Background: `#1a1b1e`
+  - Card/Surface: `#222327`
+  - Accent/Buttons: `#0066ff`
+  - Text: `#f0f0f0`
+- **Assets**: The official Echoray logo is served via CDN to ensure compatibility and fast loading.
 
 ---
 
-## 6. Recommendations & Maintenance
+## 4. UI & User Experience
 
-1.  **OAuth Expansion**: Easily add Google/GitHub providers via `auth.ts` config.
-2.  **Role Changes**: When user roles change in `members.ts`, the frontend reacts instantly due to Convex's subscription model.
-3.  **Security Audit**: Periodically check `convex/auth.ts` for provider configurations and password constraints.
+### High-Fidelity OTP Input
+The `OTPInput` component (`src/components/ui/otp-input.tsx`) provides a "big-tech" experience:
+- **Individual Digit Boxes**: Clear visual separation for the code.
+- **Auto-Focus**: Automatically moves to the next box and handles backspace navigation.
+- **Auto-Verification**: All auth forms monitor input length and call the API immediately when the 6th digit is entered, removing the need for a final "Submit" click.
+
+### Glassmorphism Theme
+Auth forms are integrated into the global design system:
+- **Backgrounds**: `backdrop-blur-xl` with subtle `primary/5` shadows.
+- **Animations**: `framer-motion` for smooth transitions between signup/verification steps.
+
+---
+
+## 5. Backend Implementation (`convex/`)
+
+- **`auth.ts`**: Configures the `Password` provider and hooks into `ResendOTPVerification` / `ResendOTPPasswordReset`.
+- **`ResendOTP.ts`**: The "brain" of the OTP system. Handles code generation, HTML template rendering, and the rate-limiting logic.
+- **`schema.ts`**: Defines the `users` table with a mandatory `email` index for fast lookups during authentication.
+
+---
+
+## 6. Development & Maintenance
+
+1. **Changing OTP Expiry**: Modify `maxAge` in `convex/ResendOTP.ts`.
+2. **Updating Email Templates**: HTML templates are located directly in the `ResendOTP.ts` file for simplified management.
+3. **Throttling Adjustments**: The `recentSends` Map in `ResendOTP.ts` controls the cooldown period.

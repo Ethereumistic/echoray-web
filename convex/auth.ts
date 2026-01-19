@@ -18,8 +18,8 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
     providers: [
         Password({
             reset: ResendOTPPasswordReset,
-            verify: ResendOTPVerification,
         }),
+        ResendOTPVerification,
     ],
     callbacks: {
         async afterUserCreatedOrUpdated(ctx, args) {
