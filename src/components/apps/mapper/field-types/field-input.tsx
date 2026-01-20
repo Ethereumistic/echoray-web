@@ -6,7 +6,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CURRENCIES } from "@/lib/mapper/currencies";
+import { stripProtocol } from "@/lib/mapper/utils";
 import type { FieldConfig } from "@/lib/mapper/field-types";
+import { cn } from "@/lib/utils";
 
 interface FieldInputProps {
     fieldId: string;
@@ -16,23 +18,26 @@ interface FieldInputProps {
     onChange: (value: unknown) => void;
     config?: FieldConfig;
     required?: boolean;
+    minimal?: boolean;
 }
 
 /**
  * Universal field input router component
  * Routes to the appropriate input based on field type
  */
-export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, config, required }: FieldInputProps) {
+export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, config, required, minimal }: FieldInputProps) {
     // TEXT CATEGORY
     if (fieldType === "text") {
         const textConfig = config as { placeholder?: string; maxLength?: number } | undefined;
         const textValue = typeof value === 'string' ? value : '';
         return (
-            <div className="space-y-2">
-                <Label htmlFor={fieldId}>
-                    {fieldName}
-                    {required && <span className="text-destructive ml-1">*</span>}
-                </Label>
+            <div className={minimal ? "" : "space-y-2"}>
+                {!minimal && (
+                    <Label htmlFor={fieldId}>
+                        {fieldName}
+                        {required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                )}
                 <Input
                     id={fieldId}
                     value={textValue}
@@ -40,6 +45,7 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
                     placeholder={textConfig?.placeholder || "Enter text..."}
                     maxLength={textConfig?.maxLength || 255}
                     required={required}
+                    className={minimal ? "border-none focus-visible:ring-0 h-full p-2" : ""}
                 />
             </div>
         );
@@ -49,20 +55,25 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
         const longTextConfig = config as { placeholder?: string; rows?: number; maxLength?: number } | undefined;
         const textValue = typeof value === 'string' ? value : '';
         return (
-            <div className="space-y-2">
-                <Label htmlFor={fieldId}>
-                    {fieldName}
-                    {required && <span className="text-destructive ml-1">*</span>}
-                </Label>
+            <div className={minimal ? "" : "space-y-2"}>
+                {!minimal && (
+                    <Label htmlFor={fieldId}>
+                        {fieldName}
+                        {required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                )}
                 <Textarea
                     id={fieldId}
                     value={textValue}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={longTextConfig?.placeholder || "Enter text..."}
-                    rows={longTextConfig?.rows || 4}
+                    rows={minimal ? 1 : (longTextConfig?.rows || 4)}
                     maxLength={longTextConfig?.maxLength || 5000}
                     required={required}
-                    className="resize-none"
+                    className={cn(
+                        "resize-none",
+                        minimal ? "border-none focus-visible:ring-0 min-h-0 h-full p-2" : ""
+                    )}
                 />
             </div>
         );
@@ -70,19 +81,31 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
 
     if (fieldType === "url") {
         const urlValue = typeof value === 'string' ? value : '';
+
+        const handleUrlChange = (newValue: string) => {
+            // Strip protocol and www prefix before saving to database
+            // This keeps the database clean and prevents duplication bugs
+            const cleanUrl = stripProtocol(newValue);
+            onChange(cleanUrl);
+        };
+
         return (
-            <div className="space-y-2">
-                <Label htmlFor={fieldId}>
-                    {fieldName}
-                    {required && <span className="text-destructive ml-1">*</span>}
-                </Label>
+            <div className={minimal ? "" : "space-y-2"}>
+                {!minimal && (
+                    <Label htmlFor={fieldId}>
+                        {fieldName}
+                        {required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                )}
                 <Input
                     id={fieldId}
-                    type="url"
+                    type="text"
                     value={urlValue}
-                    onChange={(e) => onChange(e.target.value)}
-                    placeholder="https://example.com"
+                    onChange={(e) => handleUrlChange(e.target.value)}
+                    onBlur={(e) => handleUrlChange(e.target.value)}
+                    placeholder="example.com"
                     required={required}
+                    className={minimal ? "border-none focus-visible:ring-0 h-full p-2" : ""}
                 />
             </div>
         );
@@ -91,11 +114,13 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
     if (fieldType === "email") {
         const emailValue = typeof value === 'string' ? value : '';
         return (
-            <div className="space-y-2">
-                <Label htmlFor={fieldId}>
-                    {fieldName}
-                    {required && <span className="text-destructive ml-1">*</span>}
-                </Label>
+            <div className={minimal ? "" : "space-y-2"}>
+                {!minimal && (
+                    <Label htmlFor={fieldId}>
+                        {fieldName}
+                        {required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                )}
                 <Input
                     id={fieldId}
                     type="email"
@@ -103,6 +128,7 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
                     onChange={(e) => onChange(e.target.value)}
                     placeholder="user@example.com"
                     required={required}
+                    className={minimal ? "border-none focus-visible:ring-0 h-full p-2" : ""}
                 />
             </div>
         );
@@ -113,11 +139,13 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
         const numberConfig = config as { decimals?: number } | undefined;
         const numberValue = typeof value === 'number' ? value : '';
         return (
-            <div className="space-y-2">
-                <Label htmlFor={fieldId}>
-                    {fieldName}
-                    {required && <span className="text-destructive ml-1">*</span>}
-                </Label>
+            <div className={minimal ? "" : "space-y-2"}>
+                {!minimal && (
+                    <Label htmlFor={fieldId}>
+                        {fieldName}
+                        {required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                )}
                 <Input
                     id={fieldId}
                     type="number"
@@ -125,6 +153,7 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
                     onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
                     step={numberConfig?.decimals ? `0.${"0".repeat(numberConfig.decimals - 1)}1` : "1"}
                     required={required}
+                    className={minimal ? "border-none focus-visible:ring-0 h-full p-2" : ""}
                 />
             </div>
         );
@@ -138,17 +167,19 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
         };
 
         return (
-            <div className="space-y-2">
-                <Label htmlFor={fieldId}>
-                    {fieldName}
-                    {required && <span className="text-destructive ml-1">*</span>}
-                </Label>
-                <div className="flex gap-2">
+            <div className={minimal ? "" : "space-y-2"}>
+                {!minimal && (
+                    <Label htmlFor={fieldId}>
+                        {fieldName}
+                        {required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                )}
+                <div className="flex gap-2 h-full items-center">
                     <Select
                         value={currencyValue.currency}
                         onValueChange={(currency) => onChange({ ...currencyValue, currency })}
                     >
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className={cn("w-20", minimal ? "border-none focus:ring-0 h-full shadow-none" : "w-32")}>
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -166,7 +197,7 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
                         onChange={(e) => onChange({ ...currencyValue, amount: parseFloat(e.target.value) || 0 })}
                         placeholder="0.00"
                         step="0.01"
-                        className="flex-1"
+                        className={cn("flex-1", minimal ? "border-none focus-visible:ring-0 h-full p-2 shadow-none" : "")}
                         required={required}
                     />
                 </div>
@@ -178,11 +209,13 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
         const percentConfig = config as { showProgressBar?: boolean } | undefined;
         const percentValue = typeof value === 'number' ? value : 0;
         return (
-            <div className="space-y-2">
-                <Label htmlFor={fieldId}>
-                    {fieldName}
-                    {required && <span className="text-destructive ml-1">*</span>}
-                </Label>
+            <div className={minimal ? "" : "space-y-2"}>
+                {!minimal && (
+                    <Label htmlFor={fieldId}>
+                        {fieldName}
+                        {required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                )}
                 <div className="space-y-2">
                     <Input
                         id={fieldId}
@@ -192,8 +225,9 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
                         min="0"
                         max="100"
                         required={required}
+                        className={minimal ? "border-none focus-visible:ring-0 h-full p-2" : ""}
                     />
-                    {percentConfig?.showProgressBar && (
+                    {percentConfig?.showProgressBar && !minimal && (
                         <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-primary transition-all"
@@ -210,17 +244,20 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
     if (fieldType === "date") {
         const dateValue = typeof value === 'number' && value ? new Date(value).toISOString().split('T')[0] : '';
         return (
-            <div className="space-y-2">
-                <Label htmlFor={fieldId}>
-                    {fieldName}
-                    {required && <span className="text-destructive ml-1">*</span>}
-                </Label>
+            <div className={minimal ? "" : "space-y-2"}>
+                {!minimal && (
+                    <Label htmlFor={fieldId}>
+                        {fieldName}
+                        {required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                )}
                 <Input
                     id={fieldId}
                     type="date"
                     value={dateValue}
                     onChange={(e) => onChange(e.target.value ? new Date(e.target.value).getTime() : null)}
                     required={required}
+                    className={minimal ? "border-none focus-visible:ring-0 h-full p-2" : ""}
                 />
             </div>
         );
@@ -229,17 +266,20 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
     if (fieldType === "datetime") {
         const dateValue = typeof value === 'number' && value ? new Date(value).toISOString().slice(0, 16) : '';
         return (
-            <div className="space-y-2">
-                <Label htmlFor={fieldId}>
-                    {fieldName}
-                    {required && <span className="text-destructive ml-1">*</span>}
-                </Label>
+            <div className={minimal ? "" : "space-y-2"}>
+                {!minimal && (
+                    <Label htmlFor={fieldId}>
+                        {fieldName}
+                        {required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                )}
                 <Input
                     id={fieldId}
                     type="datetime-local"
                     value={dateValue}
                     onChange={(e) => onChange(e.target.value ? new Date(e.target.value).getTime() : null)}
                     required={required}
+                    className={minimal ? "border-none focus-visible:ring-0 h-full p-2" : ""}
                 />
             </div>
         );
@@ -249,16 +289,18 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
     if (fieldType === "checkbox") {
         const isChecked = Boolean(value);
         return (
-            <div className="flex items-center space-x-2">
+            <div className={cn("flex items-center space-x-2", minimal ? "justify-center h-full" : "")}>
                 <Checkbox
                     id={fieldId}
                     checked={isChecked}
                     onCheckedChange={(checked) => onChange(checked)}
                 />
-                <Label htmlFor={fieldId} className="cursor-pointer">
-                    {fieldName}
-                    {required && <span className="text-destructive ml-1">*</span>}
-                </Label>
+                {!minimal && (
+                    <Label htmlFor={fieldId} className="cursor-pointer">
+                        {fieldName}
+                        {required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                )}
             </div>
         );
     }

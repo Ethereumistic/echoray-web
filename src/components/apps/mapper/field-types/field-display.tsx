@@ -1,6 +1,7 @@
 "use client";
 
 import { formatCurrency } from "@/lib/mapper/currencies";
+import { addProtocol } from "@/lib/mapper/utils";
 import { format } from "date-fns";
 import { CheckCircle2, Circle, ExternalLink, Mail } from "lucide-react";
 import Link from "next/link";
@@ -31,9 +32,13 @@ export function FieldDisplay({ fieldType, value, config }: FieldDisplayProps) {
 
     if (fieldType === "url") {
         const urlValue = String(value);
+        // Value is already clean in database (no protocol)
+        // Add https:// only when creating the clickable link
+        const fullUrl = addProtocol(urlValue);
+
         return (
             <Link
-                href={urlValue}
+                href={fullUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline inline-flex items-center gap-1"

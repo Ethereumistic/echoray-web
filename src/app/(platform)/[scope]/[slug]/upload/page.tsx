@@ -58,7 +58,7 @@ export default function UploadPage() {
         return (
             <div className="flex flex-col">
                 <DashboardHeader
-                    title="File Upload"
+                    appName="File Upload"
                     description="Upload and manage your files"
                 />
                 <main className="flex-1 p-6 flex items-center justify-center">
@@ -74,7 +74,7 @@ export default function UploadPage() {
         return (
             <div className="flex flex-col">
                 <DashboardHeader
-                    title="Unauthorized"
+                    appName="Unauthorized"
                     description="You don't have access to this upload page"
                 />
                 <main className="flex-1 p-6">
@@ -96,7 +96,7 @@ export default function UploadPage() {
     return (
         <div className="flex flex-col">
             <DashboardHeader
-                title="File Upload"
+                appName="File Upload"
                 description="Upload files to your GitHub CDN repository"
             />
 

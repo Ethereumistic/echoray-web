@@ -471,3 +471,88 @@ export const getCount = query({
         return cards.length;
     },
 });
+/**
+ * Sync cards and fields in bulk
+ */
+export const sync = mutation({
+    args: {
+        projectId: v.id("mapping_projects"),
+        cards: v.array(v.object({
+            id: v.optional(v.string()), // Temporary local ID or Convex ID
+            _id: v.optional(v.id("mapping_cards")), // Convex ID
+            values: v.any(),
+            order: v.number(),
+            isDeleted: v.optional(v.boolean()),
+        })),
+        fields: v.array(v.object({
+            id: v.string(),
+            name: v.string(),
+            type: v.string(),
+            required: v.boolean(),
+            config: v.any(),
+            order: v.number(),
+        })),
+    },
+    handler: async (ctx, args) => {
+        const userId = await auth.getUserId(ctx);
+        if (!userId) throw new Error("Unauthorized");
+
+        const project = await ctx.db.get(args.projectId);
+        if (!project) throw new Error("Project not found");
+
+        const hasPermission = await checkProjectPermission(ctx, userId, args.projectId, "edit");
+        if (!hasPermission) throw new Error("No permission to edit this project");
+
+        // 1. Sync Template Fields
+        const template = await ctx.db
+            .query("mapping_templates")
+            .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+            .unique();
+
+        if (!template) throw new Error("Template not found");
+
+        await ctx.db.patch(template._id, {
+            fields: args.fields,
+            updatedAt: Date.now(),
+        });
+
+        // 2. Sync Cards
+        let newCount = project.cardCount;
+
+        for (const card of args.cards) {
+            if (card.isDeleted && card._id) {
+                // Delete existing card
+                await ctx.db.delete(card._id);
+                newCount--;
+            } else if (card._id) {
+                // Update existing card
+                await ctx.db.patch(card._id, {
+                    values: card.values,
+                    order: card.order,
+                    updatedAt: Date.now(),
+                });
+            } else if (!card.isDeleted) {
+                // Create new card
+                await ctx.db.insert("mapping_cards", {
+                    projectId: args.projectId,
+                    templateId: template._id,
+                    values: card.values,
+                    createdBy: userId,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                    order: card.order,
+                    archived: false,
+                });
+                newCount++;
+            }
+        }
+
+        // Update project card count
+        await ctx.db.patch(args.projectId, {
+            cardCount: Math.max(0, newCount),
+            updatedAt: Date.now(),
+        });
+
+        return true;
+    },
+});
