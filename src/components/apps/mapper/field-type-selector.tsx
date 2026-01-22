@@ -7,6 +7,7 @@ import { useState } from "react";
 import { FIELD_METADATA, FIELD_ICONS, type FieldType, getAllCategories } from "@/lib/mapper";
 import { Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 interface FieldTypeSelectorProps {
     onSelect: (fieldType: FieldType) => void;
@@ -89,15 +90,32 @@ export function FieldTypeSelector({ onSelect, onClose }: FieldTypeSelectorProps)
                                     <Button
                                         key={meta.type}
                                         variant="outline"
-                                        className="h-auto p-4 justify-start text-left hover:bg-accent"
-                                        onClick={() => onSelect(meta.type)}
+                                        className={cn(
+                                            "h-auto p-4 justify-start text-left",
+                                            meta.isImplemented ? "hover:bg-accent cursor-pointer" : "opacity-50 grayscale cursor-not-allowed"
+                                        )}
+                                        onClick={() => meta.isImplemented && onSelect(meta.type)}
+                                        disabled={!meta.isImplemented}
                                     >
                                         <div className="flex items-start gap-3 w-full">
-                                            <div className="p-2 rounded-lg bg-primary/10">
-                                                <Icon className="w-5 h-5 text-primary" />
+                                            <div className={cn(
+                                                "p-2 rounded-lg",
+                                                meta.isImplemented ? "bg-primary/10" : "bg-muted"
+                                            )}>
+                                                <Icon className={cn(
+                                                    "w-5 h-5",
+                                                    meta.isImplemented ? "text-primary" : "text-muted-foreground"
+                                                )} />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="font-semibold text-sm">{meta.label}</div>
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <div className="font-semibold text-sm">{meta.label}</div>
+                                                    {!meta.isImplemented && (
+                                                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground uppercase font-bold tracking-wider">
+                                                            Soon
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
                                                     {meta.description}
                                                 </div>

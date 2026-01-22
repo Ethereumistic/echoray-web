@@ -14,6 +14,7 @@ export interface FieldTypeMetadata {
     category: FieldCategory;
     label: string;
     description: string;
+    isImplemented?: boolean;
     isPremium?: boolean; // For future premium features
     isAdvanced?: boolean; // Show in advanced section
 }
@@ -28,12 +29,14 @@ export const FIELD_METADATA: Record<FieldType, FieldTypeMetadata> = {
         category: "text",
         label: "Text",
         description: "Single line of text (max 255 characters)",
+        isImplemented: true,
     },
     long_text: {
         type: "long_text",
         category: "text",
         label: "Long Text",
         description: "Multi-line text area for longer content",
+        isImplemented: true,
     },
     rich_text: {
         type: "rich_text",
@@ -46,12 +49,14 @@ export const FIELD_METADATA: Record<FieldType, FieldTypeMetadata> = {
         category: "text",
         label: "URL",
         description: "Web links with validation",
+        isImplemented: true,
     },
     email: {
         type: "email",
         category: "text",
         label: "Email",
         description: "Email addresses with validation",
+        isImplemented: true,
     },
     phone: {
         type: "phone",
@@ -66,18 +71,21 @@ export const FIELD_METADATA: Record<FieldType, FieldTypeMetadata> = {
         category: "numbers",
         label: "Number",
         description: "Integers or decimal numbers",
+        isImplemented: true,
     },
     currency: {
         type: "currency",
         category: "numbers",
         label: "Currency",
         description: "Money amounts with currency symbols",
+        isImplemented: true,
     },
     percentage: {
         type: "percentage",
         category: "numbers",
         label: "Percentage",
         description: "Percentage values with progress bars",
+        isImplemented: true,
     },
     rating: {
         type: "rating",
@@ -92,12 +100,14 @@ export const FIELD_METADATA: Record<FieldType, FieldTypeMetadata> = {
         category: "date_time",
         label: "Date",
         description: "Calendar dates",
+        isImplemented: true,
     },
     datetime: {
         type: "datetime",
         category: "date_time",
         label: "Date & Time",
         description: "Specific date and time",
+        isImplemented: true,
     },
     time: {
         type: "time",
@@ -150,6 +160,7 @@ export const FIELD_METADATA: Record<FieldType, FieldTypeMetadata> = {
         category: "boolean",
         label: "Checkbox",
         description: "Yes/No or True/False",
+        isImplemented: true,
     },
     toggle: {
         type: "toggle",

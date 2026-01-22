@@ -175,6 +175,16 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
                     </Label>
                 )}
                 <div className="flex gap-2 h-full items-center">
+                    <Input
+                        id={fieldId}
+                        type="number"
+                        value={currencyValue.amount || ""}
+                        onChange={(e) => onChange({ ...currencyValue, amount: parseFloat(e.target.value) || 0 })}
+                        placeholder="0.00"
+                        step="0.01"
+                        className={cn("flex-1", minimal ? "border-none focus-visible:ring-0 h-full p-2 shadow-none" : "")}
+                        required={required}
+                    />
                     <Select
                         value={currencyValue.currency}
                         onValueChange={(currency) => onChange({ ...currencyValue, currency })}
@@ -190,16 +200,6 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
                             ))}
                         </SelectContent>
                     </Select>
-                    <Input
-                        id={fieldId}
-                        type="number"
-                        value={currencyValue.amount || ""}
-                        onChange={(e) => onChange({ ...currencyValue, amount: parseFloat(e.target.value) || 0 })}
-                        placeholder="0.00"
-                        step="0.01"
-                        className={cn("flex-1", minimal ? "border-none focus-visible:ring-0 h-full p-2 shadow-none" : "")}
-                        required={required}
-                    />
                 </div>
             </div>
         );
@@ -289,7 +289,7 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
     if (fieldType === "checkbox") {
         const isChecked = Boolean(value);
         return (
-            <div className={cn("flex items-center space-x-2", minimal ? "justify-center h-full" : "")}>
+            <div className={cn("flex items-center py-2 space-x-2", minimal ? "justify-center h-full" : "")}>
                 <Checkbox
                     id={fieldId}
                     checked={isChecked}
@@ -305,24 +305,25 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
         );
     }
 
-    // Default fallback
-    const fallbackValue = typeof value === 'string' ? value : '';
+    // Default fallback - for unimplemented types
     return (
-        <div className="space-y-2">
-            <Label htmlFor={fieldId}>
-                {fieldName}
-                {required && <span className="text-destructive ml-1">*</span>}
-            </Label>
+        <div className={minimal ? "" : "space-y-2"}>
+            {!minimal && (
+                <Label htmlFor={fieldId} className="opacity-50">
+                    {fieldName}
+                    <span className="ml-2 text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground uppercase font-bold tracking-wider">Soon</span>
+                </Label>
+            )}
             <Input
                 id={fieldId}
-                value={fallbackValue}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={`Enter ${fieldName.toLowerCase()}...`}
-                required={required}
+                value={String(value || "")}
+                disabled
+                placeholder="Coming soon..."
+                className={cn(
+                    "opacity-50 cursor-not-allowed",
+                    minimal ? "border-none focus-visible:ring-0 h-full p-2" : ""
+                )}
             />
-            <p className="text-xs text-muted-foreground mt-1">
-                Field type &quot;{fieldType}&quot; not yet implemented
-            </p>
         </div>
     );
 }
