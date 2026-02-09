@@ -1,5 +1,5 @@
 import { Hero5 } from "@/components/5/hero"
-import { Benefits5 } from "@/components/5/benefits"
+import { BenefitsHorizontal } from "@/components/5/benefits"
 import { Process5 } from "@/components/5/process"
 import { Pricing5 } from "@/components/5/pricing"
 import { FAQ5 } from "@/components/5/faq"
@@ -9,7 +9,7 @@ export default function LandingPage() {
     return (
         <>
             <Hero5 />
-            <Benefits5 />
+            <BenefitsHorizontal />
             <Process5 />
             <Pricing5 />
             <FAQ5 />
