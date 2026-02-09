@@ -1,20 +1,17 @@
 "use client"
 
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
-import { TrendingUp, Users, Clock, Shield, LineChart as LineChartIcon, Headphones, Search, X, Send } from "lucide-react"
-import { useEffect, useRef, useState, useCallback } from "react"
+import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from "framer-motion"
+import { TrendingUp, Users, Clock, Shield, LineChart, Headphones, Search, Lock, MessageSquare, X } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart } from "recharts"
+import { Input } from "@/components/ui/input"
 
 // Google Search Animation Component
-function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
+function GoogleSearchDemo({ isActive }: { isActive?: boolean }) {
     const [currentBusiness, setCurrentBusiness] = useState(0)
     const [searchQuery, setSearchQuery] = useState("")
     const [showResults, setShowResults] = useState(false)
     const [isTyping, setIsTyping] = useState(false)
-    const [hasAnimated, setHasAnimated] = useState(false)
 
     const businesses = [
         {
@@ -43,53 +40,37 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
         }
     ]
 
-    // Only reset when we've fully left this slide and come back
     useEffect(() => {
-        if (!isActive && wasActive) {
-            // We just fully left this slide - reset for next time
+        if (!isActive) {
             setSearchQuery("")
             setShowResults(false)
             setIsTyping(false)
             setCurrentBusiness(0)
-            setHasAnimated(false)
+            return
         }
-    }, [isActive, wasActive])
 
-    // Start animation when becoming active
-    useEffect(() => {
-        if (!isActive) return
-        if (hasAnimated) return
+        let index = 0
+        const query = businesses[currentBusiness].query
+        setIsTyping(true)
 
-        // Small delay to ensure component is mounted
-        const startDelay = setTimeout(() => {
-            let index = 0
-            const query = businesses[currentBusiness].query
-            setIsTyping(true)
-            setHasAnimated(true)
+        const interval = setInterval(() => {
+            if (index <= query.length) {
+                setSearchQuery(query.slice(0, index))
+                index++
+            } else {
+                setIsTyping(false)
+                setShowResults(true)
+                clearInterval(interval)
+            }
+        }, 80)
 
-            const interval = setInterval(() => {
-                if (index <= query.length) {
-                    setSearchQuery(query.slice(0, index))
-                    index++
-                } else {
-                    setIsTyping(false)
-                    setShowResults(true)
-                    clearInterval(interval)
-                }
-            }, 80)
-
-            // Store cleanup in a ref-like closure
-            return () => clearInterval(interval)
-        }, 100)
-
-        return () => clearTimeout(startDelay)
-    }, [isActive]) // Only depend on isActive, not hasAnimated
+        return () => clearInterval(interval)
+    }, [isActive, currentBusiness])
 
     const handleClear = () => {
         setShowResults(false)
         setSearchQuery("")
         setIsTyping(false)
-        setHasAnimated(false)
         setCurrentBusiness((prev) => (prev + 1) % businesses.length)
     }
 
@@ -185,21 +166,11 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
 }
 
 // Trust/Credibility Animation Component
-function TrustAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
-    const [animationKey, setAnimationKey] = useState(0)
-
-    // Only reset animation when we fully leave and come back
-    useEffect(() => {
-        if (!isActive && wasActive) {
-            // We just fully left this slide - increment key for fresh animation on return
-            setAnimationKey(prev => prev + 1)
-        }
-    }, [isActive, wasActive])
-
+function TrustAnimation({ isActive }: { isActive?: boolean }) {
     return (
-        <div className="relative w-full max-w-lg mx-auto" key={animationKey}>
+        <div className="relative w-full max-w-lg mx-auto" key={isActive ? 'active' : 'inactive'}>
             <motion.div
-                className="absolute inset-0 bg-primary/10 blur-3xl rounded-md"
+                className="absolute inset-0 bg-primary/10 blur-3xl"
                 animate={{
                     scale: [1, 1.2, 1],
                     opacity: [0.3, 0.6, 0.3],
@@ -208,14 +179,14 @@ function TrustAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
             />
 
             <motion.div
-                className="relative bg-card shadow-lg p-8 border rounded-md"
+                className="relative bg-card shadow-lg p-8 border"
                 initial={{ rotateY: 90, opacity: 0 }}
                 animate={{ rotateY: 0, opacity: 1 }}
                 transition={{ duration: 0.8 }}
             >
                 <div className="flex items-center gap-4 mb-6">
                     <motion.div
-                        className="w-16 h-16 bg-primary rounded-md"
+                        className="w-16 h-16 bg-primary"
                         animate={{ rotate: 360 }}
                         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                     />
@@ -249,15 +220,15 @@ function TrustAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
                     transition={{ delay: 1.2 }}
                 >
                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-sm" />
+                        <div className="w-2 h-2 bg-primary" />
                         <span className="text-sm text-muted-foreground">SSL Secured</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-sm" />
+                        <div className="w-2 h-2 bg-primary" />
                         <span className="text-sm text-muted-foreground">Professional Design</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-sm" />
+                        <div className="w-2 h-2 bg-primary" />
                         <span className="text-sm text-muted-foreground">Verified Business</span>
                     </div>
                 </motion.div>
@@ -267,7 +238,7 @@ function TrustAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
 }
 
 // Simple Clock Animation
-function ClockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
+function ClockAnimation({ isActive }: { isActive?: boolean }) {
     const [hourRotation, setHourRotation] = useState(0)
     const [minuteRotation, setMinuteRotation] = useState(0)
 
@@ -382,7 +353,7 @@ function ClockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
 }
 
 // Lock Security Animation
-function LockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
+function LockAnimation({ isActive }: { isActive?: boolean }) {
     const [isLocked, setIsLocked] = useState(false)
 
     useEffect(() => {
@@ -466,10 +437,8 @@ function LockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?
     )
 }
 
-// Animated Chart using Recharts LineChart
-function ChartAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
-    const [animationKey, setAnimationKey] = useState(0)
-
+// Animated Chart using shadcn chart
+function ChartAnimation({ isActive }: { isActive?: boolean }) {
     const data = [
         { day: "Mon", visitors: 300 },
         { day: "Tue", visitors: 450 },
@@ -480,290 +449,155 @@ function ChartAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
         { day: "Sun", visitors: 950 },
     ]
 
-    const chartConfig = {
-        visitors: {
-            label: "Visitors",
-            color: "hsl(var(--primary))",
-        },
-    }
-
-    // Reset animation when fully leaving and coming back
-    useEffect(() => {
-        if (!isActive && wasActive) {
-            setAnimationKey(prev => prev + 1)
-        }
-    }, [isActive, wasActive])
-
     return (
-        <div className="w-full max-w-lg mx-auto" key={animationKey}>
-            <motion.div
-                className="bg-card shadow-lg p-8 border rounded-md"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-            >
+        <div className="w-full max-w-lg mx-auto">
+            <div className="bg-card shadow-lg p-8 border">
                 <h3 className="text-2xl font-bold mb-6 text-foreground">Visitor Analytics</h3>
 
-                <ChartContainer config={chartConfig} className="h-64 w-full">
-                    <AreaChart
-                        data={data}
-                        margin={{ top: 20, right: 20, bottom: 20, left: 0 }}
-                    >
-                        <defs>
-                            <linearGradient id="visitorGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis
-                            dataKey="day"
-                            tickLine={false}
-                            axisLine={false}
-                            className="text-xs fill-muted-foreground"
-                        />
-                        <YAxis
-                            tickLine={false}
-                            axisLine={false}
-                            className="text-xs fill-muted-foreground"
-                            width={40}
-                        />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Area
-                            type="monotone"
-                            dataKey="visitors"
-                            stroke="hsl(var(--primary))"
-                            strokeWidth={3}
-                            fill="url(#visitorGradient)"
-                            animationDuration={1500}
-                            animationBegin={0}
-                        />
-                    </AreaChart>
-                </ChartContainer>
+                <div className="flex items-end justify-between h-64 gap-3">
+                    {data.map((item, i) => {
+                        const maxValue = 1000
+                        const heightPercent = (item.visitors / maxValue) * 100
+
+                        return (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                                <motion.div
+                                    className="w-full bg-primary relative"
+                                    initial={{ height: 0 }}
+                                    animate={{ height: `${heightPercent}%` }}
+                                    transition={{ delay: i * 0.15, duration: 0.8, type: "spring" }}
+                                >
+                                    <motion.div
+                                        className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground px-2 py-1 text-xs font-bold whitespace-nowrap border"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.15 + 0.8 }}
+                                    >
+                                        {item.visitors}
+                                    </motion.div>
+                                </motion.div>
+                                <span className="text-xs text-muted-foreground">{item.day}</span>
+                            </div>
+                        )
+                    })}
+                </div>
 
                 <motion.div
-                    className="mt-6 flex items-center justify-between text-sm"
+                    className="mt-8 flex items-center justify-between text-sm"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 1.5 }}
                 >
                     <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-primary rounded-sm" />
+                        <div className="w-3 h-3 bg-primary" />
                         <span className="text-muted-foreground">+24% this week</span>
                     </div>
                     <span className="font-bold text-primary">4,450 total</span>
                 </motion.div>
-            </motion.div>
-        </div>
-    )
-}
-
-// Typing Dots Animation Component
-function TypingDots() {
-    return (
-        <div className="flex gap-1 items-center px-4 py-3">
-            {[0, 1, 2].map((i) => (
-                <motion.span
-                    key={i}
-                    className="w-2 h-2 bg-muted-foreground/60 rounded-full"
-                    animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.4, 1, 0.4],
-                    }}
-                    transition={{
-                        duration: 0.6,
-                        repeat: Infinity,
-                        delay: i * 0.15,
-                    }}
-                />
-            ))}
+            </div>
         </div>
     )
 }
 
 // Website Support Chat Animation
-function ChatAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
+function ChatAnimation({ isActive }: { isActive?: boolean }) {
     const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([])
-    const [currentUserTyping, setCurrentUserTyping] = useState("")
-    const [isSupportTyping, setIsSupportTyping] = useState(false)
-    const [inputValue, setInputValue] = useState("")
-    const [animationPhase, setAnimationPhase] = useState(0)
-    const scrollRef = useRef<HTMLDivElement>(null)
-    const intervalsRef = useRef<NodeJS.Timeout[]>([])
-    const timeoutsRef = useRef<NodeJS.Timeout[]>([])
+    const [currentTyping, setCurrentTyping] = useState("")
 
-    const conversation = [
-        { text: "Hi! I'd like to update my website", isUser: true },
-        { text: "Hello! I'd be happy to help with that. What would you like to change?", isUser: false },
-        { text: "Can we add a contact form?", isUser: true },
-        { text: "Absolutely! I can add a contact form with spam protection. Would you like me to proceed?", isUser: false },
-    ]
-
-    // Scroll to bottom when messages change
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-        }
-    }, [messages, currentUserTyping, isSupportTyping])
-
-    // Cleanup function
-    const cleanup = useCallback(() => {
-        intervalsRef.current.forEach(clearInterval)
-        timeoutsRef.current.forEach(clearTimeout)
-        intervalsRef.current = []
-        timeoutsRef.current = []
-    }, [])
-
-    // Reset when leaving the slide
-    useEffect(() => {
-        if (!isActive && wasActive) {
-            cleanup()
+        if (!isActive) {
             setMessages([])
-            setCurrentUserTyping("")
-            setIsSupportTyping(false)
-            setInputValue("")
-            setAnimationPhase(0)
+            setCurrentTyping("")
+            return
         }
-    }, [isActive, wasActive, cleanup])
 
-    // Run animation sequence
-    useEffect(() => {
-        if (!isActive || animationPhase >= conversation.length) return
+        const sequence = [
+            { text: "Hi! I'd like to update my website", isUser: true, delay: 500 },
+            { text: "Hello! I'd be happy to help with that. What would you like to change on your site?", isUser: false, delay: 1500 },
+            { text: "Can we add a contact form?", isUser: true, delay: 2800 },
+            { text: "Absolutely! I can add a contact form to your website. It will include fields for name, email, and message, with spam protection included. Would you like me to proceed?", isUser: false, delay: 3800 }
+        ]
 
-        const currentMsg = conversation[animationPhase]
+        let timeouts: NodeJS.Timeout[] = []
 
-        if (currentMsg.isUser) {
-            // User typing simulation with typewriter effect
-            let charIndex = 0
-            const text = currentMsg.text
-
-            const typingInterval = setInterval(() => {
-                if (charIndex <= text.length) {
-                    const currentText = text.slice(0, charIndex)
-                    setCurrentUserTyping(currentText)
-                    setInputValue(currentText)
-                    charIndex++
+        sequence.forEach((msg, i) => {
+            const timeout = setTimeout(() => {
+                if (msg.isUser) {
+                    setMessages(prev => [...prev, msg])
                 } else {
-                    clearInterval(typingInterval)
-                    // Simulate pressing send after a short delay
-                    const sendTimeout = setTimeout(() => {
-                        setMessages(prev => [...prev, currentMsg])
-                        setCurrentUserTyping("")
-                        setInputValue("")
-                        setAnimationPhase(prev => prev + 1)
-                    }, 300)
-                    timeoutsRef.current.push(sendTimeout)
+                    // Typing animation for support responses
+                    let charIndex = 0
+                    const typingInterval = setInterval(() => {
+                        if (charIndex <= msg.text.length) {
+                            setCurrentTyping(msg.text.slice(0, charIndex))
+                            charIndex++
+                        } else {
+                            clearInterval(typingInterval)
+                            setMessages(prev => [...prev, msg])
+                            setCurrentTyping("")
+                        }
+                    }, 30)
                 }
-            }, 60)
-            intervalsRef.current.push(typingInterval)
-        } else {
-            // Support is typing - show dots first
-            setIsSupportTyping(true)
+            }, msg.delay)
+            timeouts.push(timeout)
+        })
 
-            const showMessageTimeout = setTimeout(() => {
-                setIsSupportTyping(false)
-                setMessages(prev => [...prev, currentMsg])
-                setAnimationPhase(prev => prev + 1)
-            }, 1500)
-            timeoutsRef.current.push(showMessageTimeout)
-        }
-
-        return cleanup
-    }, [isActive, animationPhase, cleanup])
-
-    // Start the animation with a delay when becoming active
-    useEffect(() => {
-        if (isActive && animationPhase === 0 && messages.length === 0) {
-            const startTimeout = setTimeout(() => {
-                setAnimationPhase(0)
-                // Trigger the first message
-                setAnimationPhase(prev => prev) // Force re-render to start
-            }, 500)
-            timeoutsRef.current.push(startTimeout)
+        return () => {
+            timeouts.forEach(clearTimeout)
         }
     }, [isActive])
 
     return (
         <div className="w-full max-w-lg mx-auto">
-            <div className="bg-card shadow-lg overflow-hidden border rounded-md">
-                {/* Header */}
-                <div className="bg-primary p-4 flex items-center gap-3 rounded-t-md">
-                    <div className="w-10 h-10 bg-primary-foreground/20 rounded-md flex items-center justify-center">
+            <div className="bg-card shadow-lg overflow-hidden border">
+                <div className="bg-primary p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary-foreground/20 flex items-center justify-center">
                         <Headphones className="w-5 h-5 text-primary-foreground" />
                     </div>
                     <div>
                         <h3 className="text-primary-foreground font-bold">Website Support</h3>
                         <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                            <div className="w-2 h-2 bg-primary-foreground animate-pulse" />
                             <span className="text-xs text-primary-foreground/80">Available 24/7</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Messages Area */}
-                <ScrollArea className="h-72 bg-muted/30">
-                    <div ref={scrollRef} className="p-4 space-y-3">
-                        {messages.map((msg, i) => (
-                            <motion.div
-                                key={i}
-                                className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
-                                initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
-                            >
-                                <div className={`max-w-[85%] px-4 py-2.5 rounded-md ${msg.isUser
-                                    ? 'bg-primary text-primary-foreground rounded-br-none'
-                                    : 'bg-card text-card-foreground border rounded-bl-none'
-                                    }`}>
-                                    <p className="text-sm leading-relaxed">{msg.text}</p>
-                                </div>
-                            </motion.div>
-                        ))}
+                <div className="p-6 space-y-4 h-80 overflow-y-auto bg-muted/30">
+                    {messages.map((msg, i) => (
+                        <motion.div
+                            key={i}
+                            className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <div className={`max-w-xs px-4 py-3 ${msg.isUser
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-card text-card-foreground border'
+                                }`}>
+                                {msg.text}
+                            </div>
+                        </motion.div>
+                    ))}
 
-                        {/* Support typing indicator */}
-                        {isSupportTyping && (
-                            <motion.div
-                                className="flex justify-start"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                            >
-                                <div className="bg-card text-card-foreground border rounded-md rounded-bl-none">
-                                    <TypingDots />
-                                </div>
-                            </motion.div>
-                        )}
-                    </div>
-                </ScrollArea>
-
-                {/* Input Area */}
-                <div className="p-3 border-t bg-card">
-                    <div className="flex items-center gap-2">
-                        <div className="flex-1 relative">
-                            <input
-                                type="text"
-                                value={inputValue}
-                                readOnly
-                                placeholder="Type your message..."
-                                className="w-full px-4 py-2.5 bg-muted/50 border rounded-md text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                            />
-                            {currentUserTyping && (
+                    {currentTyping && (
+                        <motion.div
+                            className="flex justify-start"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                        >
+                            <div className="max-w-xs px-4 py-3 bg-card text-card-foreground border">
+                                {currentTyping}
                                 <motion.span
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-primary font-bold"
                                     animate={{ opacity: [1, 0] }}
                                     transition={{ duration: 0.5, repeat: Infinity }}
                                 >
                                     |
                                 </motion.span>
-                            )}
-                        </div>
-                        <motion.button
-                            className="p-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <Send className="w-4 h-4" />
-                        </motion.button>
-                    </div>
+                            </div>
+                        </motion.div>
+                    )}
                 </div>
             </div>
         </div>
@@ -786,7 +620,6 @@ export function BenefitsHorizontal() {
             stat: "85%",
             statLabel: "of customers Google before buying",
             component: GoogleSearchDemo,
-            badge: "Search Priority"
         },
         {
             icon: Users,
@@ -795,7 +628,6 @@ export function BenefitsHorizontal() {
             stat: "75%",
             statLabel: "judge credibility by website design",
             component: TrustAnimation,
-            badge: "Trust at First Sight"
         },
         {
             icon: Clock,
@@ -804,7 +636,6 @@ export function BenefitsHorizontal() {
             stat: "10+",
             statLabel: "hours saved per week on average",
             component: ClockAnimation,
-            badge: "Work While You Sleep"
         },
         {
             icon: Shield,
@@ -813,16 +644,14 @@ export function BenefitsHorizontal() {
             stat: "99.9%",
             statLabel: "uptime guaranteed",
             component: LockAnimation,
-            badge: "Peace of Mind"
         },
         {
-            icon: LineChartIcon,
+            icon: LineChart,
             title: "Track results",
             description: "See exactly how many people visit and what they do.",
             stat: "Real",
             statLabel: "data to make better decisions",
             component: ChartAnimation,
-            badge: "Clarity Over Guessing"
         },
         {
             icon: Headphones,
@@ -831,7 +660,6 @@ export function BenefitsHorizontal() {
             stat: "24h",
             statLabel: "response time on all requests",
             component: ChatAnimation,
-            badge: "Real Humans"
         }
     ]
 
@@ -878,44 +706,22 @@ export function BenefitsHorizontal() {
     // Transform scroll progress to horizontal translation with snapping
     const x = useTransform(scrollYProgress, snapInputs, snapOutputs)
 
-    // Calculate active index for the progress indicator
-    // Using the same snap logic as the slides for perfect sync
-    const [activeIndex, setActiveIndex] = useState(0)
+    // Smooth out the animation for a nice easing effect
+    const smoothX = useSpring(x, { stiffness: 300, damping: 40, restDelta: 0.001 })
 
-    // Track which slides were previously active (for wasActive prop)
-    const [wasActiveStates, setWasActiveStates] = useState<boolean[]>(() =>
-        Array(totalSlides).fill(false)
-    )
+    // Calculate active index for the progress indicator
+    const [activeIndex, setActiveIndex] = useState(0)
 
     useEffect(() => {
         const unsubscribe = scrollYProgress.on("change", (latest) => {
-            // Calculate the active index based on same snap points as slides
-            // This ensures perfect sync between indicator and slides
-            let newIndex = 0
-
-            for (let i = 0; i < totalSlides; i++) {
-                const slideStart = i / totalSlides
-                const slideEnd = (i + 1) / totalSlides
-                const transitionZone = (slideEnd - slideStart) * 0.2
-
-                // We're on slide i if we're past its start transition zone
-                if (latest >= slideStart + transitionZone) {
-                    newIndex = i
-                }
-            }
-
-            if (newIndex !== activeIndex) {
-                // Update wasActive states - mark the previous index as "was active"
-                setWasActiveStates(prev => {
-                    const updated = [...prev]
-                    updated[activeIndex] = true // The one we're leaving was active
-                    return updated
-                })
-                setActiveIndex(newIndex)
-            }
+            const newIndex = Math.min(
+                Math.round(latest * totalSlides),
+                totalSlides - 1
+            )
+            setActiveIndex(newIndex)
         })
         return unsubscribe
-    }, [scrollYProgress, totalSlides, activeIndex])
+    }, [scrollYProgress, totalSlides])
 
     return (
         <div ref={containerRef} className="relative bg-background" style={{ height: `${benefits.length * 100}vh` }}>
@@ -923,7 +729,7 @@ export function BenefitsHorizontal() {
                 {/* Horizontal sliding container */}
                 <motion.div
                     className="flex h-full"
-                    style={{ x }}
+                    style={{ x: smoothX }}
                 >
                     {benefits.map((benefit, index) => (
                         <div
@@ -934,9 +740,9 @@ export function BenefitsHorizontal() {
                                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                                     {/* Left side - Content */}
                                     <div className="space-y-6">
-                                        <Badge className="inline-flex items-center gap-3 bg-card backdrop-blur-sm px-6 py-3 shadow-lg border rounded-md">
+                                        <Badge className="inline-flex items-center gap-3 bg-card backdrop-blur-sm px-6 py-3 shadow-lg border">
                                             <benefit.icon className="w-6 h-6 text-primary" />
-                                            <span className="font-bold text-foreground">{benefit.badge}</span>
+                                            <span className="font-bold text-foreground">Benefit {index + 1}/6</span>
                                         </Badge>
 
                                         <h2 className="text-5xl lg:text-7xl font-black text-foreground leading-tight">
@@ -959,10 +765,7 @@ export function BenefitsHorizontal() {
 
                                     {/* Right side - Animation */}
                                     <div className="flex items-center justify-center">
-                                        <benefit.component
-                                            isActive={index === activeIndex}
-                                            wasActive={wasActiveStates[index] && index !== activeIndex}
-                                        />
+                                        <benefit.component isActive={index === activeIndex} />
                                     </div>
                                 </div>
                             </div>
@@ -971,7 +774,7 @@ export function BenefitsHorizontal() {
                 </motion.div>
 
                 {/* Progress indicator - fixed position */}
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                <div className="absolute  bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
                     {benefits.map((_, i) => (
                         <div
                             key={i}
