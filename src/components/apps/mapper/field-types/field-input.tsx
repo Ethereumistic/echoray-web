@@ -103,7 +103,7 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
                     value={urlValue}
                     onChange={(e) => handleUrlChange(e.target.value)}
                     onBlur={(e) => handleUrlChange(e.target.value)}
-                    placeholder="example.com"
+                    placeholder=""
                     required={required}
                     className={minimal ? "border-none focus-visible:ring-0 h-full p-2" : ""}
                 />
@@ -153,7 +153,7 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
                     onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
                     step={numberConfig?.decimals ? `0.${"0".repeat(numberConfig.decimals - 1)}1` : "1"}
                     required={required}
-                    className={minimal ? "border-none focus-visible:ring-0 h-full p-2" : ""}
+                    className={cn("no-spinner", minimal ? "border-none focus-visible:ring-0 h-full p-2" : "")}
                 />
             </div>
         );
@@ -163,7 +163,7 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
         const currencyConfig = config as { currency?: string } | undefined;
         const currencyValue = (value as { amount: number; currency: string } | null) || {
             amount: 0,
-            currency: currencyConfig?.currency || "USD"
+            currency: currencyConfig?.currency || "EUR"
         };
 
         return (
@@ -182,7 +182,7 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
                         onChange={(e) => onChange({ ...currencyValue, amount: parseFloat(e.target.value) || 0 })}
                         placeholder="0.00"
                         step="0.01"
-                        className={cn("flex-1", minimal ? "border-none focus-visible:ring-0 h-full p-2 shadow-none" : "")}
+                        className={cn("no-spinner max-w-20", minimal ? "border-none focus-visible:ring-0 h-full p-2 shadow-none" : "")}
                         required={required}
                     />
                     <Select
@@ -225,7 +225,7 @@ export function FieldInput({ fieldId, fieldType, fieldName, value, onChange, con
                         min="0"
                         max="100"
                         required={required}
-                        className={minimal ? "border-none focus-visible:ring-0 h-full p-2" : ""}
+                        className={cn("no-spinner", minimal ? "border-none focus-visible:ring-0 h-full p-2" : "")}
                     />
                     {percentConfig?.showProgressBar && !minimal && (
                         <div className="w-full h-2 bg-muted rounded-full overflow-hidden">

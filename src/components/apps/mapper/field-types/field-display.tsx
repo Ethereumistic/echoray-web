@@ -41,7 +41,7 @@ export function FieldDisplay({ fieldType, value, config }: FieldDisplayProps) {
                 href={fullUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline inline-flex items-center gap-1"
+                className="text-white hover:underline inline-flex items-center gap-1"
             >
                 {urlValue}
                 <ExternalLink className="w-3 h-3" />

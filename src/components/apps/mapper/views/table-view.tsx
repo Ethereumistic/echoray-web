@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import type { FieldType } from "@/lib/mapper/field-types";
 import { FIELD_METADATA, FIELD_ICONS, getDefaultFieldConfig } from "@/lib/mapper";
 import { cn } from "@/lib/utils";
+import { parseClipboardData, parseFieldValue, formatFieldValueForClipboard } from "@/lib/mapper/paste-utils";
 import {
     DndContext,
     closestCenter,
@@ -582,6 +583,55 @@ export function TableView({
     const [columnOrder, setColumnOrder] = useState<string[]>([]);
     const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
 
+    const filteredAndSortedCards = useMemo(() => {
+        let result = bufferedCards.filter(c => !c.isDeleted);
+
+        // Apply search
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter((card) => {
+                return Object.values(card.values || {}).some((val) =>
+                    String(val).toLowerCase().includes(query)
+                );
+            });
+        }
+
+        // Apply sort
+        if (sortConfig.fieldId) {
+            result.sort((a, b) => {
+                const valA = a.values?.[sortConfig.fieldId!] ?? "";
+                const valB = b.values?.[sortConfig.fieldId!] ?? "";
+
+                if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
+                if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+                return 0;
+            });
+        }
+
+        return result;
+    }, [bufferedCards, searchQuery, sortConfig]);
+
+    const sortedFields = useMemo(() => {
+        return [...bufferedFields].sort((a, b) => {
+            const indexA = columnOrder.indexOf(a.id);
+            const indexB = columnOrder.indexOf(b.id);
+
+            // If not in columnOrder (e.g. newly added), fallback to default order or put at end
+            if (indexA === -1 && indexB === -1) return a.order - b.order;
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+
+            return indexA - indexB;
+        });
+    }, [bufferedFields, columnOrder]);
+
+    // Selection state
+    const [selectedRange, setSelectedRange] = useState<{
+        start: { rowIndex: number; colIndex: number };
+        end: { rowIndex: number; colIndex: number };
+    } | null>(null);
+    const [isSelecting, setIsSelecting] = useState(false);
+
     // Load column widths
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -605,6 +655,193 @@ export function TableView({
             return next;
         });
     };
+
+    // Selection handlers
+    const handleCellMouseDown = useCallback((rowIndex: number, colIndex: number, e: React.MouseEvent) => {
+        if (e.button !== 0) return; // Only left click
+
+        // If clicking on an active cell, don't clear it (let FieldInput handle it)
+        const fieldId = sortedFields[colIndex]?.id;
+        const card = filteredAndSortedCards[rowIndex];
+        const cellKey = `${card._id || card.id}-${fieldId}`;
+
+        if (activeCell === cellKey) return;
+
+        setSelectedRange({
+            start: { rowIndex, colIndex },
+            end: { rowIndex, colIndex }
+        });
+        setIsSelecting(true);
+        setActiveCell(null);
+    }, [sortedFields, filteredAndSortedCards, activeCell]);
+
+    const handleCellMouseEnter = useCallback((rowIndex: number, colIndex: number) => {
+        if (isSelecting && selectedRange) {
+            setSelectedRange(prev => ({
+                ...prev!,
+                end: { rowIndex, colIndex }
+            }));
+        }
+    }, [isSelecting, selectedRange]);
+
+    useEffect(() => {
+        const handleMouseUp = () => setIsSelecting(false);
+        window.addEventListener('mouseup', handleMouseUp);
+        return () => window.removeEventListener('mouseup', handleMouseUp);
+    }, []);
+
+    // Helper to check if a cell is selected
+    const isCellSelected = useCallback((rowIndex: number, colIndex: number) => {
+        if (!selectedRange) return false;
+        const { start, end } = selectedRange;
+        const minRow = Math.min(start.rowIndex, end.rowIndex);
+        const maxRow = Math.max(start.rowIndex, end.rowIndex);
+        const minCol = Math.min(start.colIndex, end.colIndex);
+        const maxCol = Math.max(start.colIndex, end.colIndex);
+
+        return rowIndex >= minRow && rowIndex <= maxRow &&
+            colIndex >= minCol && colIndex <= maxCol;
+    }, [selectedRange]);
+
+    // Copy Handler
+    const handleCopy = useCallback((e: ClipboardEvent) => {
+        if (!selectedRange && !activeCell) return;
+
+        // If we're editing a cell, let the default behavior happen
+        if (document.activeElement instanceof HTMLInputElement ||
+            document.activeElement instanceof HTMLTextAreaElement) {
+            return;
+        }
+
+        e.preventDefault();
+
+        let tsv = "";
+
+        if (selectedRange) {
+            const { start, end } = selectedRange;
+            const minRow = Math.min(start.rowIndex, end.rowIndex);
+            const maxRow = Math.max(start.rowIndex, end.rowIndex);
+            const minCol = Math.min(start.colIndex, end.colIndex);
+            const maxCol = Math.max(start.colIndex, end.colIndex);
+
+            const rows = [];
+            for (let r = minRow; r <= maxRow; r++) {
+                const row = [];
+                for (let c = minCol; c <= maxCol; c++) {
+                    const card = filteredAndSortedCards[r];
+                    const field = sortedFields[c];
+                    const value = card.values?.[field.id];
+                    row.push(formatFieldValueForClipboard(value, field.type as FieldType));
+                }
+                rows.push(row.join('\t'));
+            }
+            tsv = rows.join('\n');
+        } else if (activeCell) {
+            // Copy active cell if no range
+            const [cardId, fieldId] = activeCell.split('-');
+            const card = filteredAndSortedCards.find(c => (c._id || c.id) === cardId);
+            const field = sortedFields.find(f => f.id === fieldId);
+            if (card && field) {
+                tsv = formatFieldValueForClipboard(card.values?.[field.id], field.type as FieldType);
+            }
+        }
+
+        if (tsv) {
+            e.clipboardData?.setData('text/plain', tsv);
+            toast.success("Copied to clipboard");
+        }
+    }, [selectedRange, activeCell, filteredAndSortedCards, sortedFields]);
+
+    // Paste Handler
+    const handlePaste = useCallback((e: ClipboardEvent) => {
+        // If we're editing a cell, let the default behavior happen (unless it's a multi-line paste?)
+        if (document.activeElement instanceof HTMLInputElement ||
+            document.activeElement instanceof HTMLTextAreaElement) {
+            return;
+        }
+
+        e.preventDefault();
+        const clipboardData = e.clipboardData?.getData('text/plain') || '';
+        const data = parseClipboardData(clipboardData);
+        if (data.length === 0) return;
+
+        // Get starting position
+        let startRow = 0;
+        let startCol = 0;
+
+        if (selectedRange) {
+            startRow = Math.min(selectedRange.start.rowIndex, selectedRange.end.rowIndex);
+            startCol = Math.min(selectedRange.start.colIndex, selectedRange.end.colIndex);
+        } else if (activeCell) {
+            const [cardId, fieldId] = activeCell.split('-');
+            startRow = filteredAndSortedCards.findIndex(c => (c._id || c.id) === cardId);
+            startCol = sortedFields.findIndex(f => f.id === fieldId);
+        } else {
+            return;
+        }
+
+        if (startRow === -1 || startCol === -1) return;
+
+        // Apply pasted data
+        const newBufferedCards = [...bufferedCards];
+        let cardsModified = false;
+
+        data.forEach((row, rIdx) => {
+            const targetRow = startRow + rIdx;
+            if (targetRow >= filteredAndSortedCards.length) return;
+
+            const cardInView = filteredAndSortedCards[targetRow];
+            const originalIdx = newBufferedCards.findIndex(c => (c._id || c.id) === (cardInView._id || cardInView.id));
+
+            if (originalIdx === -1) return;
+
+            const updatedCard = { ...newBufferedCards[originalIdx] };
+            updatedCard.values = { ...updatedCard.values };
+
+            row.forEach((cell, cIdx) => {
+                const targetCol = startCol + cIdx;
+                if (targetCol >= sortedFields.length) return;
+
+                const field = sortedFields[targetCol];
+                const meta = FIELD_METADATA[field.type as FieldType];
+
+                // Only paste into implemented fields
+                if (meta?.isImplemented) {
+                    const parsedValue = parseFieldValue(cell, field.type as FieldType, field.config);
+                    updatedCard.values[field.id] = parsedValue;
+                    cardsModified = true;
+                }
+            });
+
+            newBufferedCards[originalIdx] = updatedCard;
+        });
+
+        if (cardsModified) {
+            setBufferedCards(newBufferedCards);
+            setIsDirty(true);
+            toast.success(`Pasted ${data.length} row(s)`);
+        }
+    }, [selectedRange, activeCell, filteredAndSortedCards, sortedFields, bufferedCards]);
+
+    // Global keyboard listeners for copy/paste
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setSelectedRange(null);
+                setActiveCell(null);
+            }
+        };
+
+        document.addEventListener('copy', handleCopy);
+        document.addEventListener('paste', handlePaste);
+        window.addEventListener('keydown', onKeyDown);
+
+        return () => {
+            document.removeEventListener('copy', handleCopy);
+            document.removeEventListener('paste', handlePaste);
+            window.removeEventListener('keydown', onKeyDown);
+        };
+    }, [handleCopy, handlePaste]);
 
     const handleAddRow = () => {
         const newRow = {
@@ -654,48 +891,6 @@ export function TableView({
             setColumnOrder(defaultOrder);
         }
     }, [template.fields, projectId]);
-
-    const filteredAndSortedCards = useMemo(() => {
-        let result = bufferedCards.filter(c => !c.isDeleted);
-
-        // Apply search
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter((card) => {
-                return Object.values(card.values || {}).some((val) =>
-                    String(val).toLowerCase().includes(query)
-                );
-            });
-        }
-
-        // Apply sort
-        if (sortConfig.fieldId) {
-            result.sort((a, b) => {
-                const valA = a.values?.[sortConfig.fieldId!] ?? "";
-                const valB = b.values?.[sortConfig.fieldId!] ?? "";
-
-                if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
-                if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
-                return 0;
-            });
-        }
-
-        return result;
-    }, [bufferedCards, searchQuery, sortConfig]);
-
-    const sortedFields = useMemo(() => {
-        return [...bufferedFields].sort((a, b) => {
-            const indexA = columnOrder.indexOf(a.id);
-            const indexB = columnOrder.indexOf(b.id);
-
-            // If not in columnOrder (e.g. newly added), fallback to default order or put at end
-            if (indexA === -1 && indexB === -1) return a.order - b.order;
-            if (indexA === -1) return 1;
-            if (indexB === -1) return -1;
-
-            return indexA - indexB;
-        });
-    }, [bufferedFields, columnOrder]);
 
     // Global drag listeners for rows
     useEffect(() => {
@@ -885,9 +1080,6 @@ export function TableView({
         }
     }, [activeCell]);
 
-    if (!cards) {
-        return <div className="p-8 text-muted-foreground">Loading cards...</div>;
-    }
 
 
 
@@ -1039,9 +1231,14 @@ export function TableView({
         toast.success(`"${newField.name}" field added`);
     };
 
+
+    if (!cards) {
+        return <div className="p-8 text-muted-foreground text-center py-20">Loading database cards...</div>;
+    }
+
     if (cards.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+            <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] text-center p-8">
                 <div className="rounded-full bg-primary/10 p-6 mb-6">
                     <Database className="w-16 h-16 text-primary" />
                 </div>
@@ -1105,7 +1302,7 @@ export function TableView({
                                             key={card._id}
                                             className="group/row relative border-b last:border-b-0 hover:bg-accent/5"
                                         >
-                                            {sortedFields.map((field) => {
+                                            {sortedFields.map((field, fIndex) => {
                                                 const cellKey = `${card._id || card.id}-${field.id}`;
                                                 const isActive = activeCell === cellKey;
                                                 const width = columnWidths[field.id];
@@ -1121,18 +1318,25 @@ export function TableView({
                                                         }}
                                                     >
                                                         <div
+                                                            onMouseDown={(e) => handleCellMouseDown(index, fIndex, e)}
+                                                            onMouseEnter={() => handleCellMouseEnter(index, fIndex)}
                                                             onClick={() => {
                                                                 const meta = FIELD_METADATA[field.type as FieldType];
                                                                 if (meta?.isImplemented) {
                                                                     setActiveCell(cellKey);
+                                                                    setSelectedRange(null);
                                                                 }
                                                             }}
                                                             className={cn(
-                                                                "h-full min-h-[40px] transition-all",
+                                                                "h-full min-h-[40px] transition-all relative overflow-hidden",
                                                                 isActive ? "bg-background ring-2 ring-inset ring-primary z-10" : "hover:bg-black/5",
-                                                                !FIELD_METADATA[field.type as FieldType]?.isImplemented && "opacity-60 cursor-not-allowed"
+                                                                !FIELD_METADATA[field.type as FieldType]?.isImplemented && "opacity-60 cursor-not-allowed",
+                                                                isCellSelected(index, fIndex) && !isActive && "bg-primary/10 ring-1 ring-inset ring-primary/30 z-0"
                                                             )}
                                                         >
+                                                            {isCellSelected(index, fIndex) && !isActive && (
+                                                                <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
+                                                            )}
                                                             {isActive ? (
                                                                 <div ref={inputRef}>
                                                                     <FieldInput

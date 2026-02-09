@@ -218,3 +218,15 @@ body {
 	animation: marquee var(--marquee-duration, 60s) linear infinite;
 	will-change: transform;
 }
+
+/* Hide number input spin buttons */
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.no-spinner {
+	-moz-appearance: textfield;
+	appearance: textfield;
+}
