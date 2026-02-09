@@ -1,12 +1,12 @@
 "use client"
 
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion"
-import { MessageCircle, Palette, Code, Rocket, Clock, CheckCircle2, Play } from "lucide-react"
+import { MessageCircle, Palette, Code, Rocket, Clock, CheckCircle2, Play, type LucideIcon } from "lucide-react"
 import { useRef, useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 
 interface ProcessStep {
-    icon: any
+    icon: LucideIcon
     title: string
     duration: string
     description: string

@@ -3,7 +3,7 @@
  */
 
 import { parse } from "date-fns";
-import { type FieldType } from "./field-types";
+import { type FieldType, type FieldConfig, type FieldValue, type CurrencyFieldConfig } from "./field-types";
 import { CURRENCIES } from "./currencies";
 
 /**
@@ -19,7 +19,7 @@ export function parseClipboardData(data: string): string[][] {
 /**
  * Converts a raw string value from clipboard to the appropriate field value type
  */
-export function parseFieldValue(value: string, type: FieldType, config?: any): any {
+export function parseFieldValue(value: string, type: FieldType, config?: FieldConfig): FieldValue {
     const trimmed = value.trim();
     if (!trimmed) return null;
 
@@ -70,7 +70,8 @@ export function parseFieldValue(value: string, type: FieldType, config?: any): a
             if (isNaN(amount)) return null;
 
             // Default to USD or config currency
-            let currencyCode = config?.currency || "USD";
+            const currencyConfig = config as CurrencyFieldConfig;
+            let currencyCode = currencyConfig?.currency || "USD";
 
             // Detect common currency symbols in the string
             const symbols: Record<string, string> = {
@@ -90,7 +91,7 @@ export function parseFieldValue(value: string, type: FieldType, config?: any): a
             }
 
             // Also check CURRENCIES list for symbols
-            if (currencyCode === (config?.currency || "USD")) {
+            if (currencyCode === (currencyConfig?.currency || "USD")) {
                 const found = CURRENCIES.find(c => trimmed.includes(c.symbol));
                 if (found) currencyCode = found.code;
             }
