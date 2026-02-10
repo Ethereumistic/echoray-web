@@ -5,6 +5,8 @@ import { MessageCircle, Palette, Code, Rocket, CheckCircle, type LucideIcon, Spa
 import { useRef, useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { AnimatePresence } from "framer-motion"
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
+import Autoplay from "embla-carousel-autoplay"
 
 interface ProcessStep {
     icon: LucideIcon
@@ -139,22 +141,17 @@ function DiscoveryCallAnimation({ isActive }: { isActive: boolean }) {
 
 // Design Preview Animation
 function DesignPreviewAnimation({ isActive }: { isActive: boolean }) {
-    const [stage, setStage] = useState(0)
+    const plugin = useRef(
+        Autoplay({ delay: 3000, stopOnInteraction: false })
+    )
 
-    useEffect(() => {
-        if (!isActive) {
-            setStage(0)
-            return
-        }
-
-        const timeouts: NodeJS.Timeout[] = []
-            ;[1, 2, 3].forEach((s, i) => {
-                const timeout = setTimeout(() => setStage(s), 300 + i * 400)
-                timeouts.push(timeout)
-            })
-
-        return () => timeouts.forEach(clearTimeout)
-    }, [isActive])
+    const images = [
+        "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/og-image/m-texx.com-en.png",
+        "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/og-image/ultrabuild.bg-en.png",
+        "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/og-image/global-travel.bg-en.png",
+        "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/og-image/dbproductions.net-en.png",
+        "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/og-image/danirusev.com-en.png",
+    ]
 
     return (
         <div className="w-full max-w-md mx-auto">
@@ -172,6 +169,30 @@ function DesignPreviewAnimation({ isActive }: { isActive: boolean }) {
                     </div>
                 </div>
 
+                <Carousel
+                    plugins={[plugin.current]}
+                    className="w-full"
+                    opts={{
+                        align: "start",
+                        loop: true,
+                    }}
+                >
+                    <CarouselContent>
+                        {images.map((src, index) => (
+                            <CarouselItem key={index}>
+                                <div className="relative aspect-[1200/630] w-full overflow-hidden rounded-b-md">
+                                    <img
+                                        src={src}
+                                        alt={`Design preview ${index + 1}`}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                </Carousel>
+
+                {/*
                 <div className="p-6 min-h-[220px] bg-gradient-to-b from-background to-muted/30 relative">
                     <motion.div
                         animate={{ opacity: stage >= 1 ? 1 : 0, y: stage >= 1 ? 0 : -10 }}
@@ -218,6 +239,7 @@ function DesignPreviewAnimation({ isActive }: { isActive: boolean }) {
                         You approve this
                     </motion.div>
                 </div>
+                */}
             </div>
         </div>
     )
@@ -254,6 +276,8 @@ function BuildAnimation({ isActive }: { isActive: boolean }) {
         { label: "Secure & backed up", threshold: 80 },
     ]
 
+    const isComplete = progress >= 100
+
     return (
         <div className="w-full max-w-md mx-auto">
             <div className="bg-card shadow-2xl border rounded-2xl overflow-hidden">
@@ -269,8 +293,8 @@ function BuildAnimation({ isActive }: { isActive: boolean }) {
                     </div>
                 </div>
 
-                <div className="p-5 space-y-5 min-h-[220px]">
-                    <div className="space-y-2">
+                <div className="p-5 min-h-[280px]">
+                    <div className="space-y-2 mb-6">
                         <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Progress</span>
                             <span className="font-bold text-primary">{progress}%</span>
@@ -283,38 +307,53 @@ function BuildAnimation({ isActive }: { isActive: boolean }) {
                         </div>
                     </div>
 
-                    <div className="space-y-3">
-                        {features.map((feature) => {
-                            const isDone = progress >= feature.threshold
-                            return (
-                                <div
-                                    key={feature.label}
-                                    className={`flex items-center gap-3 transition-opacity duration-300 ${isDone ? 'opacity-100' : 'opacity-40'}`}
-                                >
-                                    <div
-                                        className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300 ${isDone ? 'bg-primary scale-110' : 'bg-muted'}`}
+                    <div className="relative">
+                        <motion.div 
+                            className="space-y-3"
+                            animate={{
+                                gap: isComplete ? "0.5rem" : "1.25rem"
+                            }}
+                            transition={{ duration: 0.4, ease: "easeOut" }}
+                            style={{ display: "flex", flexDirection: "column" }}
+                        >
+                            {features.map((feature, index) => {
+                                const isDone = progress >= feature.threshold
+                                return (
+                                    <motion.div
+                                        key={feature.label}
+                                        className={`flex items-center gap-3 transition-opacity duration-300 ${isDone ? 'opacity-100' : 'opacity-40'}`}
+                                        animate={{
+                                            y: isComplete ? -4 * (3 - index) : 0
+                                        }}
+                                        transition={{ duration: 0.4, ease: "easeOut" }}
                                     >
-                                        {isDone && <CheckCircle className="w-3.5 h-3.5 text-primary-foreground" />}
-                                    </div>
-                                    <span className={`text-sm transition-colors duration-300 ${isDone ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                                        {feature.label}
-                                    </span>
-                                </div>
-                            )
-                        })}
+                                        <div
+                                            className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300 ${isDone ? 'bg-primary scale-110' : 'bg-muted'}`}
+                                        >
+                                            {isDone && <CheckCircle className="w-3.5 h-3.5 text-primary-foreground" />}
+                                        </div>
+                                        <span className={`text-sm transition-colors duration-300 ${isDone ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                            {feature.label}
+                                        </span>
+                                    </motion.div>
+                                )
+                            })}
+                        </motion.div>
                     </div>
 
-                    <AnimatePresence>
-                        {progress >= 100 && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="bg-primary/10 rounded-xl p-4 text-center"
-                            >
-                                <p className="text-primary font-bold">🎉 Ready for launch!</p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    <div className="mt-4 h-[56px]">
+                        <AnimatePresence>
+                            {progress >= 100 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-primary/10 rounded-xl p-4 text-center"
+                                >
+                                    <p className="text-primary font-bold">🎉 Ready for launch!</p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
             </div>
         </div>

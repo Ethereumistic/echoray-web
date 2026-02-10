@@ -69,3 +69,55 @@ export function CTA5() {
         </section>
     )
 }
+
+export function CTA5Compact() {
+    return (
+        <div className="h-full w-full bg-background overflow-auto border-2 border-dashed border-primary ">
+            <div className="p-4 flex flex-col items-center justify-center min-h-full text-center">
+                {/* Badge */}
+                <div className="inline-flex items-center gap-1 px-2 py-1 bg-chart-1/10 text-chart-1 rounded-full text-[10px] font-semibold mb-3">
+                    From €99/month • Cancel anytime
+                </div>
+
+                <h2 className="text-sm font-bold tracking-tight mb-2 leading-tight">
+                    Ready to grow your business online?
+                </h2>
+                <p className="text-[10px] text-muted-foreground mb-3 max-w-[200px]">
+                    Join hundreds of businesses that trust us with their online presence.
+                </p>
+
+                <div className="flex flex-col gap-2 w-full max-w-[180px]">
+                    <Button size="sm" className="h-7 text-[10px] font-semibold w-full" asChild>
+                        <Link href="/start-project">
+                            Get Started
+                            <ArrowRight className="ml-1 h-3 w-3" />
+                        </Link>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[10px] font-semibold w-full"
+                        asChild
+                    >
+                        <Link href="/contact">
+                            <Phone className="mr-1 h-3 w-3" />
+                            Book a Call
+                        </Link>
+                    </Button>
+                </div>
+
+                {/* Trust signals */}
+                <div className="mt-4 flex flex-col items-center gap-1 text-[8px] text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                        <span className="w-1 h-1 bg-chart-1 rounded-full" />
+                        No credit card required
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <span className="w-1 h-1 bg-chart-1 rounded-full" />
+                        24h response time
+                    </span>
+                </div>
+            </div>
+        </div>
+    )
+}

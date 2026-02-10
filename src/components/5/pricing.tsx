@@ -72,7 +72,7 @@ export function Pricing5() {
                     className="text-center mb-16"
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
+                    viewport={{ once: false }}
                     transition={{ duration: 0.5 }}
                 >
                     <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
@@ -94,7 +94,7 @@ export function Pricing5() {
                                 }`}
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
+                            viewport={{ once: false }}
                             transition={{ duration: 0.5, delay: index * 0.1 }}
                         >
                             {plan.popular && (
@@ -178,7 +178,7 @@ export function Pricing5() {
                     className="max-w-3xl mx-auto mt-12 p-6 rounded-2xl bg-muted/50 border border-border text-center"
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
+                    viewport={{ once: false }}
                     transition={{ duration: 0.5, delay: 0.4 }}
                 >
                     <p className="font-semibold mb-2">Prefer to own your website outright?</p>

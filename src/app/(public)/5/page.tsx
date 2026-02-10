@@ -4,6 +4,7 @@ import { Process5 } from "@/components/5/process"
 import { Pricing5 } from "@/components/5/pricing"
 import { FAQ5 } from "@/components/5/faq"
 import { CTA5 } from "@/components/5/cta"
+import { MacbookScrollDemo } from "@/components/5/MacBook"
 
 export default function LandingPage5() {
     return (
@@ -14,6 +15,7 @@ export default function LandingPage5() {
             <Pricing5 />
             <FAQ5 />
             <CTA5 />
+            <MacbookScrollDemo />
         </>
     )
 }
