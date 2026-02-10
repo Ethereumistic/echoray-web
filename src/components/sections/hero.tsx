@@ -21,8 +21,16 @@ export function Hero() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.1 }}
                 >
-                    We Build Digital Solutions That <span className="text-primary"> <br className="block md:hidden" />Drive Business Growth </span>
+                    A Professional Website <span className="text-primary"> <br className="block md:hidden" />That Pays for Itself </span>
                 </motion.h1>
+                {/* <motion.h1
+                    className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                >
+                    We Build Digital Solutions That <span className="text-primary"> <br className="block md:hidden" />Drive Business Growth </span>
+                </motion.h1> */}
 
                 <motion.p
                     className="mt-8 max-w-2xl text-lg text-muted-foreground md:text-xl"
@@ -30,8 +38,16 @@ export function Hero() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
                 >
-                    From modern wesbites to enterprise CRMs, Echoray.io brings clarity to the web&apos;s complexity.
+                    Your website is your hardest-working salesperson. Make sure it&apos;s actually working for you.
                 </motion.p>
+                {/* <motion.p
+                    className="mt-8 max-w-2xl text-lg text-muted-foreground md:text-xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                    From modern wesbites to enterprise CRMs, Echoray.io brings clarity to the web&apos;s complexity.
+                </motion.p> */}
 
                 <motion.div
                     className="mt-10 flex gap-4 flex-row"

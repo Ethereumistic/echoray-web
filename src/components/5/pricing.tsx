@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, ArrowRight, Star } from "lucide-react"
+import { Check, ArrowRight, Star, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -89,8 +89,8 @@ export function Pricing5() {
                         <motion.div
                             key={plan.name}
                             className={`relative rounded-2xl p-6 md:p-8 ${plan.popular
-                                    ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
-                                    : "bg-card border border-border"
+                                ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
+                                : "bg-card border border-border"
                                 }`}
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
@@ -134,18 +134,17 @@ export function Pricing5() {
                                     <li
                                         key={feature.text}
                                         className={`flex items-center gap-2 text-sm ${!feature.included
-                                                ? plan.popular
-                                                    ? "text-primary-foreground/40"
-                                                    : "text-muted-foreground/50"
-                                                : ""
+                                            ? plan.popular
+                                                ? "text-primary-foreground/40"
+                                                : "text-muted-foreground/50"
+                                            : ""
                                             }`}
                                     >
-                                        <Check className={`w-4 h-4 shrink-0 ${feature.included
-                                                ? plan.popular
-                                                    ? "text-chart-1"
-                                                    : "text-chart-1"
-                                                : "opacity-30"
-                                            }`} />
+                                        {feature.included ? (
+                                            <Check className={`w-4 h-4 shrink-0 ${plan.popular ? "text-chart-1" : "text-chart-1"}`} />
+                                        ) : (
+                                            <X className={`w-4 h-4 shrink-0 ${plan.popular ? "text-primary-foreground/30" : "text-destructive/50"}`} />
+                                        )}
                                         <span className={!feature.included ? "line-through" : ""}>
                                             {feature.text}
                                         </span>
@@ -159,8 +158,8 @@ export function Pricing5() {
 
                             <Button
                                 className={`w-full font-semibold group ${plan.popular
-                                        ? "bg-background text-foreground hover:bg-background/90"
-                                        : ""
+                                    ? "bg-background text-foreground hover:bg-background/90"
+                                    : ""
                                     }`}
                                 variant={plan.popular ? "secondary" : "default"}
                                 asChild

@@ -14,7 +14,7 @@ import Link from "next/link";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import type { FieldType } from "@/lib/mapper/field-types";
+import type { FieldType, FieldConfig } from "@/lib/mapper/field-types";
 import { FIELD_METADATA, FIELD_ICONS, getDefaultFieldConfig } from "@/lib/mapper";
 import { cn } from "@/lib/utils";
 import { parseClipboardData, parseFieldValue, formatFieldValueForClipboard } from "@/lib/mapper/paste-utils";
@@ -55,7 +55,7 @@ import { FieldTypeSelector } from "../field-type-selector";
 interface TableViewProps {
     projectId: string;
     template: {
-        fields: Array<{ id: string; name: string; type: string; required: boolean; order: number; config?: unknown }>;
+        fields: Array<{ id: string; name: string; type: string; required: boolean; order: number; config?: FieldConfig }>;
     };
     scope: string;
     slug: string;
@@ -70,7 +70,7 @@ interface MapperField {
     type: string;
     required: boolean;
     order: number;
-    config?: unknown;
+    config?: FieldConfig;
 }
 
 interface MapperCard {

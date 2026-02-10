@@ -15,6 +15,7 @@ const isPublicRoute = createRouteMatcher([
   "/blog/(.*)",
   "/start-project",
   "/work",
+  "/5",
 ]);
 
 /**

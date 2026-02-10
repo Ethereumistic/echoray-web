@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, Globe, Terminal, Settings2, LogIn } from "lucide-react"
+import { Globe, Terminal, Settings2, LogIn } from "lucide-react"
 
 import {
     NavigationMenu,
@@ -15,7 +15,7 @@ import {
     navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useAuthStore, createProfileFromConvexUser } from "@/stores/auth-store"
 import { useConvexAuth, useQuery } from "convex/react"
@@ -43,6 +43,7 @@ const services: { title: string; href: string; description: string; icon: React.
 ]
 
 export function Navbar() {
+    const [isOpen, setIsOpen] = React.useState(false)
     const { isAuthenticated: isConvexAuthenticated } = useConvexAuth()
     const { profile: storeProfile, setUserId, setProfile } = useAuthStore()
 
@@ -68,13 +69,13 @@ export function Navbar() {
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-            <div className="container mx-auto flex h-16 items-center px-4 md:px-6">
-                <Link href="/" className="mr-6 flex items-center space-x-2">
+            <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
+                <Link href="/" className="flex items-center space-x-2">
                     <Image src="/logo/wifi-dark.png" alt="Echoray Logo" width={32} height={32} className="h-8 w-8 object-contain" />
                     <span className="text-xl font-bold tracking-tight">Echoray</span>
                 </Link>
 
-                <div className="hidden md:flex md:flex-1">
+                <div className="hidden md:flex md:flex-1 md:justify-center">
                     <NavigationMenu>
                         <NavigationMenuList>
                             <NavigationMenuItem>
@@ -158,52 +159,65 @@ export function Navbar() {
                         <Link href="/start-project">Start Project</Link>
                     </Button>
 
-                    <Sheet>
+                    <Sheet open={isOpen} onOpenChange={setIsOpen}>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="md:hidden">
-                                <Menu className="h-5 w-5" />
+                            <Button variant="ghost" size="icon" className="relative md:hidden h-10 w-10">
+                                <div className="relative h-5 w-5">
+                                    <span
+                                        className={cn(
+                                            "absolute left-0 top-1.5 h-0.5 w-5 bg-current transition-all duration-300",
+                                            isOpen && "top-1/2 -translate-y-1/2 rotate-45"
+                                        )}
+                                    />
+                                    <span
+                                        className={cn(
+                                            "absolute left-0 bottom-1.5 h-0.5 w-5 bg-current transition-all duration-300",
+                                            isOpen && "top-1/2 -translate-y-1/2 -rotate-45"
+                                        )}
+                                    />
+                                </div>
                                 <span className="sr-only">Toggle Menu</span>
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                            <SheetHeader>
-                                <SheetTitle className="flex items-center gap-2">
-                                    <Image src="/logo/wifi-dark.png" alt="Echoray Logo" width={24} height={24} />
-                                    <span>Echoray</span>
-                                </SheetTitle>
-                            </SheetHeader>
-                            <nav className="mt-8 flex flex-col gap-4">
-                                <div className="flex flex-col gap-2">
-                                    <h4 className="text-sm font-medium text-muted-foreground">Services</h4>
-                                    {services.map((service) => (
-                                        <Link key={service.title} href={service.href} className="text-lg font-medium hover:text-primary">
-                                            {service.title}
-                                        </Link>
-                                    ))}
+                        <SheetContent side="right" hideClose overlayClassName="top-16 h-[calc(100vh-4rem)]" className="w-[300px] sm:w-[400px] mt-16 h-[calc(100vh-4rem)] border-l border-t-0 p-6 pt-8">
+                            <nav className="flex flex-col gap-6">
+                                <div className="flex flex-col gap-3">
+                                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Services</h4>
+                                    <div className="flex flex-col gap-1">
+                                        {services.map((service) => (
+                                            <Link key={service.title} href={service.href} className="py-2 text-base font-medium hover:text-primary transition-colors">
+                                                {service.title}
+                                            </Link>
+                                        ))}
+                                    </div>
                                 </div>
-                                <hr className="my-2 border-muted" />
-                                <Link href="/work" className="text-lg font-medium hover:text-primary">
-                                    Our Work
-                                </Link>
-                                <Link href="/about" className="text-lg font-medium hover:text-primary">
-                                    About
-                                </Link>
-
-                                {isAuthenticated ? (
-                                    <Link href="/dashboard" className="text-lg font-medium hover:text-primary flex items-center gap-2">
-                                        <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold">
-                                            {profile?.displayName?.charAt(0) || "D"}
-                                        </div>
-                                        <span>Dashboard</span>
+                                <hr className="border-muted" />
+                                <div className="flex flex-col gap-1">
+                                    <Link href="/work" className="py-2 text-base font-medium hover:text-primary transition-colors">
+                                        Our Work
                                     </Link>
-                                ) : (
-                                    <Link href="/auth/login" className="text-lg font-medium hover:text-primary flex items-center gap-2">
-                                        <LogIn className="h-5 w-5" />
-                                        <span>Sign In</span>
+                                    <Link href="/about" className="py-2 text-base font-medium hover:text-primary transition-colors">
+                                        About
                                     </Link>
-                                )}
+                                </div>
+                                <hr className="border-muted" />
+                                <div className="flex flex-col gap-1">
+                                    {isAuthenticated ? (
+                                        <Link href="/dashboard" className="py-2 text-base font-medium hover:text-primary flex items-center gap-3 transition-colors">
+                                            <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">
+                                                {profile?.displayName?.charAt(0) || "D"}
+                                            </div>
+                                            <span>Dashboard</span>
+                                        </Link>
+                                    ) : (
+                                        <Link href="/auth/login" className="py-2 text-base font-medium hover:text-primary flex items-center gap-3 transition-colors">
+                                            <LogIn className="h-5 w-5" />
+                                            <span>Sign In</span>
+                                        </Link>
+                                    )}
+                                </div>
 
-                                <Button asChild className="mt-4 w-full">
+                                <Button asChild className="mt-2 w-full">
                                     <Link href="/start-project">Start Project</Link>
                                 </Button>
                             </nav>

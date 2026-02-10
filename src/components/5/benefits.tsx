@@ -18,11 +18,11 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
 
     const businesses = [
         {
-            query: "coffee shop near me",
+            query: "today's horoscope taurus",
             results: [
-                { name: "Your Coffee Shop", type: "Local Business", isOwn: true },
-                { name: "Competitor Cafe", type: "Coffee Shop" },
-                { name: "Another Coffee Place", type: "Cafe" }
+                { name: "stars.guide", type: "Zodiac", isOwn: true },
+                { name: "horoscope.com", type: "Zodiac" },
+                { name: "astrology.com", type: "Zodiac" }
             ]
         },
         {
@@ -483,7 +483,7 @@ function ChartAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
     const chartConfig = {
         visitors: {
             label: "Visitors",
-            color: "hsl(var(--primary))",
+            color: "var(--primary)",
         },
     }
 
@@ -511,8 +511,8 @@ function ChartAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
                     >
                         <defs>
                             <linearGradient id="visitorGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+                                <stop offset="5%" stopColor="var(--color-visitors)" stopOpacity={0.4} />
+                                <stop offset="95%" stopColor="var(--color-visitors)" stopOpacity={0.05} />
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -532,7 +532,7 @@ function ChartAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
                         <Area
                             type="monotone"
                             dataKey="visitors"
-                            stroke="hsl(var(--primary))"
+                            stroke="var(--color-visitors)"
                             strokeWidth={3}
                             fill="url(#visitorGradient)"
                             animationDuration={1500}
@@ -786,7 +786,8 @@ export function BenefitsHorizontal() {
             stat: "85%",
             statLabel: "of customers Google before buying",
             component: GoogleSearchDemo,
-            badge: "Search Priority"
+            badge: "Search Priority",
+            mobileTranslateY: "-3rem" // Adjust as needed
         },
         {
             icon: Users,
@@ -795,7 +796,8 @@ export function BenefitsHorizontal() {
             stat: "75%",
             statLabel: "judge credibility by website design",
             component: TrustAnimation,
-            badge: "Trust at First Sight"
+            badge: "Trust at First Sight",
+            mobileTranslateY: "3rem" // Adjust as needed
         },
         {
             icon: Clock,
@@ -804,7 +806,8 @@ export function BenefitsHorizontal() {
             stat: "10+",
             statLabel: "hours saved per week on average",
             component: ClockAnimation,
-            badge: "Work While You Sleep"
+            badge: "Work While You Sleep",
+            mobileTranslateY: "0rem" // Adjust as needed
         },
         {
             icon: Shield,
@@ -813,16 +816,18 @@ export function BenefitsHorizontal() {
             stat: "99.9%",
             statLabel: "uptime guaranteed",
             component: LockAnimation,
-            badge: "Peace of Mind"
+            badge: "Peace of Mind",
+            mobileTranslateY: "1rem" // Adjust as needed
         },
         {
             icon: LineChartIcon,
             title: "Track results",
-            description: "See exactly how many people visit and what they do.",
+            description: "See how many people visit and what they do.",
             stat: "Real",
             statLabel: "data to make better decisions",
             component: ChartAnimation,
-            badge: "Clarity Over Guessing"
+            badge: "Clarity Over Guessing",
+            mobileTranslateY: "-1.5rem" // Adjust as needed
         },
         {
             icon: Headphones,
@@ -831,7 +836,8 @@ export function BenefitsHorizontal() {
             stat: "24h",
             statLabel: "response time on all requests",
             component: ChatAnimation,
-            badge: "Real Humans"
+            badge: "Real Humans",
+            mobileTranslateY: "-1rem" // Adjust as needed
         }
     ]
 
@@ -918,67 +924,166 @@ export function BenefitsHorizontal() {
     }, [scrollYProgress, totalSlides, activeIndex])
 
     return (
-        <div ref={containerRef} className="relative bg-background" style={{ height: `${benefits.length * 100}vh` }}>
-            <div className="sticky top-0 h-screen overflow-hidden">
-                {/* Horizontal sliding container */}
-                <motion.div
-                    className="flex h-full"
-                    style={{ x }}
-                >
-                    {benefits.map((benefit, index) => (
-                        <div
-                            key={benefit.title}
-                            className="shrink-0 w-screen h-full flex items-center justify-center"
-                        >
-                            <div className="container mx-auto px-6 max-w-6xl">
-                                <div className="grid lg:grid-cols-2 gap-12 items-center">
-                                    {/* Left side - Content */}
-                                    <div className="space-y-6">
-                                        <Badge className="inline-flex items-center gap-3 bg-card backdrop-blur-sm px-6 py-3 shadow-lg border rounded-md">
-                                            <benefit.icon className="w-6 h-6 text-primary" />
-                                            <span className="font-bold text-foreground">{benefit.badge}</span>
-                                        </Badge>
+        <>
+            {/* Desktop: Horizontal scroll */}
+            <div ref={containerRef} className="relative bg-background hidden lg:block" style={{ height: `${benefits.length * 100}vh` }}>
+                <div className="sticky top-0 h-screen overflow-hidden">
+                    {/* Horizontal sliding container */}
+                    <motion.div
+                        className="flex h-full"
+                        style={{ x }}
+                    >
+                        {benefits.map((benefit, index) => (
+                            <div
+                                key={benefit.title}
+                                className="shrink-0 w-screen h-full flex items-center justify-center"
+                            >
+                                <div className="container mx-auto px-6 max-w-6xl">
+                                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                                        {/* Left side - Content */}
+                                        <div className="space-y-6">
+                                            <Badge className="inline-flex items-center gap-3 bg-card backdrop-blur-sm px-6 py-3 shadow-lg border rounded-md">
+                                                <benefit.icon className="w-6 h-6 text-primary" />
+                                                <span className="font-bold text-foreground">{benefit.badge}</span>
+                                            </Badge>
 
-                                        <h2 className="text-5xl lg:text-7xl font-black text-foreground leading-tight">
-                                            {benefit.title}
-                                        </h2>
+                                            <h2 className="text-5xl lg:text-7xl font-black text-foreground leading-tight">
+                                                {benefit.title}
+                                            </h2>
 
-                                        <p className="text-xl lg:text-2xl text-muted-foreground leading-relaxed">
-                                            {benefit.description}
-                                        </p>
+                                            <p className="text-xl lg:text-2xl text-muted-foreground leading-relaxed">
+                                                {benefit.description}
+                                            </p>
 
-                                        <div className="flex items-baseline gap-3 pt-4">
-                                            <span className="text-6xl font-black text-primary">
-                                                {benefit.stat}
-                                            </span>
-                                            <span className="text-lg text-muted-foreground max-w-xs">
-                                                {benefit.statLabel}
-                                            </span>
+                                            <div className="flex items-baseline gap-3 pt-4">
+                                                <span className="text-6xl font-black text-primary">
+                                                    {benefit.stat}
+                                                </span>
+                                                <span className="text-lg text-muted-foreground max-w-xs">
+                                                    {benefit.statLabel}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    {/* Right side - Animation */}
-                                    <div className="flex items-center justify-center">
-                                        <benefit.component
-                                            isActive={index === activeIndex}
-                                            wasActive={wasActiveStates[index] && index !== activeIndex}
-                                        />
+                                        {/* Right side - Animation */}
+                                        <div className="flex items-center justify-center">
+                                            <benefit.component
+                                                isActive={index === activeIndex}
+                                                wasActive={wasActiveStates[index] && index !== activeIndex}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </motion.div>
+                        ))}
+                    </motion.div>
 
-                {/* Progress indicator - fixed position */}
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                    {benefits.map((_, i) => (
-                        <div
-                            key={i}
-                            className={`h-2 transition-all rounded-full duration-300 ${i === activeIndex ? 'w-12 bg-primary' : 'w-2 bg-muted'
-                                }`}
-                        />
-                    ))}
+                    {/* Progress indicator - fixed position - desktop only */}
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                        {benefits.map((_, i) => (
+                            <div
+                                key={i}
+                                className={`h-2 transition-all rounded-full duration-300 ${i === activeIndex ? 'w-12 bg-primary' : 'w-2 bg-muted'
+                                    }`}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile: Vertical scroll */}
+            <div
+                className="lg:hidden bg-background"
+                style={{
+                    scrollSnapType: 'y mandatory',
+                    scrollPadding: '0px' // Ensures snapping aligns to viewport edge
+                }}
+            >
+                {benefits.map((benefit, index) => (
+                    <MobileBenefitItem key={benefit.title} benefit={benefit} />
+                ))}
+            </div>
+        </>
+    )
+}
+
+function MobileBenefitItem({ benefit }: { benefit: any }) {
+    const sectionRef = useRef<HTMLDivElement>(null)
+    const [isInView, setIsInView] = useState(false)
+    const [hasBeenInView, setHasBeenInView] = useState(false)
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsInView(true)
+                    setHasBeenInView(true)
+                } else {
+                    setIsInView(false)
+                }
+            },
+            { threshold: 0.5 } // Trigger when 50% visible
+        )
+
+        if (sectionRef.current) {
+            observer.observe(sectionRef.current)
+        }
+
+        return () => {
+            if (sectionRef.current) {
+                observer.unobserve(sectionRef.current)
+            }
+        }
+    }, [])
+
+    return (
+        <div
+            ref={sectionRef}
+            className="min-h-screen flex items-center justify-center px-4 py-16"
+            style={{
+                scrollSnapAlign: 'start',
+                scrollSnapStop: 'always' // Forces snap to stop at each section
+            }}
+        >
+            <div className="w-full max-w-2xl space-y-2">
+                {/* Badge */}
+                <Badge className="inline-flex items-center gap-2 bg-card backdrop-blur-sm px-4 py-2 shadow-lg border rounded-md text-xs">
+                    <benefit.icon className="w-4 h-4 text-primary" />
+                    <span className="font-bold text-foreground">{benefit.badge}</span>
+                </Badge>
+
+                {/* Title */}
+                <h2 className="text-3xl sm:text-4xl font-black text-foreground leading-tight">
+                    {benefit.title}
+                </h2>
+
+                {/* Description */}
+                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+                    {benefit.description}
+                </p>
+
+                {/* Stat */}
+                <div className="flex items-baseline gap-2 pt-2">
+                    <span className="text-4xl sm:text-5xl font-black text-primary">
+                        {benefit.stat}
+                    </span>
+                    <span className="text-sm sm:text-base text-muted-foreground max-w-[200px]">
+                        {benefit.statLabel}
+                    </span>
+                </div>
+
+                {/* Animation - scaled down and moved up for mobile */}
+                <div
+                    className="flex items-center justify-center"
+                    style={{
+                        transform: `translateY(${benefit.mobileTranslateY}) scale(0.8)`,
+                        transformOrigin: 'center'
+                    }}
+                >
+                    <benefit.component
+                        isActive={isInView}
+                        wasActive={hasBeenInView && !isInView}
+                    />
                 </div>
             </div>
         </div>
