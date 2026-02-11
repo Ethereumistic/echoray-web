@@ -97,7 +97,7 @@ export const MacbookScroll = ({
         [0, 0.3],
         [0.6, isMobile ? 1 : 1.5],
     );
-    const translate = useTransform(scrollYProgress, [0, 1], [0, isMobile ? 800 : 800]);
+    const translate = useTransform(scrollYProgress, [0, 1], [0, isMobile ? 800 : 690]);
     const rotate = useTransform(scrollYProgress, [0.1, 0.12, 0.3], [-28, -28, 0]);
     const textTransform = useTransform(scrollYProgress, [0, 0.3], [0, 100]);
     const textOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
@@ -126,7 +126,7 @@ export const MacbookScroll = ({
     // 
     // 💡 TIP: If the CTA becomes too big and pixelated/blurry, reduce this
     // 3.5x = 350% size (quite large), 2x = 200% size (moderate)
-    const contentScale = useTransform(scrollYProgress, [0.2, 0.8, 1], [1, 1, 1.5]);
+    const contentScale = useTransform(scrollYProgress, [0.3, 0.6, 1], [1, 1, 1]);
 
     // CONTENT Z-DEPTH (3D forward movement)
     // This moves the CTA forward in 3D space toward the viewer using translateZ
@@ -137,7 +137,7 @@ export const MacbookScroll = ({
     // LOWER VALUES = stays flatter, closer to the screen
     // 
     // 💡 TIP: If the CTA looks "detached" or floating weirdly, reduce this value
-    const contentTranslateZ = useTransform(scrollYProgress, [0.2, 0.8, 1], [0, 300, 500]);
+    const contentTranslateZ = useTransform(scrollYProgress, [0.3, 0.6, 1], [0, 0, 200]);
 
     // CONTENT VERTICAL POSITION (Y-axis)
     // 
@@ -158,7 +158,7 @@ export const MacbookScroll = ({
     // 💡 PRO TIP: To move the CTA LOWER, use POSITIVE values (like 150)
     // The scaling will still make it grow, but the positive translate 
     // pushes it downward in the viewport
-    const contentTranslateY = useTransform(scrollYProgress, [0.2, 0.8, 1], [0, 170, 350]);
+    const contentTranslateY = useTransform(scrollYProgress, [0.3, 0.6, 1], [0, 160, -280]);
 
     return (
         <div
@@ -275,7 +275,7 @@ export const Lid = ({
                     transformStyle: "preserve-3d",
                     transformOrigin: "top",
                 }}
-                className="absolute inset-0 h-80 w-[32rem] rounded-2xl p-2 overflow-hidden"
+                className="absolute inset-0 h-80 w-[32rem] rounded-2xl p-2 "
             >
                 {/* Tuka otgore ako imame overflow-hidden, pochva da krie CTA-to zad neshto si tam. */}
 
@@ -283,7 +283,7 @@ export const Lid = ({
                 <div className="absolute inset-0 rounded-lg " />
                 {children ? (
                     <motion.div
-                        className="absolute inset-0 h-full w-full rounded-lg overflow-auto"
+                        className="absolute inset-0 h-full w-full rounded-lg"
                         style={{
                             scale: contentScale,
                             translateZ: contentTranslateZ,

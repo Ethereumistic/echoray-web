@@ -1,10 +1,10 @@
 import React from "react";
 import { MacbookScroll } from "@/components/5/macbook-scroll";
-import { CTA5Compact } from "@/components/5/cta";
+import { TimeCTA } from "@/components/5/time-cta";
 
 export function MacbookScrollDemo() {
     return (
-        <div className="w-full overflow-hidden">
+        <div className="w-full overflow-hidden -mt-[14rem]">
             <MacbookScroll
                 title={
                     <span>
@@ -14,7 +14,7 @@ export function MacbookScrollDemo() {
                 showGradient={false}
             >
                 <div className="w-full h-full ">
-                    <CTA5Compact />
+                    <TimeCTA />
                 </div>
             </MacbookScroll>
         </div>
