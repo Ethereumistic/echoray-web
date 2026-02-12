@@ -1007,7 +1007,18 @@ export function BenefitsHorizontal() {
     )
 }
 
-function MobileBenefitItem({ benefit }: { benefit: any }) {
+interface Benefit {
+    icon: React.ComponentType<{ className?: string }>
+    title: string
+    description: string
+    stat: string
+    statLabel: string
+    component: React.ComponentType<{ isActive?: boolean; wasActive?: boolean }>
+    badge: string
+    mobileTranslateY: string
+}
+
+function MobileBenefitItem({ benefit }: { benefit: Benefit }) {
     const sectionRef = useRef<HTMLDivElement>(null)
     const [isInView, setIsInView] = useState(false)
     const [hasBeenInView, setHasBeenInView] = useState(false)

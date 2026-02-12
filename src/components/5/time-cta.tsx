@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/command"
 
 import { PhoneInput } from "@/components/ui/phone-input"
+import type { Value } from "react-phone-number-input"
 
 const timeSlots = [
     "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
@@ -28,7 +29,7 @@ export function TimeCTA() {
     const [date, setDate] = useState<Date | undefined>(new Date())
     const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined)
     const [open, setOpen] = useState(false)
-    const [phone, setPhone] = useState<string | "">("")
+    const [phone, setPhone] = useState<Value>("" as Value)
 
     return (
         <div className="w-lg h-88 bg-background rounded-md border-2 border-dashed border-primary overflow-hidden mx-auto ">
@@ -67,8 +68,8 @@ export function TimeCTA() {
 
                             <PhoneInput
                                 placeholder="Phone number"
-                                value={phone as any}
-                                onChange={(val) => setPhone(val as string)}
+                                value={phone}
+                                onChange={setPhone}
                                 defaultCountry="BG"
                                 className="h-7 **:[input]:h-7 **:[input]:text-xs **:[button]:h-7"
                             />
