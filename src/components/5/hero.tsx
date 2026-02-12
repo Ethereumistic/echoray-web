@@ -7,7 +7,6 @@ import { ArrowRight } from "lucide-react"
 import { HeroBackground } from "@/components/sections/hero-background"
 import { HeroLogoMarquee } from "@/components/sections/logo-cloud"
 import { Hero3D } from "./hero-3d"
-import { CometCardDemo } from "./CometCardDemo"
 
 export function Hero5() {
     return (

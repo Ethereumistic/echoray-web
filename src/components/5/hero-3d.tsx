@@ -57,6 +57,7 @@ export function Hero3D() {
                 ref={ref}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
+                className="relative rounded-[2.5rem]"
                 style={{
                     rotateX,
                     rotateY,
@@ -64,7 +65,7 @@ export function Hero3D() {
                     translateY,
                     transformStyle: "preserve-3d",
                     boxShadow:
-                        "rgba(0, 0, 0, 0.01) 0px 520px 146px 0px, rgba(0, 0, 0, 0.04) 0px 333px 133px 0px, rgba(0, 0, 0, 0.26) 0px 83px 83px 0px, rgba(0, 0, 0, 0.29) 0px 21px 46px 0px",
+                        "rgba(0, 0, 0, 0.3) 0px 20px 40px -10px, rgba(0, 0, 0, 0.2) 0px 10px 20px -10px",
                 }}
                 initial={{ scale: 1, opacity: 0, z: 0 }}
                 animate={{ opacity: 1 }}
@@ -73,26 +74,18 @@ export function Hero3D() {
                     z: 50,
                     transition: { duration: 0.2 },
                 }}
-                className="relative"
             >
-                <div
-                    className="relative w-[280px] h-[580px] "
-                >
-
-
-                    <div className="w-full h-full  overflow-hidden">
-                        <img
-                            loading="lazy"
-                            className="h-full w-full object-cover"
-                            alt="Website preview"
-                            src="https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/hero/stars.guide-mock.png"
-                        />
-                    </div>
-
+                <div className="relative w-[280px] h-[580px] rounded-[2.5rem] overflow-hidden">
+                    <img
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                        alt="Website preview"
+                        src="https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/hero/stars.guide-mock.png"
+                    />
                 </div>
 
                 <motion.div
-                    className="pointer-events-none absolute inset-0 z-50 h-full w-full mix-blend-overlay"
+                    className="pointer-events-none absolute inset-0 z-50 h-full w-full rounded-[2.5rem] mix-blend-overlay"
                     style={{
                         background: glareBackground,
                         opacity: 0.6,
