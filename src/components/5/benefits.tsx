@@ -851,7 +851,12 @@ function ChatAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?
                 }}
                 transition={{ duration: 6, repeat: Infinity }}
             />
-            <div className="relative bg-card shadow-lg overflow-hidden border rounded-md">
+            <motion.div
+                className="relative bg-card shadow-lg overflow-hidden border rounded-md"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+            >
                 {/* Header */}
                 <div className="bg-primary p-4 flex items-center gap-3 rounded-t-md">
                     <div className="w-10 h-10 bg-primary-foreground/20 rounded-md flex items-center justify-center">
@@ -931,7 +936,7 @@ function ChatAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?
                         </motion.button>
                     </div>
                 </div>
-            </div>
+            </motion.div>
         </div>
     )
 }
@@ -1009,6 +1014,20 @@ export function BenefitsHorizontal() {
 
     // Calculate the current active slide based on scroll progress
     const totalSlides = benefits.length
+
+    // Track if the benefits container is actually visible in the viewport
+    // This prevents the first slide's animation from firing before the user scrolls to it
+    const [isContainerVisible, setIsContainerVisible] = useState(false)
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsContainerVisible(entry.isIntersecting)
+            },
+            { threshold: 0.05 }
+        )
+        if (containerRef.current) observer.observe(containerRef.current)
+        return () => observer.disconnect()
+    }, [])
 
     // Create snap points for each slide
     // Each slide takes up 1/totalSlides of the scroll, but we add a "resting zone"
@@ -1155,7 +1174,7 @@ export function BenefitsHorizontal() {
 
     // Render the stat with animation for specific slides
     const renderStat = (benefit: typeof benefits[0], index: number) => {
-        const isSlideActive = index === activeIndex
+        const isSlideActive = index === activeIndex && isContainerVisible
         switch (index) {
             case 1: // 75% - animated
                 return (
@@ -1268,10 +1287,13 @@ export function BenefitsHorizontal() {
                                             </div>
                                         </div>
 
-                                        {/* Right side - Animation */}
-                                        <div className="flex items-center justify-center">
+                                        {/* Right side - Animation - hidden when not active to prevent stale state flash during transitions */}
+                                        <div
+                                            className="flex items-center justify-center"
+                                            style={{ opacity: (index === activeIndex && isContainerVisible) ? 1 : 0 }}
+                                        >
                                             <benefit.component
-                                                isActive={index === activeIndex}
+                                                isActive={index === activeIndex && isContainerVisible}
                                                 wasActive={wasActiveStates[index] && index !== activeIndex}
                                             />
                                         </div>
