@@ -66,7 +66,10 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
     const [searchQuery, setSearchQuery] = useState("")
     const [showResults, setShowResults] = useState(false)
     const [isTyping, setIsTyping] = useState(false)
-    const [hasAnimated, setHasAnimated] = useState(false)
+    const [animationKey, setAnimationKey] = useState(0)
+    const prevIsActiveRef = useRef(isActive)
+    const timeoutsRef = useRef<NodeJS.Timeout[]>([])
+    const intervalsRef = useRef<ReturnType<typeof setInterval>[]>([])
 
     const businesses = [
         {
@@ -78,46 +81,65 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
             ]
         },
         {
-            query: "best plumber in town",
+            query: "new cool social media platform",
             results: [
-                { name: "Your Plumber Service", type: "Plumbing Service", isOwn: true },
-                { name: "Standard Plumbing", type: "Plumbing" },
-                { name: "Quick Fix Pipes", type: "Plumber" }
+                { name: "yea.cool", type: "Social Media", isOwn: true },
+                { name: "Competitor A", type: "Social Media" },
+                { name: "Competitor B", type: "Social Media" }
             ]
         },
         {
-            query: "creative web agency",
+            query: "i need a website for my business",
             results: [
-                { name: "Your Digital Studio", type: "Web Design", isOwn: true },
-                { name: "Basic Web Co", type: "Design" },
-                { name: "Old School Layouts", type: "Web Studio" }
+                { name: "echoray.io", type: "Software Company", isOwn: true },
+                { name: "Competitor C", type: "Design" },
+                { name: "Competitor D", type: "Web Studio" }
             ]
         }
     ]
 
-    // Only reset when we've fully left this slide and come back
+    // Cleanup helper
+    const cleanupTimers = useCallback(() => {
+        timeoutsRef.current.forEach(t => clearTimeout(t))
+        intervalsRef.current.forEach(i => clearInterval(i))
+        timeoutsRef.current = []
+        intervalsRef.current = []
+    }, [])
+
+    // Replay animation when becoming active (skip first mount so it doesn't autoplay on page load)
     useEffect(() => {
-        if (!isActive && wasActive) {
-            // We just fully left this slide - reset for next time
+        if (isActive && !prevIsActiveRef.current) {
+            // Becoming active - advance to next business and replay
+            setAnimationKey(prev => prev + 1)
+            setCurrentBusiness(prev => (prev + 1) % businesses.length)
+        }
+        prevIsActiveRef.current = !!isActive
+    }, [isActive, businesses.length])
+
+    // Reset visual state when leaving the slide
+    useEffect(() => {
+        if (!isActive) {
+            cleanupTimers()
             setSearchQuery("")
             setShowResults(false)
             setIsTyping(false)
-            setCurrentBusiness(0)
-            setHasAnimated(false)
         }
-    }, [isActive, wasActive])
+    }, [isActive, cleanupTimers])
 
-    // Start animation when becoming active - 33% faster typing
+    // Run the typing animation whenever animationKey changes (which happens on activation)
     useEffect(() => {
         if (!isActive) return
-        if (hasAnimated) return
+
+        cleanupTimers()
+        setSearchQuery("")
+        setShowResults(false)
+        setIsTyping(false)
 
         // Small delay to ensure component is mounted
         const startDelay = setTimeout(() => {
             let index = 0
             const query = businesses[currentBusiness].query
             setIsTyping(true)
-            setHasAnimated(true)
 
             const interval = setInterval(() => {
                 if (index <= query.length) {
@@ -128,22 +150,28 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
                     setShowResults(true)
                     clearInterval(interval)
                 }
-            }, 53) // Was 80ms, now ~33% faster
+            }, 53) // ~33% faster
+            intervalsRef.current.push(interval)
+        }, 67) // ~33% faster
+        timeoutsRef.current.push(startDelay)
 
-            // Store cleanup in a ref-like closure
-            return () => clearInterval(interval)
-        }, 67) // Was 100ms, now ~33% faster
+        return cleanupTimers
+    }, [animationKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-        return () => clearTimeout(startDelay)
-    }, [isActive]) // Only depend on isActive, not hasAnimated
-
-    const handleClear = () => {
+    // X button: 1 second delay, then retrigger with next business
+    const handleClear = useCallback(() => {
+        cleanupTimers()
         setShowResults(false)
         setSearchQuery("")
         setIsTyping(false)
-        setHasAnimated(false)
-        setCurrentBusiness((prev) => (prev + 1) % businesses.length)
-    }
+
+        // 1 second delay, then advance business and retrigger animation
+        const delayTimeout = setTimeout(() => {
+            setCurrentBusiness(prev => (prev + 1) % businesses.length)
+            setAnimationKey(prev => prev + 1)
+        }, 1000)
+        timeoutsRef.current.push(delayTimeout)
+    }, [cleanupTimers, businesses.length])
 
     return (
         <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center min-h-[500px] relative">
@@ -165,7 +193,7 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
                     opacity: 1,
                     y: showResults ? -20 : 0
                 }}
-                transition={{ duration: 0.33, type: "spring", stiffness: 130 }} // 33% faster
+                transition={{ duration: 0.33, type: "spring", stiffness: 130 }}
             >
                 <Search className="w-5 h-5 text-muted-foreground shrink-0" />
                 <input
@@ -194,12 +222,12 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
                 <AnimatePresence mode="wait">
                     {showResults && (
                         <motion.div
-                            key={currentBusiness}
+                            key={`${currentBusiness}-${animationKey}`}
                             className="space-y-4 w-full"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0, y: 10 }}
-                            transition={{ duration: 0.2 }} // 33% faster
+                            transition={{ duration: 0.2 }}
                         >
                             {businesses[currentBusiness].results.map((result, i) => (
                                 <motion.div
@@ -208,8 +236,8 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
                                     initial={{ opacity: 0, y: 20, x: -10 }}
                                     animate={{ opacity: 1, y: 0, x: 0 }}
                                     transition={{
-                                        delay: i * 0.1, // 33% faster
-                                        duration: 0.33, // 33% faster
+                                        delay: i * 0.1,
+                                        duration: 0.33,
                                         type: "spring",
                                         stiffness: 130
                                     }}
