@@ -191,55 +191,6 @@ function DesignPreviewAnimation({ isActive }: { isActive: boolean }) {
                         ))}
                     </CarouselContent>
                 </Carousel>
-
-                {/*
-                <div className="p-6 min-h-[220px] bg-gradient-to-b from-background to-muted/30 relative">
-                    <motion.div
-                        animate={{ opacity: stage >= 1 ? 1 : 0, y: stage >= 1 ? 0 : -10 }}
-                        transition={{ duration: 0.3 }}
-                        className="flex items-center gap-2 mb-5"
-                    >
-                        <div className="w-8 h-8 rounded-lg bg-primary" />
-                        <div className="h-3 w-24 rounded-full bg-foreground/20" />
-                    </motion.div>
-
-                    <motion.div
-                        animate={{ opacity: stage >= 2 ? 1 : 0, y: stage >= 2 ? 0 : 10 }}
-                        transition={{ duration: 0.3 }}
-                        className="space-y-3 mb-5"
-                    >
-                        <div className="h-7 w-3/4 rounded-lg bg-foreground/80" />
-                        <div className="h-4 w-full rounded-md bg-muted-foreground/30" />
-                        <div className="h-4 w-2/3 rounded-md bg-muted-foreground/30" />
-                    </motion.div>
-
-                    <motion.div
-                        animate={{ opacity: stage >= 3 ? 1 : 0, scale: stage >= 3 ? 1 : 0.9 }}
-                        transition={{ duration: 0.3 }}
-                        className="flex gap-3"
-                    >
-                        <div className="h-10 w-28 rounded-lg bg-primary flex items-center justify-center">
-                            <span className="text-xs text-primary-foreground font-medium">Get Started</span>
-                        </div>
-                        <div className="h-10 w-24 rounded-lg border bg-card flex items-center justify-center">
-                            <span className="text-xs text-muted-foreground">Learn More</span>
-                        </div>
-                    </motion.div>
-
-                    <motion.div
-                        animate={{
-                            opacity: stage >= 3 ? 1 : 0,
-                            scale: stage >= 3 ? 1 : 0,
-                            rotate: stage >= 3 ? 0 : -10
-                        }}
-                        transition={{ delay: 0.2, type: "spring" }}
-                        className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5"
-                    >
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        You approve this
-                    </motion.div>
-                </div>
-                */}
             </div>
         </div>
     )
@@ -308,7 +259,7 @@ function BuildAnimation({ isActive }: { isActive: boolean }) {
                     </div>
 
                     <div className="relative">
-                        <motion.div 
+                        <motion.div
                             className="space-y-3"
                             animate={{
                                 gap: isComplete ? "0.5rem" : "1.25rem"

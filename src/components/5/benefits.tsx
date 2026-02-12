@@ -1,12 +1,64 @@
 "use client"
 
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
-import { TrendingUp, Users, Clock, Shield, LineChart as LineChartIcon, Headphones, Search, X, Send } from "lucide-react"
+import { TrendingUp, Users, Clock, Shield, LineChart as LineChartIcon, Headphones, Search, X, Send, ChevronLeft, ChevronRight } from "lucide-react"
 import { useEffect, useRef, useState, useCallback } from "react"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart } from "recharts"
+
+// Animated Counter Component - smoothly counts up to target
+function AnimatedCounter({ target, suffix = "", prefix = "", duration = 1.5, isActive, decimals = 0 }: {
+    target: number
+    suffix?: string
+    prefix?: string
+    duration?: number
+    isActive?: boolean
+    decimals?: number
+}) {
+    const [count, setCount] = useState(0)
+    const [hasAnimated, setHasAnimated] = useState(false)
+
+    useEffect(() => {
+        if (!isActive || hasAnimated) return
+        setHasAnimated(true)
+
+        const startTime = Date.now()
+        const animate = () => {
+            const elapsed = Date.now() - startTime
+            const progress = Math.min(elapsed / (duration * 1000), 1)
+            // Ease out cubic
+            const eased = 1 - Math.pow(1 - progress, 3)
+            setCount(eased * target)
+
+            if (progress < 1) {
+                requestAnimationFrame(animate)
+            } else {
+                setCount(target)
+            }
+        }
+        requestAnimationFrame(animate)
+    }, [isActive, hasAnimated, target, duration])
+
+    // Reset when leaving
+    useEffect(() => {
+        if (!isActive) {
+            setCount(0)
+            setHasAnimated(false)
+        }
+    }, [isActive])
+
+    const displayValue = decimals > 0
+        ? count.toFixed(decimals)
+        : Math.round(count).toString()
+
+    return (
+        <span>
+            {prefix}{displayValue}{suffix}
+        </span>
+    )
+}
 
 // Google Search Animation Component
 function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
@@ -55,7 +107,7 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
         }
     }, [isActive, wasActive])
 
-    // Start animation when becoming active
+    // Start animation when becoming active - 33% faster typing
     useEffect(() => {
         if (!isActive) return
         if (hasAnimated) return
@@ -76,11 +128,11 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
                     setShowResults(true)
                     clearInterval(interval)
                 }
-            }, 80)
+            }, 53) // Was 80ms, now ~33% faster
 
             // Store cleanup in a ref-like closure
             return () => clearInterval(interval)
-        }, 100)
+        }, 67) // Was 100ms, now ~33% faster
 
         return () => clearTimeout(startDelay)
     }, [isActive]) // Only depend on isActive, not hasAnimated
@@ -94,7 +146,16 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
     }
 
     return (
-        <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center min-h-[500px]">
+        <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center min-h-[500px] relative">
+            {/* Radial glow */}
+            <motion.div
+                className="absolute inset-0 bg-primary/10 blur-3xl rounded-full"
+                animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.3, 0.6, 0.3],
+                }}
+                transition={{ duration: 6, repeat: Infinity }}
+            />
             <motion.div
                 layout
                 className={`bg-card shadow-xl p-4 flex items-center gap-3 rounded-xl border w-full relative z-20 ${showResults ? 'mb-6' : 'mb-0'}`}
@@ -104,7 +165,7 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
                     opacity: 1,
                     y: showResults ? -20 : 0
                 }}
-                transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+                transition={{ duration: 0.33, type: "spring", stiffness: 130 }} // 33% faster
             >
                 <Search className="w-5 h-5 text-muted-foreground shrink-0" />
                 <input
@@ -138,7 +199,7 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0, y: 10 }}
-                            transition={{ duration: 0.3 }}
+                            transition={{ duration: 0.2 }} // 33% faster
                         >
                             {businesses[currentBusiness].results.map((result, i) => (
                                 <motion.div
@@ -147,10 +208,10 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
                                     initial={{ opacity: 0, y: 20, x: -10 }}
                                     animate={{ opacity: 1, y: 0, x: 0 }}
                                     transition={{
-                                        delay: i * 0.15,
-                                        duration: 0.5,
+                                        delay: i * 0.1, // 33% faster
+                                        duration: 0.33, // 33% faster
                                         type: "spring",
-                                        stiffness: 100
+                                        stiffness: 130
                                     }}
                                 >
                                     <div className="flex-1">
@@ -184,27 +245,34 @@ function GoogleSearchDemo({ isActive, wasActive }: { isActive?: boolean; wasActi
     )
 }
 
-// Trust/Credibility Animation Component
+// Trust/Credibility Animation Component - Redesigned with trust score meter
 function TrustAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
     const [animationKey, setAnimationKey] = useState(0)
+    const prevIsActiveRef = useRef(isActive)
 
-    // Only reset animation when we fully leave and come back
+    // Replay animations when becoming active again
     useEffect(() => {
-        if (!isActive && wasActive) {
-            // We just fully left this slide - increment key for fresh animation on return
+        if (isActive && !prevIsActiveRef.current) {
             setAnimationKey(prev => prev + 1)
         }
-    }, [isActive, wasActive])
+        prevIsActiveRef.current = !!isActive
+    }, [isActive])
+
+    const trustMetrics = [
+        { label: "First Impressions", value: 94, delay: 0.6 },
+        { label: "Credibility Score", value: 87, delay: 0.9 },
+        { label: "Conversion Rate", value: 73, delay: 1.2 },
+    ]
 
     return (
         <div className="relative w-full max-w-lg mx-auto" key={animationKey}>
             <motion.div
-                className="absolute inset-0 bg-primary/10 blur-3xl rounded-md"
+                className="absolute inset-0 bg-primary/10 blur-3xl rounded-full"
                 animate={{
                     scale: [1, 1.2, 1],
                     opacity: [0.3, 0.6, 0.3],
                 }}
-                transition={{ duration: 3, repeat: Infinity }}
+                transition={{ duration: 6, repeat: Infinity }}
             />
 
             <motion.div
@@ -213,12 +281,16 @@ function TrustAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
                 animate={{ rotateY: 0, opacity: 1 }}
                 transition={{ duration: 0.8 }}
             >
+                {/* Header with business info and stars */}
                 <div className="flex items-center gap-4 mb-6">
                     <motion.div
-                        className="w-16 h-16 bg-primary rounded-md"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    />
+                        className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/5 rounded-md flex items-center justify-center border border-primary/20"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.2, type: "spring" }}
+                    >
+                        <Shield className="w-8 h-8 text-primary" />
+                    </motion.div>
                     <div>
                         <h3 className="font-bold text-xl text-foreground">Your Business</h3>
                         <motion.div
@@ -242,23 +314,60 @@ function TrustAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
                     </div>
                 </div>
 
+                {/* Trust Score Meter Bars */}
+                <div className="space-y-4">
+                    {trustMetrics.map((metric, i) => (
+                        <motion.div
+                            key={metric.label}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: metric.delay, duration: 0.4 }}
+                        >
+                            <div className="flex justify-between items-center mb-1.5">
+                                <span className="text-sm font-medium text-muted-foreground">{metric.label}</span>
+                                <motion.span
+                                    className="text-sm font-bold text-primary"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: metric.delay + 0.3 }}
+                                >
+                                    {metric.value}%
+                                </motion.span>
+                            </div>
+                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                <motion.div
+                                    className="h-full bg-gradient-to-r from-primary/80 to-primary rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${metric.value}%` }}
+                                    transition={{
+                                        delay: metric.delay + 0.1,
+                                        duration: 0.8,
+                                        ease: [0.16, 1, 0.3, 1] // custom ease out
+                                    }}
+                                />
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* Trust indicators */}
                 <motion.div
-                    className="space-y-3"
+                    className="mt-6 pt-4 border-t border-border flex items-center gap-3"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 1.2 }}
+                    transition={{ delay: 1.6 }}
                 >
                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-sm" />
-                        <span className="text-sm text-muted-foreground">SSL Secured</span>
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span className="text-xs text-muted-foreground">SSL Secured</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-sm" />
-                        <span className="text-sm text-muted-foreground">Professional Design</span>
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span className="text-xs text-muted-foreground">Verified</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-sm" />
-                        <span className="text-sm text-muted-foreground">Verified Business</span>
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span className="text-xs text-muted-foreground">Pro Design</span>
                     </div>
                 </motion.div>
             </motion.div>
@@ -266,10 +375,20 @@ function TrustAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
     )
 }
 
-// Simple Clock Animation
+// Simple Clock Animation - 33% slower hands
 function ClockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
     const [hourRotation, setHourRotation] = useState(0)
     const [minuteRotation, setMinuteRotation] = useState(0)
+    const [animationKey, setAnimationKey] = useState(0)
+    const prevIsActiveRef = useRef(isActive)
+
+    // Replay animations when becoming active again
+    useEffect(() => {
+        if (isActive && !prevIsActiveRef.current) {
+            setAnimationKey(prev => prev + 1)
+        }
+        prevIsActiveRef.current = !!isActive
+    }, [isActive])
 
     useEffect(() => {
         let animationId: number
@@ -279,24 +398,27 @@ function ClockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
             if (!startTime) startTime = timestamp
             const elapsed = timestamp - startTime
 
-            // Hour hand: 360 degrees in 8 seconds (45 deg/sec)
-            setHourRotation((elapsed / 1000) * 45 % 360)
-            // Minute hand: 360 degrees in 4 seconds (90 deg/sec)
-            setMinuteRotation((elapsed / 1000) * 90 % 360)
+            // Hour hand: was 45 deg/sec, now 30 deg/sec (33% slower)
+            setHourRotation((elapsed / 1000) * 30 % 360)
+            // Minute hand: was 90 deg/sec, now 60 deg/sec (33% slower)
+            setMinuteRotation((elapsed / 1000) * 60 % 360)
 
             animationId = requestAnimationFrame(animate)
         }
 
         animationId = requestAnimationFrame(animate)
         return () => cancelAnimationFrame(animationId)
-    }, [])
+    }, [animationKey])
 
     return (
-        <div className="relative w-64 h-64 mx-auto">
+        <div className="relative w-64 h-64 mx-auto" key={animationKey}>
             <motion.div
-                className="absolute inset-0 bg-primary/10 blur-2xl"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute inset-0 bg-primary/10 blur-3xl rounded-full"
+                animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.3, 0.6, 0.3],
+                }}
+                transition={{ duration: 4, repeat: Infinity }}
             />
 
             <svg viewBox="0 0 200 200" className="w-full h-full relative z-10">
@@ -368,38 +490,43 @@ function ClockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
                 {/* Center dot */}
                 <circle cx="100" cy="100" r="6" fill="currentColor" className="text-primary" />
             </svg>
-
-            <motion.div
-                className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-center"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-            >
-                <p className="text-3xl font-bold text-primary">10+ hours</p>
-                <p className="text-sm text-muted-foreground">saved weekly</p>
-            </motion.div>
         </div>
     )
 }
 
-// Lock Security Animation
+// Lock Security Animation - 33% faster keyhole animation, removed text
 function LockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
     const [isLocked, setIsLocked] = useState(false)
+    const [animationKey, setAnimationKey] = useState(0)
+    const prevIsActiveRef = useRef(isActive)
+
+    // Replay animations when becoming active again
+    useEffect(() => {
+        if (isActive && !prevIsActiveRef.current) {
+            setAnimationKey(prev => prev + 1)
+        }
+        prevIsActiveRef.current = !!isActive
+    }, [isActive])
 
     useEffect(() => {
         if (!isActive) {
             setIsLocked(false)
             return
         }
-        const timer = setTimeout(() => setIsLocked(true), 800)
+        // Was 800ms, now ~33% faster = 535ms
+        const timer = setTimeout(() => setIsLocked(true), 535)
         return () => clearTimeout(timer)
-    }, [isActive])
+    }, [isActive, animationKey])
 
     return (
-        <div className="relative w-64 h-64 mx-auto">
+        <div className="relative w-64 h-64 mx-auto" key={animationKey}>
             <motion.div
-                className="absolute inset-0 bg-primary/10 blur-2xl"
-                animate={{ scale: [1, 1.3, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute inset-0 bg-primary/10 blur-3xl rounded-full"
+                animate={{
+                    scale: [1, 1.3, 1],
+                    opacity: [0.3, 0.6, 0.3],
+                }}
+                transition={{ duration: 4, repeat: Infinity }}
             />
 
             <svg viewBox="0 0 200 200" className="w-full h-full relative z-10">
@@ -414,7 +541,7 @@ function LockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?
                     className="text-primary"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ delay: 0.3, type: "spring" }}
+                    transition={{ delay: 0.2, type: "spring" }} // 33% faster
                 />
 
                 {/* Lock shackle */}
@@ -427,7 +554,7 @@ function LockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?
                     className="text-primary"
                     initial={{ pathLength: 0 }}
                     animate={{ pathLength: 1 }}
-                    transition={{ duration: 0.8 }}
+                    transition={{ duration: 0.53 }} // Was 0.8, now 33% faster
                 />
 
                 {/* Keyhole */}
@@ -439,7 +566,7 @@ function LockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?
                     className="text-background"
                     initial={{ scale: 0 }}
                     animate={{ scale: isLocked ? 1 : 0 }}
-                    transition={{ delay: 1 }}
+                    transition={{ delay: 0.67 }} // Was 1.0, now 33% faster
                 />
                 <motion.rect
                     x="96"
@@ -450,23 +577,14 @@ function LockAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?
                     className="text-background"
                     initial={{ scaleY: 0 }}
                     animate={{ scaleY: isLocked ? 1 : 0 }}
-                    transition={{ delay: 1.2 }}
+                    transition={{ delay: 0.8 }} // Was 1.2, now 33% faster
                 />
             </svg>
-
-            <motion.p
-                className="text-center mt-4 text-xl font-bold text-primary"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.5 }}
-            >
-                99.9% Uptime
-            </motion.p>
         </div>
     )
 }
 
-// Animated Chart using Recharts LineChart
+// Animated Chart using Recharts LineChart - with fade-in for "Real" stat
 function ChartAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
     const [animationKey, setAnimationKey] = useState(0)
 
@@ -487,17 +605,28 @@ function ChartAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive
         },
     }
 
-    // Reset animation when fully leaving and coming back
+    // Replay animation when becoming active again
+    const prevIsActiveRef = useRef(isActive)
     useEffect(() => {
-        if (!isActive && wasActive) {
+        if (isActive && !prevIsActiveRef.current) {
             setAnimationKey(prev => prev + 1)
         }
-    }, [isActive, wasActive])
+        prevIsActiveRef.current = !!isActive
+    }, [isActive])
 
     return (
-        <div className="w-full max-w-lg mx-auto" key={animationKey}>
+        <div className="w-full max-w-lg mx-auto relative" key={animationKey}>
+            {/* Radial glow */}
             <motion.div
-                className="bg-card shadow-lg p-8 border rounded-md"
+                className="absolute inset-0 bg-primary/10 blur-3xl rounded-full"
+                animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.3, 0.6, 0.3],
+                }}
+                transition={{ duration: 6, repeat: Infinity }}
+            />
+            <motion.div
+                className="relative bg-card shadow-lg p-8 border rounded-md"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
@@ -581,7 +710,7 @@ function TypingDots() {
     )
 }
 
-// Website Support Chat Animation
+// Website Support Chat Animation - 33% faster typing and replies
 function ChatAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?: boolean }) {
     const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([])
     const [currentUserTyping, setCurrentUserTyping] = useState("")
@@ -633,7 +762,7 @@ function ChatAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?
         const currentMsg = conversation[animationPhase]
 
         if (currentMsg.isUser) {
-            // User typing simulation with typewriter effect
+            // User typing simulation with typewriter effect - 33% faster
             let charIndex = 0
             const text = currentMsg.text
 
@@ -651,20 +780,20 @@ function ChatAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?
                         setCurrentUserTyping("")
                         setInputValue("")
                         setAnimationPhase(prev => prev + 1)
-                    }, 300)
+                    }, 200) // Was 300, now 33% faster
                     timeoutsRef.current.push(sendTimeout)
                 }
-            }, 60)
+            }, 40) // Was 60, now 33% faster
             intervalsRef.current.push(typingInterval)
         } else {
-            // Support is typing - show dots first
+            // Support is typing - show dots first - 33% faster
             setIsSupportTyping(true)
 
             const showMessageTimeout = setTimeout(() => {
                 setIsSupportTyping(false)
                 setMessages(prev => [...prev, currentMsg])
                 setAnimationPhase(prev => prev + 1)
-            }, 1500)
+            }, 1000) // Was 1500, now 33% faster
             timeoutsRef.current.push(showMessageTimeout)
         }
 
@@ -678,14 +807,23 @@ function ChatAnimation({ isActive, wasActive }: { isActive?: boolean; wasActive?
                 setAnimationPhase(0)
                 // Trigger the first message
                 setAnimationPhase(prev => prev) // Force re-render to start
-            }, 500)
+            }, 333) // Was 500, now 33% faster
             timeoutsRef.current.push(startTimeout)
         }
     }, [isActive])
 
     return (
-        <div className="w-full max-w-lg mx-auto">
-            <div className="bg-card shadow-lg overflow-hidden border rounded-md">
+        <div className="w-full max-w-lg mx-auto relative">
+            {/* Radial glow */}
+            <motion.div
+                className="absolute inset-0 bg-primary/10 blur-3xl rounded-full"
+                animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.3, 0.6, 0.3],
+                }}
+                transition={{ duration: 6, repeat: Infinity }}
+            />
+            <div className="relative bg-card shadow-lg overflow-hidden border rounded-md">
                 {/* Header */}
                 <div className="bg-primary p-4 flex items-center gap-3 rounded-t-md">
                     <div className="w-10 h-10 bg-primary-foreground/20 rounded-md flex items-center justify-center">
@@ -813,8 +951,8 @@ export function BenefitsHorizontal() {
             icon: Shield,
             title: "Stay secure",
             description: "We handle security so your customers' data stays safe.",
-            stat: "99.9%",
-            statLabel: "uptime guaranteed",
+            stat: "99%",
+            statLabel: "uptime",
             component: LockAnimation,
             badge: "Peace of Mind",
             mobileTranslateY: "1rem" // Adjust as needed
@@ -893,6 +1031,9 @@ export function BenefitsHorizontal() {
         Array(totalSlides).fill(false)
     )
 
+    // Track active index using ref to avoid stale closures in scroll listener
+    const activeIndexRef = useRef(0)
+
     useEffect(() => {
         const unsubscribe = scrollYProgress.on("change", (latest) => {
             // Calculate the active index based on same snap points as slides
@@ -904,30 +1045,164 @@ export function BenefitsHorizontal() {
                 const slideEnd = (i + 1) / totalSlides
                 const transitionZone = (slideEnd - slideStart) * 0.2
 
-                // We're on slide i if we're past its start transition zone
-                if (latest >= slideStart + transitionZone) {
+                // Switch indicator at the midpoint of each slide segment
+                // This prevents premature switching with tiny scrolls
+                const slideMidpoint = (slideStart + slideEnd) / 2
+                if (latest >= slideMidpoint) {
                     newIndex = i
+                }
+                // But also snap to it once past the transition zone start
+                // (ensures we never lag behind the visual)
+                if (i === 0 && latest < (slideEnd - transitionZone)) {
+                    newIndex = 0
                 }
             }
 
-            if (newIndex !== activeIndex) {
+            // Also handle: if we're past the start of hold zone for any slide,
+            // that slide should be active (ensures sync with visuals)
+            for (let i = totalSlides - 1; i >= 0; i--) {
+                const slideStart = i / totalSlides
+                const slideEnd = (i + 1) / totalSlides
+                const transitionZone = (slideEnd - slideStart) * 0.2
+                if (latest >= slideStart + transitionZone && latest <= slideEnd - transitionZone) {
+                    newIndex = i
+                    break
+                }
+            }
+
+            if (newIndex !== activeIndexRef.current) {
+                const prevIndex = activeIndexRef.current
+                activeIndexRef.current = newIndex
                 // Update wasActive states - mark the previous index as "was active"
                 setWasActiveStates(prev => {
                     const updated = [...prev]
-                    updated[activeIndex] = true // The one we're leaving was active
+                    updated[prevIndex] = true // The one we're leaving was active
                     return updated
                 })
                 setActiveIndex(newIndex)
             }
         })
         return unsubscribe
-    }, [scrollYProgress, totalSlides, activeIndex])
+    }, [scrollYProgress, totalSlides]) // No activeIndex dependency - uses ref instead
+
+    // Navigate to a specific slide by scrolling the page
+    const navigateToSlide = useCallback((slideIndex: number) => {
+        if (!containerRef.current) return
+        const containerRect = containerRef.current.getBoundingClientRect()
+        const containerTop = containerRef.current.offsetTop
+        const totalScrollHeight = containerRef.current.scrollHeight - window.innerHeight
+
+        // Calculate the scroll position for the target slide
+        // Each slide occupies 1/totalSlides of the scroll range
+        const slideCenter = (slideIndex + 0.5) / totalSlides
+        const targetScroll = containerTop + (slideCenter * totalScrollHeight)
+
+        window.scrollTo({
+            top: targetScroll,
+            behavior: 'smooth'
+        })
+    }, [totalSlides])
+
+    // Handle chevron navigation
+    const handlePrev = useCallback(() => {
+        if (activeIndex === 0) {
+            // On first slide, scroll to top of page
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+        } else {
+            navigateToSlide(activeIndex - 1)
+        }
+    }, [activeIndex, navigateToSlide])
+
+    const handleNext = useCallback(() => {
+        if (activeIndex === totalSlides - 1) {
+            // On last slide, scroll to the next section below
+            if (containerRef.current) {
+                const containerBottom = containerRef.current.offsetTop + containerRef.current.offsetHeight
+                window.scrollTo({ top: containerBottom, behavior: 'smooth' })
+            }
+        } else {
+            navigateToSlide(activeIndex + 1)
+        }
+    }, [activeIndex, totalSlides, navigateToSlide])
+
+    // Render the stat with animation for specific slides
+    const renderStat = (benefit: typeof benefits[0], index: number) => {
+        const isSlideActive = index === activeIndex
+        switch (index) {
+            case 1: // 75% - animated
+                return (
+                    <AnimatedCounter
+                        target={75}
+                        suffix="%"
+                        duration={1.5}
+                        isActive={isSlideActive}
+                    />
+                )
+            case 2: // 10+ - animated
+                return (
+                    <AnimatedCounter
+                        target={10}
+                        suffix="+"
+                        duration={1.2}
+                        isActive={isSlideActive}
+                    />
+                )
+            case 3: // 99% - animated (changed from 99.9)
+                return (
+                    <AnimatedCounter
+                        target={99}
+                        suffix="%"
+                        duration={1.8}
+                        isActive={isSlideActive}
+                    />
+                )
+            case 4: // "Real" - cool fade in
+                return (
+                    <motion.span
+                        key={isSlideActive ? 'active' : 'inactive'}
+                        initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
+                        animate={isSlideActive ? {
+                            opacity: 1,
+                            y: 0,
+                            filter: 'blur(0px)'
+                        } : {
+                            opacity: 0,
+                            y: 20,
+                            filter: 'blur(10px)'
+                        }}
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                        Real
+                    </motion.span>
+                )
+            default:
+                return benefit.stat
+        }
+    }
 
     return (
         <>
             {/* Desktop: Horizontal scroll */}
             <div ref={containerRef} className="relative bg-background hidden lg:block" style={{ height: `${benefits.length * 100}vh` }}>
                 <div className="sticky top-0 h-screen overflow-hidden">
+                    {/* Chevron Left */}
+                    <button
+                        onClick={handlePrev}
+                        className="absolute left-4 xl:left-8 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-lg hover:bg-card hover:shadow-xl transition-all duration-200 group cursor-pointer"
+                        aria-label="Previous slide"
+                    >
+                        <ChevronLeft className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </button>
+
+                    {/* Chevron Right */}
+                    <button
+                        onClick={handleNext}
+                        className="absolute right-4 xl:right-8 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-lg hover:bg-card hover:shadow-xl transition-all duration-200 group cursor-pointer"
+                        aria-label="Next slide"
+                    >
+                        <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </button>
+
                     {/* Horizontal sliding container */}
                     <motion.div
                         className="flex h-full"
@@ -956,8 +1231,8 @@ export function BenefitsHorizontal() {
                                             </p>
 
                                             <div className="flex items-baseline gap-3 pt-4">
-                                                <span className="text-6xl font-black text-primary">
-                                                    {benefit.stat}
+                                                <span className="text-6xl font-black text-primary" style={{ minWidth: [1, 2, 3].includes(index) ? '4ch' : undefined, display: 'inline-block' }}>
+                                                    {renderStat(benefit, index)}
                                                 </span>
                                                 <span className="text-lg text-muted-foreground max-w-xs">
                                                     {benefit.statLabel}
@@ -978,13 +1253,15 @@ export function BenefitsHorizontal() {
                         ))}
                     </motion.div>
 
-                    {/* Progress indicator - fixed position - desktop only */}
+                    {/* Progress indicator - fixed position - desktop only - clickable dots */}
                     <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
                         {benefits.map((_, i) => (
-                            <div
+                            <button
                                 key={i}
-                                className={`h-2 transition-all rounded-full duration-300 ${i === activeIndex ? 'w-12 bg-primary' : 'w-2 bg-muted'
+                                onClick={() => navigateToSlide(i)}
+                                className={`h-2 transition-all rounded-full duration-300 cursor-pointer hover:opacity-80 ${i === activeIndex ? 'w-12 bg-primary' : 'w-2 bg-muted hover:bg-muted-foreground/40'
                                     }`}
+                                aria-label={`Go to slide ${i + 1}`}
                             />
                         ))}
                     </div>
@@ -1000,7 +1277,7 @@ export function BenefitsHorizontal() {
                 }}
             >
                 {benefits.map((benefit, index) => (
-                    <MobileBenefitItem key={benefit.title} benefit={benefit} />
+                    <MobileBenefitItem key={benefit.title} benefit={benefit} index={index} />
                 ))}
             </div>
         </>
@@ -1018,7 +1295,7 @@ interface Benefit {
     mobileTranslateY: string
 }
 
-function MobileBenefitItem({ benefit }: { benefit: Benefit }) {
+function MobileBenefitItem({ benefit, index }: { benefit: Benefit; index: number }) {
     const sectionRef = useRef<HTMLDivElement>(null)
     const [isInView, setIsInView] = useState(false)
     const [hasBeenInView, setHasBeenInView] = useState(false)
@@ -1046,6 +1323,38 @@ function MobileBenefitItem({ benefit }: { benefit: Benefit }) {
             }
         }
     }, [])
+
+    // Mobile stat rendering with counters
+    const renderMobileStat = () => {
+        switch (index) {
+            case 1:
+                return <AnimatedCounter target={75} suffix="%" duration={1.5} isActive={isInView} />
+            case 2:
+                return <AnimatedCounter target={10} suffix="+" duration={1.2} isActive={isInView} />
+            case 3:
+                return <AnimatedCounter target={99} suffix="%" duration={1.8} isActive={isInView} />
+            case 4:
+                return (
+                    <motion.span
+                        initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
+                        animate={isInView ? {
+                            opacity: 1,
+                            y: 0,
+                            filter: 'blur(0px)'
+                        } : {
+                            opacity: 0,
+                            y: 20,
+                            filter: 'blur(10px)'
+                        }}
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                        Real
+                    </motion.span>
+                )
+            default:
+                return benefit.stat
+        }
+    }
 
     return (
         <div
@@ -1075,8 +1384,8 @@ function MobileBenefitItem({ benefit }: { benefit: Benefit }) {
 
                 {/* Stat */}
                 <div className="flex items-baseline gap-2 pt-2">
-                    <span className="text-4xl sm:text-5xl font-black text-primary">
-                        {benefit.stat}
+                    <span className="text-4xl sm:text-5xl font-black text-primary" style={{ minWidth: [1, 2, 3].includes(index) ? '3.5ch' : undefined, display: 'inline-block' }}>
+                        {renderMobileStat()}
                     </span>
                     <span className="text-sm sm:text-base text-muted-foreground max-w-[200px]">
                         {benefit.statLabel}
@@ -1100,4 +1409,3 @@ function MobileBenefitItem({ benefit }: { benefit: Benefit }) {
         </div>
     )
 }
-
