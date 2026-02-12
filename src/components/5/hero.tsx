@@ -8,6 +8,42 @@ import { HeroBackground } from "@/components/sections/hero-background"
 import { HeroLogoMarquee } from "@/components/sections/logo-cloud"
 import { Hero3D } from "./hero-3d"
 
+// Staggered fade-up variants for children
+const containerVariants = {
+    hidden: {},
+    visible: {
+        transition: {
+            staggerChildren: 0.15,
+            delayChildren: 0.1,
+        },
+    },
+}
+
+const fadeUp = {
+    hidden: { opacity: 0, y: 30, filter: "blur(6px)" },
+    visible: {
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        transition: {
+            duration: 0.7,
+            ease: [0.25, 0.4, 0.25, 1] as [number, number, number, number],
+        },
+    },
+}
+
+const fadeIn = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: {
+        opacity: 1,
+        scale: 1,
+        transition: {
+            duration: 0.8,
+            ease: [0.25, 0.4, 0.25, 1] as [number, number, number, number],
+        },
+    },
+}
+
 export function Hero5() {
     return (
         <section className="relative py-16 md:py-24 overflow-hidden">
@@ -16,31 +52,29 @@ export function Hero5() {
             </div>
 
             <div className="container relative z-10 mx-auto px-4 md:px-6">
-                <div className="max-w-5xl mx-auto">
-                    <div className="grid lg:grid-cols-6 gap-12 lg:gap-16 items-center">
-                        {/* Main content - 3 columns */}
-                        <div className="lg:col-span-4">
-                            {/* Badge */}
-
-
+                <div className="max-w-6xl mx-auto">
+                    <div className="grid lg:grid-cols-12 gap-12 items-center">
+                        {/* Main content — 7 of 12 columns on desktop */}
+                        <motion.div
+                            className="lg:col-span-7 text-center lg:text-right"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
                             {/* Headline */}
                             <motion.h1
-                                className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] mb-6"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.1 }}
+                                className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.2] mb-6"
+                                variants={fadeUp}
                             >
-                                A professional website
+                                <span className="text-nowrap -ml-8">A professional website</span>
                                 <br />
                                 <span className="text-primary">that pays for itself</span>
                             </motion.h1>
 
                             {/* Subheadline */}
                             <motion.p
-                                className="text-xl text-muted-foreground mb-8 leading-relaxed"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.2 }}
+                                className="text-lg sm:text-[1.38rem] text-muted-foreground mb-8 leading-relaxed"
+                                variants={fadeUp}
                             >
                                 Your website is your hardest-working salesperson. <br />
                                 Make sure it&apos;s actually working for you.
@@ -48,10 +82,8 @@ export function Hero5() {
 
                             {/* CTAs */}
                             <motion.div
-                                className="flex flex-col sm:flex-row gap-4"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.3 }}
+                                className="flex flex-col flex-row gap-4 justify-center lg:justify-end"
+                                variants={fadeUp}
                             >
                                 <Button size="lg" className="h-12 px-4 md:px-8 text-base group" asChild>
                                     <Link href="/start-project">
@@ -68,24 +100,21 @@ export function Hero5() {
                                     <Link href="/work">Our Work</Link>
                                 </Button>
                             </motion.div>
-                        </div>
+                        </motion.div>
 
-                        <Hero3D />
-                        {/* <CometCardDemo /> */}
+                        {/* Phone mockup — 5 of 12 columns */}
+                        <motion.div
+                            className="lg:col-span-5 flex justify-center lg:justify-start"
+                            variants={fadeIn}
+                            initial="hidden"
+                            animate="visible"
+                            transition={{ delay: 0.4 }}
+                        >
+                            <Hero3D />
+                        </motion.div>
                     </div>
                 </div>
 
-                <motion.div
-                    className="mt-16 w-full"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.5 }}
-                >
-                    <p className="mb-6 text-center text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                        Trusted by
-                    </p>
-                    <HeroLogoMarquee />
-                </motion.div>
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent z-20 pointer-events-none" />

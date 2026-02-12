@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { motion } from "framer-motion"
 
 const CDN_BASE = "https://cdn.jsdelivr.net/gh/Ethereumistic/echoray-cdn/partners/"
 
@@ -89,41 +90,51 @@ export function HeroLogoMarquee() {
     const logos = [...partners, ...partners]
 
     return (
-        <div className="relative w-full max-w-4xl mx-auto overflow-hidden ">
-            {/* Left fade gradient */}
-            <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-linear-to-r from-background to-transparent" />
+        <motion.div
+            className="mt-8 w-full"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.7, ease: [0.25, 0.4, 0.25, 1] }}
+        >
+            <p className="mb-6 text-center text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                Trusted by
+            </p>
+            <div className="relative w-full max-w-none md:max-w-4xl mx-auto overflow-hidden">
+                {/* Left fade gradient — hidden on mobile */}
+                <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-linear-to-r from-background to-transparent hidden md:block" />
 
-            {/* Marquee track */}
-            <div
-                className={cn(
-                    "flex w-max animate-marquee items-center gap-28",
-                    "hover:paused"
-                )}
-                style={{
-                    "--marquee-duration": "120s",
-                } as React.CSSProperties}
-                aria-label="Trusted partners"
-            >
-                {logos.map((partner, index) => (
-                    <div
-                        key={`hero-${partner.file}-${index}`}
-                        className="flex h-20 w-20  shrink-0 items-center justify-center grayscale opacity-50 transition-all duration-300 hover:grayscale-0 hover:opacity-100"
-                    >
-                        <Image
-                            src={`${CDN_BASE}${partner.file}.png`}
-                            alt={`${partner.name} logo`}
-                            width={160}
-                            height={64}
-                            className="h-auto max-h-24 w-auto max-w-[150px] object-contain "
-                            loading="eager"
-                            unoptimized
-                        />
-                    </div>
-                ))}
+                {/* Marquee track */}
+                <div
+                    className={cn(
+                        "flex w-max animate-marquee items-center gap-12 md:gap-28",
+                        "hover:paused"
+                    )}
+                    style={{
+                        "--marquee-duration": "120s",
+                    } as React.CSSProperties}
+                    aria-label="Trusted partners"
+                >
+                    {logos.map((partner, index) => (
+                        <div
+                            key={`hero-${partner.file}-${index}`}
+                            className="flex h-18 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center grayscale opacity-50 transition-all duration-300 hover:grayscale-0 hover:opacity-100"
+                        >
+                            <Image
+                                src={`${CDN_BASE}${partner.file}.png`}
+                                alt={`${partner.name} logo`}
+                                width={160}
+                                height={64}
+                                className="h-auto max-h-24 w-auto max-w-[150px] object-contain"
+                                loading="eager"
+                                unoptimized
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Right fade gradient — hidden on mobile */}
+                <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-32 bg-linear-to-l from-background to-transparent hidden md:block" />
             </div>
-
-            {/* Right fade gradient */}
-            <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-32 bg-linear-to-l from-background to-transparent" />
-        </div>
+        </motion.div>
     )
 }
