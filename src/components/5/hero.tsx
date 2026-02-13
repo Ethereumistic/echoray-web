@@ -52,8 +52,8 @@ export function Hero5() {
             </div>
 
             <div className="container relative z-10 mx-auto px-4 md:px-6">
-                <div className="max-w-6xl mx-auto">
-                    <div className="grid lg:grid-cols-12 gap-12 items-center">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid lg:grid-cols-12 gap-12 sm:gap-0 items-center">
                         {/* Main content — 7 of 12 columns on desktop */}
                         <motion.div
                             className="lg:col-span-7 text-center lg:text-right"
@@ -66,7 +66,7 @@ export function Hero5() {
                                 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.2] mb-6"
                                 variants={fadeUp}
                             >
-                                <span className="text-nowrap -ml-8">A professional website</span>
+                                <span className="text-nowrap ">A professional website</span>
                                 <br />
                                 <span className="text-primary">that pays for itself</span>
                             </motion.h1>
@@ -104,7 +104,7 @@ export function Hero5() {
 
                         {/* Phone mockup — 5 of 12 columns */}
                         <motion.div
-                            className="lg:col-span-5 flex justify-center lg:justify-start"
+                            className="lg:col-span-5 flex justify-center lg:justify-start translate-x-0 md:-translate-x-8"
                             variants={fadeIn}
                             initial="hidden"
                             animate="visible"

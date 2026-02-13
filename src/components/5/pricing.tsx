@@ -1,9 +1,16 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { Check, ArrowRight, Star, X } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Check, ArrowRight, Star, X, Sparkles, Crown, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useState } from "react"
+
+const planIcons = {
+    "Simple Website": Zap,
+    "Advanced Website": Star,
+    "Custom System": Crown,
+}
 
 const plans = [
     {
@@ -65,11 +72,11 @@ const plans = [
 
 export function Pricing5() {
     return (
-        <section id="pricing" className="py-24 md:py-32">
+        <section id="pricing" className="py-16">
             <div className="container mx-auto px-4 md:px-6">
                 {/* Header */}
                 <motion.div
-                    className="text-center mb-16"
+                    className="text-center mb-12"
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: false }}
@@ -99,7 +106,7 @@ export function Pricing5() {
                         >
                             {plan.popular && (
                                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-chart-1 text-background text-sm font-bold rounded-full">
+                                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-500 text-background text-sm font-bold rounded-full">
                                         <Star className="w-3 h-3" />
                                         Best Value
                                     </span>

@@ -18,74 +18,6 @@ interface ProcessStep {
     component: React.ComponentType<{ isActive: boolean }>
 }
 
-// Chat Animation - COMMENTED OUT FOR VIDEO VERSION
-/*
-function DiscoveryCallAnimation({ isActive }: { isActive: boolean }) {
-    const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([])
-
-    const conversation = [
-        { text: "What does your business do?", isUser: false },
-        { text: "I run a local bakery 🥐", isUser: true },
-        { text: "Who are your ideal customers?", isUser: false },
-        { text: "Busy parents who want fresh bread", isUser: true },
-        { text: "Perfect! I know exactly what you need ✨", isUser: false },
-    ]
-
-    useEffect(() => {
-        if (!isActive) {
-            setMessages([])
-            return
-        }
-
-        const timeouts: NodeJS.Timeout[] = []
-        conversation.forEach((msg, i) => {
-            const timeout = setTimeout(() => {
-                setMessages(prev => [...prev, msg])
-            }, 400 + i * 550)
-            timeouts.push(timeout)
-        })
-
-        return () => timeouts.forEach(clearTimeout)
-    }, [isActive])
-
-    return (
-        <div className="w-full max-w-md mx-auto">
-            <div className="bg-card shadow-2xl border rounded-2xl overflow-hidden">
-                <div className="bg-primary/10 px-5 py-4 border-b flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                        <MessageCircle className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                        <p className="font-bold text-foreground">Quick Discovery Call</p>
-                        <p className="text-xs text-muted-foreground">15 minutes • No obligation</p>
-                    </div>
-                </div>
-
-                <div className="p-4 space-y-3 min-h-[220px]">
-                    <AnimatePresence>
-                        {messages.map((msg, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
-                            >
-                                <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm ${msg.isUser
-                                    ? 'bg-primary text-primary-foreground rounded-br-sm'
-                                    : 'bg-muted text-foreground rounded-bl-sm'
-                                    }`}>
-                                    {msg.text}
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
-            </div>
-        </div>
-    )
-}
-*/
-
 // Video Animation
 function DiscoveryCallAnimation({ isActive }: { isActive: boolean }) {
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -320,12 +252,9 @@ function LaunchAnimation({ isActive }: { isActive: boolean }) {
     const deploymentTasks = [
         { label: 'Setting up domain', icon: '🌐' },
         { label: 'DNS propagating', icon: '📡' },
-        { label: 'Provisioning SSL certificate', icon: '🔒' },
-        { label: 'Building production bundle', icon: '📦' },
-        { label: 'Optimizing assets', icon: '⚡' },
-        { label: 'Deploying to edge network', icon: '🚀' },
-        { label: 'Indexing content', icon: '📄' },
-        { label: 'Google bots crawling', icon: '🤖' },
+        { label: 'Provisioning SSL', icon: '🔒' },
+        { label: 'Building bundle', icon: '📦' },
+        { label: 'Deploying to net', icon: '🚀' },
     ]
 
     useEffect(() => {
@@ -366,7 +295,9 @@ function LaunchAnimation({ isActive }: { isActive: boolean }) {
     const CONTAINER_HEIGHT = 650
 
     return (
-        <div className="w-full max-w-md mx-auto">
+        <div className="launch-wrapper w-full max-w-md mx-auto" style={{ transform: 'translateY(-5rem)' }}>
+            {/* On sm+ screens, reset the offset */}
+            <style>{`@media (min-width: 640px) { .launch-wrapper { transform: translateY(0) !important; } }`}</style>
             {/* Fixed height, overflow visible so glow isn't clipped */}
             <div className="relative" style={{ height: `${CONTAINER_HEIGHT}px` }}>
                 <AnimatePresence mode="wait">
@@ -451,17 +382,6 @@ function LaunchAnimation({ isActive }: { isActive: boolean }) {
                                                     </motion.span>
                                                 )}
                                             </span>
-
-                                            {/* Completion time */}
-                                            {isComplete && (
-                                                <motion.span
-                                                    className="ml-auto text-xs text-muted-foreground"
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                >
-                                                    ✓
-                                                </motion.span>
-                                            )}
                                         </motion.div>
                                     )
                                 })}
@@ -482,7 +402,7 @@ function LaunchAnimation({ isActive }: { isActive: boolean }) {
                         <motion.div
                             key="mockup"
                             initial={{ opacity: 0, scale: 0.6 }}
-                            animate={{ opacity: 1, scale: 1 }}
+                            animate={{ opacity: 1, scale: 1.3 }}
                             transition={{ type: 'spring', stiffness: 200, damping: 20, duration: 0.6 }}
                             className="absolute inset-0 flex items-center justify-center"
                         >
@@ -562,7 +482,16 @@ const steps: ProcessStep[] = [
 // Individual Step Component
 function ProcessStepCard({ step, index, totalSteps }: { step: ProcessStep; index: number; totalSteps: number }) {
     const ref = useRef<HTMLDivElement>(null)
-    const isInView = useInView(ref, { amount: 0.6, once: false })
+    const [isMobile, setIsMobile] = useState(false)
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 1024)
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
+
+    const isInView = useInView(ref, { amount: isMobile ? 0.1 : 0.6, once: false })
 
     // Step 1 & 3: Text LEFT, Component RIGHT
     // Step 2 & 4: Component LEFT, Text RIGHT
@@ -598,7 +527,7 @@ function ProcessStepCard({ step, index, totalSteps }: { step: ProcessStep; index
                 opacity: isInView ? 1 : 0.3,
                 scale: isInView ? 1 : 0.95,
             }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            transition={{ duration: isMobile ? 0.08 : 0.15, ease: "easeOut" }}
         >
             <div className="container mx-auto px-6 max-w-6xl w-full">
                 {/* Desktop Layout */}
@@ -640,29 +569,34 @@ function ProcessStepCard({ step, index, totalSteps }: { step: ProcessStep; index
                 </div>
 
                 {/* Mobile Layout */}
-                <div className="lg:hidden flex gap-4">
+                <div className="lg:hidden flex gap-1">
                     {/* Timeline */}
-                    <div className="flex flex-col items-center shrink-0 relative">
+                    <div className="flex flex-col items-center shrink-0 relative -ml-4">
                         {/* Step Circle */}
-                        <div className="relative z-10 mt-1">
+                        <motion.div
+                            className="relative z-10 mt-2"
+                            animate={{ opacity: isInView ? 1 : 0.3 }}
+                            transition={{ duration: isMobile ? 0.08 : 0.15, ease: "easeOut" }}
+                        >
                             <div
-                                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isInView
+                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300 ${isInView
                                     ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
                                     : 'bg-card border-2 border-primary/30 text-muted-foreground'
                                     }`}
                             >
-                                <step.icon className="w-5 h-5" />
+                                <step.icon className="w-4 h-4" />
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
 
                     {/* Content */}
                     <motion.div
                         className="flex-1 pb-4"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ amount: 0.3 }}
-                        transition={{ duration: 0.5 }}
+                        animate={{
+                            opacity: isInView ? 1 : 0.3,
+                            y: isInView ? 0 : 8
+                        }}
+                        transition={{ duration: isMobile ? 0.08 : 0.15, ease: "easeOut" }}
                     >
                         <Badge className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border-primary/20 px-3 py-1.5 rounded-full text-xs font-bold mb-3">
                             {step.badge}
@@ -686,28 +620,28 @@ function ProcessStepCard({ step, index, totalSteps }: { step: ProcessStep; index
                         </div>
                     </motion.div>
                 </div>
-            </div>
-        </motion.div>
+            </div >
+        </motion.div >
     )
 }
 
 export function Process5() {
     return (
-        <section className="bg-background py-16 lg:py-24">
+        <section className="bg-background pt-24 overflow-x-hidden">
             {/* Section Header */}
-            <div className="container mx-auto px-6 max-w-4xl text-center mb-16 lg:mb-20">
+            <div className="container mx-auto px-6 max-w-4xl text-center mb-8">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
                 >
-                    <Badge className="mb-6 px-4 py-2 bg-primary/10 text-primary border-primary/20">
+                    {/* <Badge className="mb-6 px-4 py-2 bg-primary/10 text-primary border-primary/20">
                         <Layers className="w-4 h-4 mr-2" />
                         How It Works
-                    </Badge>
+                    </Badge> */}
                     <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-foreground mb-6 leading-tight">
-                        From idea to live website in 7 days, not 7 months
+                        From idea to live website in <br /> <span className="text-primary">7 days, not 7 months</span>
                     </h2>
                     <p className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto">
                         No confusing tech talk. No endless meetings. Just a simple 4-step process to get your business online.
@@ -723,7 +657,7 @@ export function Process5() {
                         {/* Desktop Line - Centered */}
                         <div className="absolute left-1/2 -translate-x-1/2 w-0.5 h-full bg-primary/20 hidden lg:block" />
                         {/* Mobile Line - Aligned with icons */}
-                        <div className="absolute left-12 -translate-x-1/2 w-0.5 h-full bg-primary/20 lg:hidden" />
+                        <div className="absolute w-0.5 h-full bg-primary/20 lg:hidden" style={{ left: '28px', transform: 'translateX(-50%)' }} />
                     </div>
                 </div>
 

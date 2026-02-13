@@ -10,7 +10,7 @@ import { HeroLogoMarquee } from "@/components/sections/logo-cloud"
 
 export default function LandingPage5() {
     return (
-        <>
+        <div className="">
             <Hero5 />
             <HeroLogoMarquee />
             <BenefitsHorizontal />
@@ -20,6 +20,6 @@ export default function LandingPage5() {
             {/* <CTA5 />
             <TimeCTA /> */}
             <MacbookScrollDemo />
-        </>
+        </div>
     )
 }
