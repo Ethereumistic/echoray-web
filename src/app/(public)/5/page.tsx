@@ -17,8 +17,6 @@ export default function LandingPage5() {
             <Process5 />
             <Pricing5 />
             <FAQ5 />
-            {/* <CTA5 />
-            <TimeCTA /> */}
             <MacbookScrollDemo />
         </div>
     )
