@@ -76,7 +76,7 @@ export function TimeCTABlue() {
                                 value={phone}
                                 onChange={setPhone}
                                 defaultCountry="BG"
-                                className="h-7 **:[input]:h-7 **:[input]:text-xs **:[button]:h-7 bg-background! focus:ring-0 rounded-md "
+                                className="h-7 **:[input]:h-7 **:[input]:text-xs **:[button]:h-7 **:[input]:bg-background! **:[button]:bg-background! **:[input]:focus-visible:ring-0 **:[button]:focus-visible:ring-0 **:[input]:focus-visible:border-input **:[button]:focus-visible:border-input rounded-md "
                             />
 
                             <Button

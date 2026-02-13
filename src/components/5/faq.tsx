@@ -9,7 +9,7 @@ import { ButtonGroup } from "@/components/ui/button-group"
 import { toast } from "sonner"
 
 // Customize your scroll settings here
-const SCROLL_OFFSET = -1000; // Negative values scroll further down, positive values stop earlier
+const SCROLL_OFFSET_REM = -65; // Value in REM. Negative values scroll further down, positive values stop earlier
 const SCROLL_DURATION = 3; // Duration in seconds
 
 const faqs = [
@@ -45,7 +45,9 @@ export function FAQ5() {
         const nextSection = sectionRef.current?.nextElementSibling as HTMLElement;
         if (nextSection) {
             const currentScroll = window.scrollY;
-            const targetScroll = nextSection.getBoundingClientRect().top + currentScroll - SCROLL_OFFSET;
+            const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+            const offsetPx = SCROLL_OFFSET_REM * rootFontSize;
+            const targetScroll = nextSection.getBoundingClientRect().top + currentScroll - offsetPx;
 
             // Helper to block user scrolling
             const preventDefault = (e: Event) => e.preventDefault();
