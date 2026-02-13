@@ -1,9 +1,9 @@
-import { Process5 } from '@/components/5/process'
-import { FAQ5 } from '@/components/5/faq'
-import { Hero5 } from '@/components/5/hero'
-import { BenefitsHorizontal } from '@/components/5/benefits'
-import { Pricing5 } from '@/components/5/pricing'
-import { MacbookScrollDemo } from '@/components/5/MacBook'
+import { Process5 } from '@/components/sections/process'
+import { FAQ5 } from '@/components/sections/faq'
+import { Hero5 } from '@/components/sections/hero'
+import { BenefitsHorizontal } from '@/components/sections/benefits'
+import { Pricing5 } from '@/components/sections/pricing'
+import { CTA } from '@/components/sections/cta'
 import { WhatsIncluded } from '@/components/sections/whats-included'
 import { HeroLogoMarquee } from '@/components/sections/logo-cloud'
 
@@ -19,7 +19,7 @@ export default function HomePage() {
             <Process5 />
             <Pricing5 />
             <FAQ5 />
-            <MacbookScrollDemo />
+            <CTA />
         </>
     )
 }

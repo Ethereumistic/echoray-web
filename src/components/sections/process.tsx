@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { AnimatePresence } from "framer-motion"
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
 import Autoplay from "embla-carousel-autoplay"
-import { Hero3D } from "@/components/5/hero-3d"
+import { Hero3D } from "@/components/sections/hero-3d"
 
 interface ProcessStep {
     icon: LucideIcon

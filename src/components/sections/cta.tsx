@@ -1,9 +1,9 @@
 import React from "react";
-import { MacbookScroll } from "@/components/5/macbook-scroll";
+import { MacbookScroll } from "@/components/sections/macbook-scroll";
 // import { TimeCTA } from "@/components/5/time-cta";
-import { TimeCTABlue } from "@/components/5/time-cta-blue";
+import { TimeCTABlue } from "@/components/sections/time-cta-blue";
 
-export function MacbookScrollDemo() {
+export function CTA() {
     return (
         <div className="w-full overflow-hidden -mt-[14rem]">
             <MacbookScroll
