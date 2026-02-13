@@ -1,16 +1,32 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useState, useEffect } from "react"
 import {
     motion,
     useMotionValue,
     useSpring,
     useTransform,
     useMotionTemplate,
+    AnimatePresence,
 } from "framer-motion"
 
-export function Hero3D() {
+const images = [
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/stars.guide.webp",
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/danirusev-en.webp",
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/m-texx-en.webp",
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/global-travel-en.webp",
+]
+
+export function PhoneMock() {
     const ref = useRef<HTMLDivElement>(null)
+    const [currentIndex, setCurrentIndex] = useState(0)
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % images.length)
+        }, 3000)
+        return () => clearInterval(interval)
+    }, [])
 
     const x = useMotionValue(0)
     const y = useMotionValue(0)
@@ -76,12 +92,19 @@ export function Hero3D() {
                 }}
             >
                 <div className="relative w-[280px] h-[580px] rounded-[2.5rem] overflow-hidden">
-                    <img
-                        loading="lazy"
-                        className="h-full w-full object-cover"
-                        alt="Website preview"
-                        src="https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/stars.guide.webp"
-                    />
+                    <AnimatePresence>
+                        <motion.img
+                            key={currentIndex}
+                            loading="lazy"
+                            className="h-full w-full object-cover absolute inset-0"
+                            alt="Website preview"
+                            src={images[currentIndex]}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.8, ease: "easeInOut" }}
+                        />
+                    </AnimatePresence>
                 </div>
 
                 <motion.div

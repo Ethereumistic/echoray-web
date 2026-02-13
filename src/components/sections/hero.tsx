@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import { HeroBackground } from "@/components/sections/hero-background"
 import { HeroLogoMarquee } from "@/components/sections/logo-cloud"
-import { Hero3D } from "./hero-3d"
+import { PhoneMock } from "./phone-mock"
 
 // Staggered fade-up variants for children
 const containerVariants = {
@@ -110,7 +110,7 @@ export function Hero5() {
                             animate="visible"
                             transition={{ delay: 0.4 }}
                         >
-                            <Hero3D />
+                            <PhoneMock />
                         </motion.div>
                     </div>
                 </div>

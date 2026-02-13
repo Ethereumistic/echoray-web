@@ -2,6 +2,7 @@ import React from "react";
 import { MacbookScroll } from "@/components/sections/macbook-scroll";
 // import { TimeCTA } from "@/components/5/time-cta";
 import { TimeCTABlue } from "@/components/sections/time-cta-blue";
+import { TimeCTA } from "./time-cta";
 
 export function CTA() {
     return (
