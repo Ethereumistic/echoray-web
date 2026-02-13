@@ -1,6 +1,7 @@
 import React from "react";
 import { MacbookScroll } from "@/components/5/macbook-scroll";
-import { TimeCTA } from "@/components/5/time-cta";
+// import { TimeCTA } from "@/components/5/time-cta";
+import { TimeCTABlue } from "@/components/5/time-cta-blue";
 
 export function MacbookScrollDemo() {
     return (
@@ -14,7 +15,8 @@ export function MacbookScrollDemo() {
                 showGradient={false}
             >
                 <div className="w-full h-full ">
-                    <TimeCTA />
+                    {/* <TimeCTA /> */}
+                    <TimeCTABlue />
                 </div>
             </MacbookScroll>
         </div>

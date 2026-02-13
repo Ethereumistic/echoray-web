@@ -25,14 +25,14 @@ const timeSlots = [
     "17:00", "17:30", "18:00"
 ]
 
-export function TimeCTA() {
+export function TimeCTABlue() {
     const [date, setDate] = useState<Date | undefined>(new Date())
     const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined)
     const [open, setOpen] = useState(false)
     const [phone, setPhone] = useState<Value>("" as Value)
 
     return (
-        <div className="w-lg h-88 bg-background rounded-md border-2 border-dotted border-primary overflow-hidden mx-auto ">
+        <div className="w-lg h-88 rounded-md overflow-hidden mx-auto bg-primary">
             <div className="flex flex-col items-center justify-center h-full px-6">
                 {/* Centered Header */}
                 <div className="flex flex-col items-center text-center">
@@ -84,7 +84,7 @@ export function TimeCTA() {
                                 {selectedTime ? `Time: ${selectedTime} (Sofia)` : "Select time slot"}
                             </Button>
 
-                            <Button size="sm" className="h-7 text-xs font-semibold w-full mt-1">
+                            <Button size="sm" className="h-7 bg-black hover:bg-black text-xs font-semibold w-full mt-1">
                                 Confirm Booking
                                 <ArrowRight className="ml-1 h-3 w-3" />
                             </Button>

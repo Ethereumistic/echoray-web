@@ -41,7 +41,7 @@ export default function RootLayout({
 					<ConvexClientProvider>
 						{children}
 						<PermissionDebugger />
-						<Toaster position="top-right" expand={false} richColors />
+						<Toaster position="bottom-right" expand={false} richColors />
 					</ConvexClientProvider>
 				</body>
 			</html>
