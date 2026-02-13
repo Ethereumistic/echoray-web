@@ -47,10 +47,29 @@ export function FAQ5() {
             const currentScroll = window.scrollY;
             const targetScroll = nextSection.getBoundingClientRect().top + currentScroll - SCROLL_OFFSET;
 
+            // Helper to block user scrolling
+            const preventDefault = (e: Event) => e.preventDefault();
+            const preventKeys = (e: KeyboardEvent) => {
+                if (["Space", "ArrowUp", "ArrowDown", "PageUp", "PageDown", "End", "Home"].includes(e.code)) {
+                    e.preventDefault();
+                }
+            };
+
+            // Add listeners to block scroll
+            window.addEventListener("wheel", preventDefault, { passive: false });
+            window.addEventListener("touchmove", preventDefault, { passive: false });
+            window.addEventListener("keydown", preventKeys, { passive: false });
+
             animate(currentScroll, targetScroll, {
                 duration: SCROLL_DURATION,
                 ease: [0.16, 1, 0.3, 1], // Premium smooth easing
-                onUpdate: (value) => window.scrollTo(0, value)
+                onUpdate: (value) => window.scrollTo(0, value),
+                onComplete: () => {
+                    // Cleanup: allow scrolling again
+                    window.removeEventListener("wheel", preventDefault);
+                    window.removeEventListener("touchmove", preventDefault);
+                    window.removeEventListener("keydown", preventKeys);
+                }
             });
         }
     }

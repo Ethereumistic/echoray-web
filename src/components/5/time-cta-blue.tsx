@@ -55,15 +55,20 @@ export function TimeCTABlue() {
 
                     {/* Right Column: Inputs */}
                     <div className="flex flex-col items-center sm:items-start text-center sm:text-left h-full justify-center">
-                        <p className="text-sm text-muted-foreground mb-4  leading-relaxed">
+                        <p className="text-sm  mb-4  leading-relaxed">
                             Book a quick 15-min call.<br /> No pressure, just real solutions.
                         </p>
 
                         <div className="flex flex-col gap-2 w-full max-w-xl">
                             <Input
+                                type="text"
+                                placeholder="Full name"
+                                className="h-7 bg-background! "
+                            />
+                            <Input
                                 type="email"
                                 placeholder="Email address"
-                                className="h-7 bg-background"
+                                className="h-7 bg-background! "
                             />
 
                             <PhoneInput
@@ -71,22 +76,22 @@ export function TimeCTABlue() {
                                 value={phone}
                                 onChange={setPhone}
                                 defaultCountry="BG"
-                                className="h-7 **:[input]:h-7 **:[input]:text-xs **:[button]:h-7"
+                                className="h-7 **:[input]:h-7 **:[input]:text-xs **:[button]:h-7 bg-background! focus:ring-0 rounded-md "
                             />
 
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-7 text-xs w-full justify-start font-normal text-muted-foreground"
+                                className="h-7 text-xs w-full justify-start font-normal text-muted-foreground bg-background! "
                                 onClick={() => setOpen(true)}
                             >
                                 <Clock className="mr-2 h-3 w-3" />
                                 {selectedTime ? `Time: ${selectedTime} (Sofia)` : "Select time slot"}
                             </Button>
 
-                            <Button size="sm" className="h-7 bg-black hover:bg-black text-xs font-semibold w-full mt-1">
+                            <Button size="lg" className="cursor-pointer bg-black hover:bg-black text-sm font-semibold w-full mt-1 group">
                                 Confirm Booking
-                                <ArrowRight className="ml-1 h-3 w-3" />
+                                <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
                             </Button>
                         </div>
                     </div>
