@@ -11,10 +11,14 @@ import {
 } from "framer-motion"
 
 const images = [
-    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/stars.guide.webp",
-    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/danirusev-en.webp",
-    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/m-texx-en.webp",
-    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/global-travel-en.webp",
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/stars.guide.webp",
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/danirusev.webp",
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/dbproductions.webp",
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/global-travel.webp",
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/ultrabuild.webp",
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/m-texx.webp",
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/bio-ddd.webp",
+    "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/global-travel.webp",
 ]
 
 export function PhoneMock() {
@@ -24,7 +28,7 @@ export function PhoneMock() {
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentIndex((prev) => (prev + 1) % images.length)
-        }, 3000)
+        }, 6000)
         return () => clearInterval(interval)
     }, [])
 
