@@ -8,35 +8,35 @@ export function WorkParallaxDemo() {
 
 export const products = [
     {
-        title: "Moonbeam",
-        link: "https://gomoonbeam.com",
+        title: "M-Texx Textile Recycling",
+        link: "https://m-texx.com",
         thumbnail:
-            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/square/en/m-texx.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/m-texx.png",
     },
     {
-        title: "Cursor",
-        link: "https://cursor.so",
+        title: "Ultrabuild",
+        link: "https://ultrabuild.bg",
         thumbnail:
-            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/square/en/ultrabuild.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/ultrabuild.png",
     },
     {
-        title: "Rogue",
-        link: "https://userogue.com",
+        title: "stars.guide",
+        link: "https://stars.guide",
         thumbnail:
-            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/square/en/stars.guide.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/stars.guide.png",
     },
 
     {
-        title: "Editorially",
-        link: "https://editorially.org",
+        title: "Bio-DDD",
+        link: "https://bio-ddd.com",
         thumbnail:
-            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/square/en/dbproductions.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/bio-ddd.png",
     },
     {
-        title: "Editrix AI",
-        link: "https://editrix.ai",
+        title: "Dani Rusev",
+        link: "https://danirusev.com",
         thumbnail:
-            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/square/en/danirusev.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/danirusev.png",
     },
     {
         title: "Pixel Perfect",
@@ -46,22 +46,22 @@ export const products = [
     },
 
     {
-        title: "Algochurn",
-        link: "https://algochurn.com",
+        title: "yea.cool",
+        link: "https://yea.cool",
         thumbnail:
-            "https://www.aceternity.com/images/products/thumbnails/new/algochurn.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/yea.cool.png",
     },
     {
-        title: "Aceternity UI",
-        link: "https://ui.aceternity.com",
+        title: "DB Productions",
+        link: "https://dbproductions.net",
         thumbnail:
-            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/square/en/dbproductions.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/dbproductions.png",
     },
     {
-        title: "Tailwind Master Kit",
-        link: "https://tailwindmasterkit.com",
+        title: "Dani Rusev",
+        link: "https://danirusev.com",
         thumbnail:
-            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/square/en/danirusev.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/danirusev.png",
     },
     {
         title: "SmartBridge",
@@ -77,16 +77,16 @@ export const products = [
     },
 
     {
-        title: "Creme Digital",
-        link: "https://cremedigital.com",
+        title: "Purity or Death",
+        link: "https://chistota-smurt.vercel.app/",
         thumbnail:
-            "https://www.aceternity.com/images/products/thumbnails/new/cremedigital.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/chist.png",
     },
     {
-        title: "Golden Bells Academy",
-        link: "https://goldenbellsacademy.com",
+        title: "Global Travel",
+        link: "https://global-travel.bg",
         thumbnail:
-            "https://www.aceternity.com/images/products/thumbnails/new/goldenbellsacademy.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/global-travel.png",
     },
     {
         title: "Invoker Labs",

@@ -57,7 +57,7 @@ export const WorkParallax = ({
     return (
         <div
             ref={ref}
-            className="h-[300vh] py-40 overflow-hidden  antialiased relative flex flex-col self-auto [perspective:1000px] [transform-style:preserve-3d]"
+            className="h-[350vh] py-40 overflow-hidden antialiased relative flex flex-col self-auto [perspective:1000px] [transform-style:preserve-3d]"
         >
             <Header />
             <motion.div
@@ -136,7 +136,7 @@ export const ProductCard = ({
                 y: -20,
             }}
             key={product.title}
-            className="group/product h-96 w-[30rem] relative shrink-0"
+            className="group/product h-96 w-96 relative shrink-0 rounded-md "
         >
             <a
                 href={product.link}
@@ -146,11 +146,11 @@ export const ProductCard = ({
                     src={product.thumbnail}
                     height="600"
                     width="600"
-                    className="object-cover object-left-top absolute h-full w-full inset-0"
+                    className="object-cover object-left-top absolute h-full w-full inset-0 rounded-md "
                     alt={product.title}
                 />
             </a>
-            <div className="absolute inset-0 h-full w-full opacity-0 group-hover/product:opacity-80 bg-black pointer-events-none"></div>
+            <div className="absolute inset-0 h-full w-full opacity-0 group-hover/product:opacity-10 bg-black pointer-events-none rounded-md"></div>
             <h2 className="absolute bottom-4 left-4 opacity-0 group-hover/product:opacity-100 text-white">
                 {product.title}
             </h2>
