@@ -33,16 +33,16 @@ export const products = [
             "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/bio-ddd.png",
     },
     {
-        title: "Dani Rusev",
-        link: "https://danirusev.com",
+        title: "Unseen",
+        link: "https://unseen.bg",
         thumbnail:
-            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/danirusev.png",
+            "https://www.aceternity.com/images/products/thumbnails/new/renderwork.png",
     },
     {
-        title: "Pixel Perfect",
-        link: "https://app.pixelperfect.quest",
+        title: "Unseen",
+        link: "unseen.bg",
         thumbnail:
-            "https://www.aceternity.com/images/products/thumbnails/new/pixelperfect.png",
+            "https://www.aceternity.com/images/products/thumbnails/new/renderwork.png",
     },
 
     {
@@ -64,10 +64,10 @@ export const products = [
             "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/danirusev.png",
     },
     {
-        title: "SmartBridge",
-        link: "https://smartbridgetech.com",
+        title: "Unseen",
+        link: "unseen.bg",
         thumbnail:
-            "https://www.aceternity.com/images/products/thumbnails/new/smartbridge.png",
+            "https://www.aceternity.com/images/products/thumbnails/new/renderwork.png",
     },
     {
         title: "Renderwork Studio",
@@ -89,15 +89,15 @@ export const products = [
             "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/global-travel.png",
     },
     {
-        title: "Invoker Labs",
-        link: "https://invoker.lol",
+        title: "Rossa Travel",
+        link: "rossa-travel.bg",
         thumbnail:
-            "https://www.aceternity.com/images/products/thumbnails/new/invoker.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/global-travel.png",
     },
     {
-        title: "E Free Invoice",
-        link: "https://efreeinvoice.com",
+        title: "Unseen",
+        link: "unseen.bg",
         thumbnail:
-            "https://www.aceternity.com/images/products/thumbnails/new/efreeinvoice.png",
+            "https://www.aceternity.com/images/products/thumbnails/new/renderwork.png",
     },
 ];
