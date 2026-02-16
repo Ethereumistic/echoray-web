@@ -13,6 +13,7 @@ import {
     ChevronRight,
     Terminal,
     FileText,
+    Sparkles,
 } from "lucide-react"
 
 import {
@@ -33,6 +34,7 @@ import { useAuthActions } from "@convex-dev/auth/react"
 
 const adminNavItems = [
     { title: "Overview", href: "/admin", icon: LayoutDashboard },
+    { title: "Lead AI", href: "/admin/lead-ai", icon: Sparkles },
     { title: "Content CMS", href: "/admin/cms", icon: FileText },
     { title: "Subscription Tiers", href: "/admin/tiers", icon: CreditCard },
     { title: "Bitwise Permissions", href: "/admin/permissions", icon: Shield },

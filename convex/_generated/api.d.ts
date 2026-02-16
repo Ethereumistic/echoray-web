@@ -16,6 +16,8 @@ import type * as debug from "../debug.js";
 import type * as emails from "../emails.js";
 import type * as github from "../github.js";
 import type * as http from "../http.js";
+import type * as leadai from "../leadai.js";
+import type * as leadaiActions from "../leadaiActions.js";
 import type * as mapping_cards from "../mapping/cards.js";
 import type * as mapping_projects from "../mapping/projects.js";
 import type * as mapping_templates from "../mapping/templates.js";
@@ -44,6 +46,8 @@ declare const fullApi: ApiFromModules<{
   emails: typeof emails;
   github: typeof github;
   http: typeof http;
+  leadai: typeof leadai;
+  leadaiActions: typeof leadaiActions;
   "mapping/cards": typeof mapping_cards;
   "mapping/projects": typeof mapping_projects;
   "mapping/templates": typeof mapping_templates;

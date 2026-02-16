@@ -463,4 +463,168 @@ export default defineSchema({
     })
         .index("by_project", ["projectId"])
         .index("by_project_default", ["projectId", "isDefault"]),
+
+    // ========================================
+    // LEAD AI TABLES
+    // ========================================
+
+    // LeadAI Search Sessions
+    leadai_searches: defineTable({
+        industry: v.string(),
+        niche: v.optional(v.string()),
+        websiteType: v.string(),
+        country: v.string(),
+        city: v.optional(v.string()),
+        requestedLeadCount: v.number(),
+        status: v.union(
+            v.literal("in_progress"),
+            v.literal("completed"),
+            v.literal("failed")
+        ),
+        startedAt: v.number(),
+        completedAt: v.optional(v.number()),
+        totalLeadsFound: v.number(),
+        aiModel: v.string(),
+        totalTokensUsed: v.optional(v.number()),
+        totalCost: v.optional(v.number()),
+        errorLog: v.optional(v.array(v.string())),
+    })
+        .index("by_status", ["status"])
+        .index("by_created", ["startedAt"]),
+
+    // LeadAI Individual Lead Records
+    leadai_leads: defineTable({
+        searchId: v.id("leadai_searches"),
+
+        // Basic Info
+        companyName: v.string(),
+        companyNameLocal: v.optional(v.string()),
+        industry: v.string(),
+        businessDescription: v.string(),
+
+        // Contact Info
+        emails: v.array(v.object({
+            email: v.string(),
+            type: v.string(),
+            verified: v.boolean(),
+        })),
+        phones: v.array(v.object({
+            number: v.string(),
+            type: v.string(),
+            verified: v.boolean(),
+        })),
+        addresses: v.array(v.object({
+            street: v.string(),
+            city: v.string(),
+            postalCode: v.optional(v.string()),
+            country: v.string(),
+            type: v.string(),
+        })),
+        contactPersons: v.array(v.object({
+            name: v.string(),
+            position: v.optional(v.string()),
+            email: v.optional(v.string()),
+            phone: v.optional(v.string()),
+        })),
+
+        // Digital Presence
+        website: v.optional(v.string()),
+        websiteStatus: v.optional(v.object({
+            hasHttps: v.boolean(),
+            isMobileResponsive: v.boolean(),
+            estimatedAge: v.optional(v.number()),
+            techStack: v.optional(v.array(v.string())),
+        })),
+        socialMedia: v.array(v.object({
+            platform: v.string(),
+            url: v.string(),
+            followers: v.optional(v.number()),
+        })),
+        googleBusinessUrl: v.optional(v.string()),
+
+        // Bulgarian Registry Data
+        registrationNumber: v.optional(v.string()),
+        registryData: v.optional(v.object({
+            source: v.string(),
+            employeeCount: v.optional(v.number()),
+            estimatedRevenue: v.optional(v.number()),
+            registrationDate: v.optional(v.string()),
+            legalStatus: v.optional(v.string()),
+            directors: v.optional(v.array(v.string())),
+            lastUpdated: v.string(),
+        })),
+
+        // Scoring
+        viabilityScore: v.number(),
+        priorityTier: v.union(
+            v.literal("hot"),
+            v.literal("warm"),
+            v.literal("cold"),
+            v.literal("low")
+        ),
+        scoreBreakdown: v.object({
+            contactInfoScore: v.number(),
+            businessScaleScore: v.number(),
+            digitalPresenceScore: v.number(),
+            verificationScore: v.number(),
+        }),
+
+        // Status
+        status: v.union(
+            v.literal("new"),
+            v.literal("rating_queued"),
+            v.literal("rated"),
+            v.literal("offer_created"),
+            v.literal("contacted"),
+            v.literal("converted"),
+            v.literal("rejected")
+        ),
+        assignedTo: v.optional(v.string()),
+        notes: v.optional(v.string()),
+
+        // Phase 2 (Future)
+        websiteRating: v.optional(v.object({
+            overallScore: v.number(),
+            seoScore: v.number(),
+            designScore: v.number(),
+            performanceScore: v.number(),
+            ratedAt: v.string(),
+            recommendations: v.array(v.string()),
+        })),
+
+        // Phase 3 (Future — Human-driven)
+        offer: v.optional(v.object({
+            createdAt: v.string(),
+            createdBy: v.string(),
+            offerType: v.string(),
+            estimatedValue: v.number(),
+            proposalDocument: v.optional(v.string()),
+            sentAt: v.optional(v.string()),
+            status: v.string(),
+        })),
+
+        // Metadata
+        createdAt: v.number(),
+        updatedAt: v.number(),
+        dataSource: v.array(v.string()),
+        aiConfidence: v.number(),
+    })
+        .index("by_search", ["searchId"])
+        .index("by_score", ["viabilityScore"])
+        .index("by_status", ["status"])
+        .index("by_priority", ["priorityTier"])
+        .index("by_created", ["createdAt"]),
+
+    // LeadAI API Usage Tracking
+    leadai_apiUsage: defineTable({
+        searchId: v.id("leadai_searches"),
+        provider: v.string(),
+        model: v.optional(v.string()),
+        tokensUsed: v.optional(v.number()),
+        requestCount: v.number(),
+        cost: v.number(),
+        timestamp: v.number(),
+    })
+        .index("by_search", ["searchId"])
+        .index("by_timestamp", ["timestamp"]),
 });
