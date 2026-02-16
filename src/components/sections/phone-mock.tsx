@@ -10,7 +10,7 @@ import {
     AnimatePresence,
 } from "framer-motion"
 
-const images = [
+const DEFAULT_IMAGES = [
     "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/stars.guide.webp",
     "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/danirusev.webp",
     "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/dbproductions.webp",
@@ -21,16 +21,24 @@ const images = [
     "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/en/global-travel.webp",
 ]
 
-export function PhoneMock() {
+interface PhoneMockProps {
+    imageSrc?: string
+    alt?: string
+}
+
+export function PhoneMock({ imageSrc, alt = "Website preview" }: PhoneMockProps) {
     const ref = useRef<HTMLDivElement>(null)
     const [currentIndex, setCurrentIndex] = useState(0)
+    
+    const images = imageSrc ? [imageSrc] : DEFAULT_IMAGES
 
     useEffect(() => {
+        if (imageSrc) return
         const interval = setInterval(() => {
             setCurrentIndex((prev) => (prev + 1) % images.length)
         }, 6000)
         return () => clearInterval(interval)
-    }, [])
+    }, [imageSrc, images.length])
 
     const x = useMotionValue(0)
     const y = useMotionValue(0)
@@ -72,12 +80,12 @@ export function PhoneMock() {
     }
 
     return (
-        <div className="relative w-full flex items-center justify-center perspective-distant">
+        <div className="relative w-full flex items-center justify-center perspective-distant overflow-visible">
             <motion.div
                 ref={ref}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
-                className="relative rounded-[2.5rem]"
+                className="relative rounded-[2.5rem] overflow-visible"
                 style={{
                     rotateX,
                     rotateY,
@@ -98,10 +106,10 @@ export function PhoneMock() {
                 <div className="relative w-[280px] h-[580px] rounded-[2.5rem] overflow-hidden">
                     <AnimatePresence>
                         <motion.img
-                            key={currentIndex}
+                            key={images[currentIndex]}
                             loading="lazy"
                             className="h-full w-full object-cover absolute inset-0"
-                            alt="Website preview"
+                            alt={alt}
                             src={images[currentIndex]}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -112,27 +120,27 @@ export function PhoneMock() {
                 </div>
 
                 <motion.div
-                    className="pointer-events-none absolute inset-0 z-50 h-full w-full rounded-[2.5rem] mix-blend-overlay"
+                    className="pointer-events-none absolute inset-0 h-full w-full rounded-[2.5rem] mix-blend-overlay"
                     style={{
                         background: glareBackground,
                         opacity: 0.6,
                     }}
                     transition={{ duration: 0.2 }}
                 />
-
-                <motion.div
-                    className="absolute -inset-20 bg-gradient-to-r from-primary/10 via-primary/30 to-primary/10 blur-3xl -z-10"
-                    animate={{
-                        opacity: [0.3, 0.5, 0.3],
-                        scale: [1, 1.1, 1],
-                    }}
-                    transition={{
-                        duration: 4,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                    }}
-                />
             </motion.div>
+
+            <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/20 to-primary/10 blur-2xl -z-10 pointer-events-none"
+                animate={{
+                    opacity: [0.3, 0.5, 0.3],
+                    scale: [1, 1.05, 1],
+                }}
+                transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                }}
+            />
 
         </div>
     )
