@@ -6,6 +6,7 @@ import { useQuery, useMutation, useAction } from "convex/react"
 import { api } from "../../../../../convex/_generated/api"
 import type { Id } from "../../../../../convex/_generated/dataModel"
 import { cn } from "@/lib/utils"
+import type { LucideIcon } from "lucide-react"
 import {
     Sparkles,
     Search,
@@ -29,7 +30,6 @@ import {
     Copy,
     StickyNote,
     Filter,
-    ArrowUpDown,
     X,
     RotateCcw,
     Bug,
@@ -68,6 +68,64 @@ type PriorityTier = "hot" | "warm" | "cold" | "low"
 type LeadStatus = "new" | "rating_queued" | "rated" | "offer_created" | "contacted" | "converted" | "rejected"
 type SearchStatus = "in_progress" | "completed" | "failed"
 
+interface LeadAISearch {
+    _id: Id<"leadai_searches">
+    industry: string
+    niche?: string
+    country: string
+    city?: string
+    websiteType: string
+    requestedLeadCount: number
+    status: SearchStatus
+    startedAt: number
+    completedAt?: number
+    totalLeadsFound: number
+    aiModel?: string
+    errorLog?: string[]
+}
+
+interface LeadEmail { email: string; type: string; verified?: boolean }
+interface LeadPhone { number: string; type: string; verified?: boolean }
+interface LeadAddress { street: string; city: string; postalCode?: string; country: string; type?: string }
+interface LeadContactPerson { name: string; position?: string }
+interface LeadSocialMedia { url: string; platform: string; followers?: number }
+
+interface LeadAILead {
+    _id: Id<"leadai_leads">
+    companyName: string
+    companyNameLocal?: string
+    industry: string
+    businessDescription?: string
+    emails?: LeadEmail[]
+    phones?: LeadPhone[]
+    addresses?: LeadAddress[]
+    contactPersons?: LeadContactPerson[]
+    website?: string
+    socialMedia?: LeadSocialMedia[]
+    viabilityScore: number
+    priorityTier: PriorityTier
+    status: LeadStatus
+    aiConfidence?: number
+    googleBusinessUrl?: string
+    registrationNumber?: string
+}
+
+interface FormData {
+    industry: string
+    niche: string
+    websiteType: string
+    country: string
+    city: string
+    requestedLeadCount: number
+    model: string
+}
+
+interface ErrorState {
+    message: string
+    details: string[]
+    params: FormData
+}
+
 const PRIORITY_CONFIG: Record<PriorityTier, { label: string; color: string; bg: string; glow: string }> = {
     hot: { label: "Hot", color: "text-orange-400", bg: "bg-orange-500/15 border-orange-500/30", glow: "shadow-orange-500/20" },
     warm: { label: "Warm", color: "text-amber-400", bg: "bg-amber-500/15 border-amber-500/30", glow: "shadow-amber-500/20" },
@@ -85,7 +143,7 @@ const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string }> = {
     rejected: { label: "Rejected", color: "bg-red-500/15 text-red-400 border-red-500/30" },
 }
 
-const SEARCH_STATUS_CONFIG: Record<SearchStatus, { label: string; icon: any; color: string }> = {
+const SEARCH_STATUS_CONFIG: Record<SearchStatus, { label: string; icon: LucideIcon; color: string }> = {
     in_progress: { label: "In Progress", icon: Loader2, color: "text-blue-400" },
     completed: { label: "Completed", icon: CheckCircle2, color: "text-emerald-400" },
     failed: { label: "Failed", icon: XCircle, color: "text-red-400" },
@@ -213,11 +271,11 @@ export default function LeadAIPage() {
                     })
                 }
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Failed to start search:", err)
             setLastError({
                 message: "Failed to start search",
-                details: [err.message || "Unknown error"],
+                details: [err instanceof Error ? err.message : "Unknown error"],
                 params: { ...params },
             })
             setSelectedSearchId(null)
@@ -244,17 +302,17 @@ export default function LeadAIPage() {
         }
     }
 
-    const handleResearch = (search: any) => {
+    const handleResearch = (search: Record<string, unknown>) => {
         setFormData({
-            industry: search.industry || "",
-            niche: search.niche || "",
-            websiteType: search.websiteType || "any",
-            country: search.country || "Bulgaria",
-            city: search.city || "",
-            requestedLeadCount: search.requestedLeadCount || 10,
-            model: search.aiModel || "arcee-ai/trinity-large-preview:free",
+            industry: String(search.industry || ""),
+            niche: String(search.niche || ""),
+            websiteType: String(search.websiteType || "any"),
+            country: String(search.country || "Bulgaria"),
+            city: String(search.city || ""),
+            requestedLeadCount: String(search.requestedLeadCount || 10),
+            model: String(search.aiModel || "arcee-ai/trinity-large-preview:free"),
         })
-        setAppendToSearchId(search._id)  // Mark as append mode
+        setAppendToSearchId(search._id as Id<"leadai_searches">)  // Mark as append mode
         setIsSearchFormOpen(true)
         window.scrollTo({ top: 0, behavior: "smooth" })
     }
@@ -404,7 +462,7 @@ export default function LeadAIPage() {
                     <EmptyState />
                 ) : (
                     <div className="space-y-3">
-                        {searches.map((search: any, i: number) => (
+                        {searches.map((search: Record<string, unknown>, i: number) => (
                             <SearchRow
                                 key={search._id}
                                 search={search}
@@ -432,7 +490,7 @@ export default function LeadAIPage() {
 // ── Stat Card ────────────────────────────────────────────────────
 
 function StatCard({ icon: Icon, label, value, suffix, color, delay }: {
-    icon: any
+    icon: LucideIcon
     label: string
     value?: number
     suffix?: string
@@ -467,8 +525,8 @@ function StatCard({ icon: Icon, label, value, suffix, color, delay }: {
 // ── Search Form ──────────────────────────────────────────────────
 
 function SearchForm({ formData, setFormData, onSubmit, isSearching, onClose, appendMode }: {
-    formData: any
-    setFormData: (data: any) => void
+    formData: Record<string, string>
+    setFormData: (data: Record<string, string>) => void
     onSubmit: () => void
     isSearching: boolean
     onClose: () => void
@@ -657,7 +715,7 @@ function SearchForm({ formData, setFormData, onSubmit, isSearching, onClose, app
 // ── Error Banner ─────────────────────────────────────────────────
 
 function ErrorBanner({ error, onRetry, onDismiss, isRetrying }: {
-    error: { message: string; details: string[]; params: any }
+    error: { message: string; details: string[]; params: Record<string, string> }
     onRetry: () => void
     onDismiss: () => void
     isRetrying: boolean
@@ -672,7 +730,7 @@ function ErrorBanner({ error, onRetry, onDismiss, isRetrying }: {
                     <div>
                         <p className="font-bold text-sm text-red-400">{error.message}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Search for <span className="font-medium text-white">"{error.params.industry}"</span>
+                            Search for <span className="font-medium text-white">&ldquo;{error.params.industry}&rdquo;</span>
                             {error.params.city && <> in <span className="font-medium text-white">{error.params.city}</span></>}
                             {" "}failed with {error.details.length} error(s)
                         </p>
@@ -832,7 +890,7 @@ function ActiveSearchProgress({ searchId, onDismiss }: {
 // ── Search Row (expandable) ──────────────────────────────────────
 
 function SearchRow({ search, index, filterPriority, onSelectLead, onDelete, onResearch, isDeleting }: {
-    search: any
+    search: Record<string, unknown>
     index: number
     filterPriority: string
     onSelectLead: (id: Id<"leadai_leads">) => void
@@ -850,7 +908,7 @@ function SearchRow({ search, index, filterPriority, onSelectLead, onDelete, onRe
     const statusCfg = SEARCH_STATUS_CONFIG[search.status as SearchStatus]
     const StatusIcon = statusCfg.icon
 
-    const filteredLeads = leads?.filter((l: any) =>
+    const filteredLeads = leads?.filter((l: Record<string, unknown>) =>
         filterPriority === "all" || l.priorityTier === filterPriority
     )
 
@@ -975,7 +1033,7 @@ function SearchRow({ search, index, filterPriority, onSelectLead, onDelete, onRe
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {filteredLeads.map((lead: any) => (
+                                        {filteredLeads.map((lead: Record<string, unknown>) => (
                                             <LeadRow
                                                 key={lead._id}
                                                 lead={lead}
@@ -1011,7 +1069,7 @@ function SearchRow({ search, index, filterPriority, onSelectLead, onDelete, onRe
 
 // ── Lead Table Row ───────────────────────────────────────────────
 
-function LeadRow({ lead, onClick }: { lead: any; onClick: () => void }) {
+function LeadRow({ lead, onClick }: { lead: Record<string, unknown>; onClick: () => void }) {
     const priorityCfg = PRIORITY_CONFIG[lead.priorityTier as PriorityTier]
     const statusCfg = STATUS_CONFIG[lead.status as LeadStatus]
 
@@ -1187,7 +1245,7 @@ function LeadDetailDialog({ leadId, onClose }: {
                                 {lead.emails?.length > 0 && (
                                     <div className="space-y-1.5">
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Emails</p>
-                                        {lead.emails.map((e: any, i: number) => (
+                                        {lead.emails.map((e: { email: string; type: string }, i: number) => (
                                             <div key={i} className="flex items-center gap-2 text-sm group">
                                                 <Mail className="size-3 text-muted-foreground" />
                                                 <span>{e.email}</span>
@@ -1202,7 +1260,7 @@ function LeadDetailDialog({ leadId, onClose }: {
                                 {lead.phones?.length > 0 && (
                                     <div className="space-y-1.5 mt-3">
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Phones</p>
-                                        {lead.phones.map((p: any, i: number) => (
+                                        {lead.phones.map((p: { number: string; type: string }, i: number) => (
                                             <div key={i} className="flex items-center gap-2 text-sm group">
                                                 <Phone className="size-3 text-muted-foreground" />
                                                 <span>{p.number}</span>
@@ -1217,7 +1275,7 @@ function LeadDetailDialog({ leadId, onClose }: {
                                 {lead.contactPersons?.length > 0 && (
                                     <div className="space-y-1.5 mt-3">
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Contact Persons</p>
-                                        {lead.contactPersons.map((c: any, i: number) => (
+                                        {lead.contactPersons.map((c: { name: string; position?: string }, i: number) => (
                                             <div key={i} className="text-sm">
                                                 <span className="font-medium">{c.name}</span>
                                                 {c.position && <span className="text-muted-foreground"> — {c.position}</span>}
@@ -1228,7 +1286,7 @@ function LeadDetailDialog({ leadId, onClose }: {
                                 {lead.addresses?.length > 0 && (
                                     <div className="space-y-1.5 mt-3">
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Addresses</p>
-                                        {lead.addresses.map((a: any, i: number) => (
+                                        {lead.addresses.map((a: { street: string; city: string; postalCode?: string; country: string }, i: number) => (
                                             <div key={i} className="flex items-start gap-2 text-sm">
                                                 <MapPin className="size-3 text-muted-foreground mt-0.5" />
                                                 <span>{a.street}, {a.city}{a.postalCode ? ` ${a.postalCode}` : ""}, {a.country}</span>
@@ -1268,7 +1326,7 @@ function LeadDetailDialog({ leadId, onClose }: {
                                 {lead.socialMedia?.length > 0 && (
                                     <div className="space-y-1.5 mt-3">
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Social Media</p>
-                                        {lead.socialMedia.map((s: any, i: number) => (
+                                        {lead.socialMedia.map((s: { url: string; platform: string; followers?: number }, i: number) => (
                                             <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300">
                                                 <ExternalLink className="size-3" />
                                                 {s.platform}
@@ -1413,7 +1471,7 @@ function ScoreBreakdown({ score, breakdown, tier }: {
 
 function DetailSection({ title, icon: Icon, children }: {
     title: string
-    icon: any
+    icon: LucideIcon
     children: React.ReactNode
 }) {
     return (
