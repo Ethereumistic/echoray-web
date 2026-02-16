@@ -185,3 +185,43 @@ export const commitFileToGitHub = async (
 
     return response.data.commit.sha!;
 };
+
+/**
+ * Ensure a CMS-specific GitHub repo exists (e.g., "work")
+ * Idempotent — safe to call on every upload.
+ * Does NOT use the repos table; CMS repos are hardcoded.
+ */
+export const ensureCmsRepo = internalAction({
+    args: {
+        repoName: v.string(), // e.g. "work"
+    },
+    handler: async (_ctx, args) => {
+        const token = process.env.GITHUB_BOT_TOKEN;
+        if (!token) throw new Error("GITHUB_BOT_TOKEN is not set");
+
+        const octokit = new Octokit({ auth: token });
+
+        // Check if repo already exists
+        try {
+            await octokit.repos.get({
+                owner: "echoray-io",
+                repo: args.repoName,
+            });
+            // Repo exists, nothing to do
+            return;
+        } catch (error: any) {
+            if (error.status !== 404) throw error;
+        }
+
+        // Create the repo
+        await octokit.repos.createForAuthenticatedUser({
+            name: args.repoName,
+            description: `CMS assets for ${args.repoName}`,
+            private: false,
+            auto_init: true,
+        });
+
+        // Wait for GitHub to initialize
+        await new Promise(resolve => setTimeout(resolve, 2000));
+    },
+});

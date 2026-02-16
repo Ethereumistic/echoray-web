@@ -8,9 +8,11 @@ import { query } from "./_generated/server";
 export const getPublishedProjects = query({
     args: {},
     handler: async (ctx) => {
-        return await ctx.db
+        const projects = await ctx.db
             .query("workProjects")
             .withIndex("by_isPublished", (q) => q.eq("isPublished", true))
             .collect();
+        // Sort by display order set in CMS
+        return projects.sort((a, b) => a.order - b.order);
     },
 });

@@ -329,6 +329,7 @@ export default defineSchema({
 
     // Work Portfolio Projects
     workProjects: defineTable({
+        // ── Public fields (visible on /work) ──
         title: v.string(),
         slug: v.string(),
         link: v.string(),
@@ -340,6 +341,43 @@ export default defineSchema({
         status: v.union(v.literal("completed"), v.literal("ongoing")),
         isPublished: v.boolean(),
         order: v.number(),
+
+        // ── Media fields ──
+        ogImage: v.optional(v.string()),
+        phoneMockup: v.optional(v.string()),
+
+        // ── Internal: Client ──
+        clientName: v.optional(v.string()),
+        clientPhone: v.optional(v.string()),
+        clientEmail: v.optional(v.string()),
+        clientSocials: v.optional(v.array(v.object({
+            platform: v.string(),
+            url: v.string(),
+        }))),
+
+        // ── Internal: Infrastructure ──
+        domain: v.optional(v.string()),
+        domainProvider: v.optional(v.string()),
+        domainPrice: v.optional(v.number()),        // yearly, empty = free
+        dnsProvider: v.optional(v.string()),
+        dnsSameAsDomain: v.optional(v.boolean()),
+        domainExpiryDate: v.optional(v.number()),
+        vpsProvider: v.optional(v.string()),
+        vpsPrice: v.optional(v.number()),            // yearly, empty = free
+        vpsExpiryDate: v.optional(v.number()),
+        githubRepoUrl: v.optional(v.string()),
+        subscriptionTier: v.optional(v.string()),
+        internalNotes: v.optional(v.string()),
+
+        // ── Internal: Contract & Timeline ──
+        contractStartDate: v.optional(v.number()),
+        contractEndDate: v.optional(v.number()),
+        startDate: v.optional(v.number()),
+        deadline: v.optional(v.number()),
+        completedDate: v.optional(v.number()),
+        launchDate: v.optional(v.number()),
+
+        // ── Meta ──
         createdAt: v.number(),
         updatedAt: v.number(),
     })

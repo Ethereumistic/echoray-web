@@ -156,3 +156,98 @@ export async function uploadToGitHubWithRetry(
 
     throw lastError || new Error("Upload failed after retries");
 }
+
+/**
+ * Options for deleting a file from GitHub
+ */
+export interface GitHubDeleteOptions {
+    owner: string;
+    repo: string;
+    branch: string;
+    path: string;
+    token: string;
+}
+
+/**
+ * Deletes a file from GitHub.
+ * @param options - Delete configuration
+ */
+export async function deleteFromGitHub(options: GitHubDeleteOptions): Promise<void> {
+    const url = `https://api.github.com/repos/${options.owner}/${options.repo}/contents/${options.path}`;
+
+    // 1. Get file SHA (required for deletion)
+    const checkResponse = await fetch(url, {
+        headers: {
+            Authorization: `Bearer ${options.token}`,
+            Accept: "application/vnd.github.v3+json",
+        },
+    });
+
+    if (!checkResponse.ok) {
+        if (checkResponse.status === 404) {
+            // File doesn't exist, nothing to delete
+            return;
+        }
+        throw new Error(`Failed to check file: ${checkResponse.status}`);
+    }
+
+    const fileData = (await checkResponse.json()) as { sha: string };
+
+    // 2. Delete the file
+    const deleteResponse = await fetch(url, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${options.token}`,
+            Accept: "application/vnd.github.v3+json",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            message: `CMS: Delete ${options.path}`,
+            sha: fileData.sha,
+            branch: options.branch,
+        }),
+    });
+
+    if (!deleteResponse.ok) {
+        const error = (await deleteResponse.json().catch(() => ({ message: "Unknown error" }))) as { message?: string };
+        throw new Error(error.message || `GitHub delete failed with status ${deleteResponse.status}`);
+    }
+}
+
+/**
+ * Options for creating a Git tag
+ */
+export interface CreateGitTagOptions {
+    owner: string;
+    repo: string;
+    token: string;
+    tagName: string;
+    commitSha: string; // SHA of the commit to tag — use the one returned by uploadToGitHub
+}
+
+/**
+ * Creates a lightweight Git tag pointing to a specific commit.
+ * Used for immutable CDN URLs: @v{tag} instead of @main bypasses jsDelivr cache.
+ *
+ * @param options - Tag configuration (must include the exact commit SHA to tag)
+ */
+export async function createGitTag(options: CreateGitTagOptions): Promise<void> {
+    const refUrl = `https://api.github.com/repos/${options.owner}/${options.repo}/git/refs`;
+    const refRes = await fetch(refUrl, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${options.token}`,
+            Accept: "application/vnd.github.v3+json",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            ref: `refs/tags/${options.tagName}`,
+            sha: options.commitSha,
+        }),
+    });
+
+    if (!refRes.ok) {
+        const error = (await refRes.json().catch(() => ({ message: "Unknown error" }))) as { message?: string };
+        throw new Error(error.message || `Failed to create tag: ${refRes.status}`);
+    }
+}
