@@ -11,6 +11,7 @@
 import type * as ResendOTP from "../ResendOTP.js";
 import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
+import type * as cms from "../cms.js";
 import type * as debug from "../debug.js";
 import type * as emails from "../emails.js";
 import type * as github from "../github.js";
@@ -26,6 +27,7 @@ import type * as roles from "../roles.js";
 import type * as seed from "../seed.js";
 import type * as uploads from "../uploads.js";
 import type * as users from "../users.js";
+import type * as work from "../work.js";
 
 import type {
   ApiFromModules,
@@ -37,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   ResendOTP: typeof ResendOTP;
   admin: typeof admin;
   auth: typeof auth;
+  cms: typeof cms;
   debug: typeof debug;
   emails: typeof emails;
   github: typeof github;
@@ -52,6 +55,7 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   uploads: typeof uploads;
   users: typeof users;
+  work: typeof work;
 }>;
 
 /**

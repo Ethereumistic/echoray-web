@@ -324,6 +324,30 @@ export default defineSchema({
         .index("by_status", ["status"]),
 
     // ========================================
+    // CMS CONTENT TABLES
+    // ========================================
+
+    // Work Portfolio Projects
+    workProjects: defineTable({
+        title: v.string(),
+        slug: v.string(),
+        link: v.string(),
+        thumbnail: v.string(),
+        tagline: v.optional(v.string()),
+        description: v.optional(v.string()),
+        projectType: v.optional(v.string()),
+        techStack: v.optional(v.array(v.string())),
+        status: v.union(v.literal("completed"), v.literal("ongoing")),
+        isPublished: v.boolean(),
+        order: v.number(),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index("by_slug", ["slug"])
+        .index("by_isPublished", ["isPublished"])
+        .index("by_order", ["order"]),
+
+    // ========================================
     // MAPPER MICRO-APP TABLES
     // ========================================
 

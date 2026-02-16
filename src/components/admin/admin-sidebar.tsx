@@ -12,6 +12,7 @@ import {
     LogOut,
     ChevronRight,
     Terminal,
+    FileText,
 } from "lucide-react"
 
 import {
@@ -32,6 +33,7 @@ import { useAuthActions } from "@convex-dev/auth/react"
 
 const adminNavItems = [
     { title: "Overview", href: "/admin", icon: LayoutDashboard },
+    { title: "Content CMS", href: "/admin/cms", icon: FileText },
     { title: "Subscription Tiers", href: "/admin/tiers", icon: CreditCard },
     { title: "Bitwise Permissions", href: "/admin/permissions", icon: Shield },
     { title: "Audit Logs", href: "/admin/logs", icon: History },
