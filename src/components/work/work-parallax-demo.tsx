@@ -36,7 +36,7 @@ export const products = [
         title: "Unseen",
         link: "https://unseen.bg",
         thumbnail:
-            "https://www.aceternity.com/images/products/thumbnails/new/renderwork.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/echoray-default-book.png",
     },
     {
         title: "Unseen",
@@ -67,7 +67,7 @@ export const products = [
         title: "Unseen",
         link: "unseen.bg",
         thumbnail:
-            "https://www.aceternity.com/images/products/thumbnails/new/renderwork.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/echoray-accent-book.png",
     },
     {
         title: "Renderwork Studio",
@@ -98,6 +98,6 @@ export const products = [
         title: "Unseen",
         link: "unseen.bg",
         thumbnail:
-            "https://www.aceternity.com/images/products/thumbnails/new/renderwork.png",
+            "https://cdn.jsdelivr.net/gh/Ethereumistic/echo-ray-assets/mock/sq/en/echoray-default.png",
     },
 ];
