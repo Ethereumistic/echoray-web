@@ -35,6 +35,9 @@ import {
     Bug,
     Trash2,
 } from "lucide-react"
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyArray = any[]
 import {
     Table,
     TableBody,
@@ -118,6 +121,10 @@ interface FormData {
     city: string
     requestedLeadCount: number
     model: string
+}
+
+type FormDataString = {
+    [K in keyof FormData]: K extends "requestedLeadCount" ? string : FormData[K]
 }
 
 interface ErrorState {
@@ -302,17 +309,17 @@ export default function LeadAIPage() {
         }
     }
 
-    const handleResearch = (search: Record<string, unknown>) => {
+    const handleResearch = (search: LeadAISearch) => {
         setFormData({
-            industry: String(search.industry || ""),
-            niche: String(search.niche || ""),
-            websiteType: String(search.websiteType || "any"),
-            country: String(search.country || "Bulgaria"),
-            city: String(search.city || ""),
-            requestedLeadCount: String(search.requestedLeadCount || 10),
-            model: String(search.aiModel || "arcee-ai/trinity-large-preview:free"),
+            industry: search.industry,
+            niche: search.niche || "",
+            websiteType: search.websiteType,
+            country: search.country,
+            city: search.city || "",
+            requestedLeadCount: search.requestedLeadCount,
+            model: search.aiModel || "arcee-ai/trinity-large-preview:free",
         })
-        setAppendToSearchId(search._id as Id<"leadai_searches">)  // Mark as append mode
+        setAppendToSearchId(search._id)
         setIsSearchFormOpen(true)
         window.scrollTo({ top: 0, behavior: "smooth" })
     }
@@ -462,7 +469,7 @@ export default function LeadAIPage() {
                     <EmptyState />
                 ) : (
                     <div className="space-y-3">
-                        {searches.map((search: Record<string, unknown>, i: number) => (
+                        {searches.map((search: LeadAISearch, i: number) => (
                             <SearchRow
                                 key={search._id}
                                 search={search}
@@ -525,8 +532,8 @@ function StatCard({ icon: Icon, label, value, suffix, color, delay }: {
 // ── Search Form ──────────────────────────────────────────────────
 
 function SearchForm({ formData, setFormData, onSubmit, isSearching, onClose, appendMode }: {
-    formData: Record<string, string>
-    setFormData: (data: Record<string, string>) => void
+    formData: FormData
+    setFormData: (data: FormData) => void
     onSubmit: () => void
     isSearching: boolean
     onClose: () => void
@@ -715,7 +722,7 @@ function SearchForm({ formData, setFormData, onSubmit, isSearching, onClose, app
 // ── Error Banner ─────────────────────────────────────────────────
 
 function ErrorBanner({ error, onRetry, onDismiss, isRetrying }: {
-    error: { message: string; details: string[]; params: Record<string, string> }
+    error: { message: string; details: string[]; params: FormData }
     onRetry: () => void
     onDismiss: () => void
     isRetrying: boolean
@@ -890,7 +897,7 @@ function ActiveSearchProgress({ searchId, onDismiss }: {
 // ── Search Row (expandable) ──────────────────────────────────────
 
 function SearchRow({ search, index, filterPriority, onSelectLead, onDelete, onResearch, isDeleting }: {
-    search: Record<string, unknown>
+    search: LeadAISearch
     index: number
     filterPriority: string
     onSelectLead: (id: Id<"leadai_leads">) => void
@@ -906,11 +913,12 @@ function SearchRow({ search, index, filterPriority, onSelectLead, onDelete, onRe
     )
 
     const statusCfg = SEARCH_STATUS_CONFIG[search.status as SearchStatus]
-    const StatusIcon = statusCfg.icon
 
-    const filteredLeads = leads?.filter((l: Record<string, unknown>) =>
+    const filteredLeads = leads?.filter((l: LeadAILead) =>
         filterPriority === "all" || l.priorityTier === filterPriority
     )
+
+    const StatusIcon = statusCfg.icon
 
     return (
         <motion.div
@@ -1033,7 +1041,7 @@ function SearchRow({ search, index, filterPriority, onSelectLead, onDelete, onRe
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {filteredLeads.map((lead: Record<string, unknown>) => (
+                                        {filteredLeads.map((lead: LeadAILead) => (
                                             <LeadRow
                                                 key={lead._id}
                                                 lead={lead}
@@ -1045,7 +1053,7 @@ function SearchRow({ search, index, filterPriority, onSelectLead, onDelete, onRe
                             </div>
                         ) : (
                             <div className="p-6 text-center text-sm text-muted-foreground space-y-1">
-                                {search.status === "failed" && search.errorLog?.length > 0 ? (
+                                {search.status === "failed" && search.errorLog && search.errorLog.length > 0 ? (
                                     <>
                                         <p className="text-red-400">Search failed: {search.errorLog[0]?.replace("Pipeline error: ", "")}</p>
                                         <p className="text-xs text-zinc-500">Try re-searching with a different model or broader criteria</p>
@@ -1069,9 +1077,9 @@ function SearchRow({ search, index, filterPriority, onSelectLead, onDelete, onRe
 
 // ── Lead Table Row ───────────────────────────────────────────────
 
-function LeadRow({ lead, onClick }: { lead: Record<string, unknown>; onClick: () => void }) {
-    const priorityCfg = PRIORITY_CONFIG[lead.priorityTier as PriorityTier]
-    const statusCfg = STATUS_CONFIG[lead.status as LeadStatus]
+function LeadRow({ lead, onClick }: { lead: LeadAILead; onClick: () => void }) {
+    const priorityCfg = PRIORITY_CONFIG[lead.priorityTier]
+    const statusCfg = STATUS_CONFIG[lead.status]
 
     const scoreColor =
         lead.viabilityScore >= 80 ? "text-orange-400" :

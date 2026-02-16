@@ -67,7 +67,7 @@ export default function WorkDetailPage() {
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight mb-2">Project not found</h1>
-                        <p className="text-muted-foreground">This project doesn't exist or isn't published yet.</p>
+                        <p className="text-muted-foreground">This project doesn&apos;t exist or isn&apos;t published yet.</p>
                     </div>
                     <Button variant="outline" onClick={() => router.push("/work")} className="gap-2">
                         <ArrowLeft className="size-4" /> Back to Work
