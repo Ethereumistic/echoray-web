@@ -9,6 +9,7 @@ export function WorkParallaxDemo() {
 
     const products = projects?.map((p) => ({
         title: p.title,
+        slug: p.slug,
         link: p.link,
         thumbnail: p.thumbnail,
     })) ?? [];
