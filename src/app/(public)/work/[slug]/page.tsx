@@ -257,8 +257,8 @@ export default function WorkDetailPage() {
                             </TabsTrigger>
                         </TabsList>
 
-                        <div className="w-[500px] h-[580px] relative">
-                            <TabsContent value="sq" className="absolute inset-0 m-0 focus-visible:outline-none data-[state=inactive]:hidden">
+                        <div className="w-[600px] h-[580px] relative">
+                            <TabsContent value="sq" className="absolute inset-0 m-0 flex items-start justify-center focus-visible:outline-none data-[state=inactive]:hidden">
                                 {project.thumbnail ? (
                                     <div className="relative">
                                         <div className="absolute -inset-4 bg-primary/10 rounded-3xl blur-2xl opacity-30" />
@@ -277,7 +277,7 @@ export default function WorkDetailPage() {
                                 )}
                             </TabsContent>
 
-                            <TabsContent value="16:9" className="absolute inset-0 m-0 focus-visible:outline-none data-[state=inactive]:hidden">
+                            <TabsContent value="16:9" className="absolute inset-0 m-0 flex items-start justify-center focus-visible:outline-none data-[state=inactive]:hidden">
                                 {project.ogImage ? (
                                     <div className="relative">
                                         <div className="absolute -inset-4 bg-primary/10 rounded-3xl blur-2xl opacity-30" />
@@ -296,7 +296,7 @@ export default function WorkDetailPage() {
                                 )}
                             </TabsContent>
 
-                            <TabsContent value="mobile" className="absolute inset-0 m-0 focus-visible:outline-none data-[state=inactive]:hidden">
+                            <TabsContent value="mobile" className="absolute inset-0 m-0 flex items-start justify-center focus-visible:outline-none data-[state=inactive]:hidden">
                                 {project.phoneMockup ? (
                                     <PhoneMock imageSrc={project.phoneMockup} alt={`${project.title} mobile preview`} />
                                 ) : (
