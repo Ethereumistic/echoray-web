@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { Check, ArrowRight, Star, X, Sparkles, Crown, Zap } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@echoray/ui/components/ui/button"
 import Link from "next/link"
 import { useState, useRef, useEffect } from "react"
 

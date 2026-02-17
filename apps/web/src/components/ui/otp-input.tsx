@@ -1,6 +1,6 @@
 'use client'
 
-import { cn } from '@/lib/utils'
+import { cn } from "@echoray/ui/lib/utils"
 import { useRef, KeyboardEvent, ClipboardEvent, ChangeEvent } from 'react'
 
 interface OTPInputProps {

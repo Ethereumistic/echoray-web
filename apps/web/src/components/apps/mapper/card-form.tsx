@@ -3,8 +3,8 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@echoray/ui/components/ui/card";
+import { Button } from "@echoray/ui/components/ui/button";
 import { FieldInput } from "./field-types/field-input";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";

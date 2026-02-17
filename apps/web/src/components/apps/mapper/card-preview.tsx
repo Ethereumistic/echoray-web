@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@echoray/ui/components/ui/card";
 import { FIELD_ICONS, type FieldDefinition } from "@/lib/mapper";
 import { Eye } from "lucide-react";
 

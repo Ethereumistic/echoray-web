@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useQuery, useMutation, useConvexAuth } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { cn } from "@/lib/utils"
+import { cn } from "@echoray/ui/lib/utils"
 import { PERMISSION_BITS } from "@/types/permissions"
 
 /**

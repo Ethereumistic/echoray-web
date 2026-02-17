@@ -5,14 +5,14 @@ import { useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import type { Id } from "../../../convex/_generated/dataModel"
 import { useAuthStore } from "@/stores/auth-store"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@echoray/ui/components/ui/button"
+import { Input } from "@echoray/ui/components/ui/input"
+import { Textarea } from "@echoray/ui/components/ui/textarea"
+import { Label } from "@echoray/ui/components/ui/label"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@echoray/ui/components/ui/card"
 import { toast } from "sonner"
 import { Loader2, Save, AlertTriangle, Trash2, LogOut } from "lucide-react"
-import { organizationSchema, type OrganizationFormValues } from "@/lib/validations"
+import { organizationSchema, type OrganizationFormValues } from "@echoray/utils/validations"
 import { useRouter } from "next/navigation"
 import {
     AlertDialog,
@@ -23,7 +23,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@echoray/ui/components/ui/alert-dialog"
 
 /**
  * Form to manage the current active organization's settings.

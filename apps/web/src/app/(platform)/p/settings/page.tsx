@@ -1,10 +1,10 @@
 "use client"
 
 import { DashboardHeader } from '@/components/dashboard/header'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@echoray/ui/components/ui/card'
 import { UpdateProfileForm } from '@/components/auth/update-profile-form'
 import { SettingsPasswordForm } from '@/components/auth/settings-password-form'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@echoray/ui/components/ui/tabs'
 import { useAuthStore } from '@/stores/auth-store'
 import { OrgSettingsForm } from '@/components/dashboard/org-settings-form'
 import { MembersList } from '@/components/dashboard/members-list'

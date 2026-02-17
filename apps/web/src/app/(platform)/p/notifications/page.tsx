@@ -1,7 +1,7 @@
 "use client"
 
 import { DashboardHeader } from "@/components/dashboard/header"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@echoray/ui/components/ui/card"
 import { Bell } from "lucide-react"
 
 export default function PersonalNotificationsPage() {

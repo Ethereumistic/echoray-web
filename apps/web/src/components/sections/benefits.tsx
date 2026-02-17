@@ -3,9 +3,9 @@
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { TrendingUp, Users, Clock, Shield, LineChart as LineChartIcon, Headphones, Search, X, Send, ChevronLeft, ChevronRight } from "lucide-react"
 import { useEffect, useRef, useState, useCallback } from "react"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { Badge } from "@echoray/ui/components/ui/badge"
+import { ScrollArea } from "@echoray/ui/components/ui/scroll-area"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@echoray/ui/components/ui/chart"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart } from "recharts"
 
 // Animated Counter Component - smoothly counts up to target

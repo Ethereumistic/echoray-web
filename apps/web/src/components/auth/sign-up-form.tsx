@@ -1,18 +1,18 @@
 'use client'
 
-import { cn } from '@/lib/utils'
+import { cn } from "@echoray/ui/lib/utils"
 import { useAuthActions } from "@convex-dev/auth/react"
-import { Button } from '@/components/ui/button'
+import { Button } from '@echoray/ui/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { OTPInput } from '@/components/ui/otp-input'
+} from '@echoray/ui/components/ui/card'
+import { Input } from '@echoray/ui/components/ui/input'
+import { Label } from '@echoray/ui/components/ui/label'
+import { OTPInput } from '@echoray/ui/components/ui/otp-input'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'

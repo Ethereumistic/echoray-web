@@ -3,13 +3,13 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@echoray/ui/components/ui/card";
+import { Button } from "@echoray/ui/components/ui/button";
 import { FieldDisplay } from "../field-types/field-display";
 import { FieldInput } from "../field-types/field-input";
 import { Save, X, Database, Edit2, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@echoray/ui/components/ui/scroll-area";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 

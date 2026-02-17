@@ -14,7 +14,7 @@ import {
     FileText,
     ArrowRight
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn } from "@echoray/ui/lib/utils"
 // import { formatDistanceToNow } from "date-fns"
 
 export default function AdminLogsPage() {

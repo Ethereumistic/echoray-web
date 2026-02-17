@@ -3,7 +3,7 @@ import { CheckIcon, ChevronsUpDown } from "lucide-react";
 import * as RPNInput from "react-phone-number-input";
 import flags from "react-phone-number-input/flags";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@echoray/ui/components/ui/button";
 import {
     Command,
     CommandEmpty,
@@ -11,15 +11,15 @@ import {
     CommandInput,
     CommandItem,
     CommandList,
-} from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
+} from "@echoray/ui/components/ui/command";
+import { Input } from "@echoray/ui/components/ui/input";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+} from "@echoray/ui/components/ui/popover";
+import { ScrollArea } from "@echoray/ui/components/ui/scroll-area";
+import { cn } from "@echoray/ui/lib/utils";
 
 type PhoneInputProps = Omit<
     React.ComponentProps<"input">,
@@ -121,7 +121,7 @@ const CountrySelect = ({
                 <Command>
                     <CommandInput
                         value={searchValue}
-                        onValueChange={(value) => {
+                        onValueChange={(value: string) => {
                             setSearchValue(value);
                             setTimeout(() => {
                                 if (scrollAreaRef.current) {

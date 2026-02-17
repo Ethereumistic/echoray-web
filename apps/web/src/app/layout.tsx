@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import { ConvexClientProvider } from "@/lib/convex";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@echoray/ui/components/ui/sonner";
 import { PermissionDebugger } from "@/components/debug/permission-debugger";
 
 export default function RootLayout({

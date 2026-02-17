@@ -1,8 +1,8 @@
 "use client"
 
 import { DashboardHeader } from '@/components/dashboard/header'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@echoray/ui/components/ui/card'
+import { Badge } from '@echoray/ui/components/ui/badge'
 import { useScopeContext } from '@/contexts/scope-context'
 import {
     CloudUpload,
@@ -20,7 +20,7 @@ import {
     type LucideIcon
 } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { cn } from "@echoray/ui/lib/utils"
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/stores/auth-store'
 

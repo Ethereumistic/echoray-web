@@ -1,16 +1,16 @@
 'use client'
 
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { cn } from "@echoray/ui/lib/utils"
+import { Button } from '@echoray/ui/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '@echoray/ui/components/ui/card'
+import { Input } from '@echoray/ui/components/ui/input'
+import { Label } from '@echoray/ui/components/ui/label'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'

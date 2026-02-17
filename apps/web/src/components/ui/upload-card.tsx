@@ -3,10 +3,10 @@
 import { useCallback, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Upload, X, File, FileText, Image, Video, FileArchive, Check, Edit2 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { cn } from "@echoray/ui/lib/utils"
+import { Input } from "@echoray/ui/components/ui/input"
+import { Tabs, TabsList, TabsTrigger } from "@echoray/ui/components/ui/tabs"
+import { ScrollArea } from "@echoray/ui/components/ui/scroll-area"
 import { Button } from "./button"
 
 export interface UploadFile {

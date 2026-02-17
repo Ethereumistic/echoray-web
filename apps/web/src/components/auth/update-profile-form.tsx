@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { useMutation } from 'convex/react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button } from '@echoray/ui/components/ui/button'
+import { Input } from '@echoray/ui/components/ui/input'
+import { Label } from '@echoray/ui/components/ui/label'
 import { useAuthStore } from '@/stores/auth-store'
 import { api } from '../../../convex/_generated/api'
 import { toast } from 'sonner'

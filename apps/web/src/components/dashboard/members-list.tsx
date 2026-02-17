@@ -10,7 +10,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table"
+} from "@echoray/ui/components/ui/table"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -18,10 +18,10 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+} from "@echoray/ui/components/ui/dropdown-menu"
+import { Button } from "@echoray/ui/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@echoray/ui/components/ui/avatar"
+import { Badge } from "@echoray/ui/components/ui/badge"
 import { MoreHorizontal, Shield, UserMinus, ShieldAlert, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuthStore } from "@/stores/auth-store"

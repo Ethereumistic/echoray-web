@@ -1,13 +1,13 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@echoray/ui/components/ui/dialog";
+import { Input } from "@echoray/ui/components/ui/input";
+import { Button } from "@echoray/ui/components/ui/button";
 import { useState } from "react";
 import { FIELD_METADATA, FIELD_ICONS, type FieldType, getAllCategories } from "@/lib/mapper";
 import { Search } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { ScrollArea } from "@echoray/ui/components/ui/scroll-area";
+import { cn } from "@echoray/ui/lib/utils";
 
 interface FieldTypeSelectorProps {
     onSelect: (fieldType: FieldType) => void;

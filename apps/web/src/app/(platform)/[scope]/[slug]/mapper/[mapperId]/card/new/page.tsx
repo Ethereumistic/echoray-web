@@ -1,7 +1,7 @@
 import { CardForm } from "@/components/apps/mapper/card-form";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@echoray/ui/components/ui/button";
 
 export default async function NewCardPage({
     params,

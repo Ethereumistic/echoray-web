@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@echoray/ui/components/ui/button";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@echoray/ui/components/ui/popover";
 
 const ICON_OPTIONS = [
     "📊", "📈", "📉", "🗂️", "📁", "📂", "🗃️", "📋", "📝",

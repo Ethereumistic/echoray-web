@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
+import { Button } from "@echoray/ui/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import { HeroBackground } from "@/components/sections/hero-background"
 import { HeroLogoMarquee } from "@/components/sections/logo-cloud"

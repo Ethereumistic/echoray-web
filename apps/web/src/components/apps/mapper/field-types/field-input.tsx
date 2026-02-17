@@ -1,14 +1,14 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@echoray/ui/components/ui/input";
+import { Textarea } from "@echoray/ui/components/ui/textarea";
+import { Checkbox } from "@echoray/ui/components/ui/checkbox";
+import { Label } from "@echoray/ui/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@echoray/ui/components/ui/select";
 import { CURRENCIES } from "@/lib/mapper/currencies";
 import { stripProtocol } from "@/lib/mapper/utils";
 import type { FieldConfig } from "@/lib/mapper/field-types";
-import { cn } from "@/lib/utils";
+import { cn } from "@echoray/ui/lib/utils";
 
 interface FieldInputProps {
     fieldId: string;

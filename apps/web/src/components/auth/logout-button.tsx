@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuthActions } from "@convex-dev/auth/react"
-import { Button } from '@/components/ui/button'
+import { Button } from '@echoray/ui/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth-store'
 

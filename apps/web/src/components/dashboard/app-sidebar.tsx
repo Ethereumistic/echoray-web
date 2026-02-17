@@ -40,8 +40,8 @@ import {
     SidebarMenuSubButton,
     SidebarMenuAction,
     useSidebar,
-} from "@/components/ui/sidebar"
-import { cn } from "@/lib/utils"
+} from "@echoray/ui/components/ui/sidebar"
+import { cn } from "@echoray/ui/lib/utils"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -49,18 +49,18 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
     DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu"
+} from "@echoray/ui/components/ui/dropdown-menu"
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@echoray/ui/components/ui/popover"
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@echoray/ui/components/ui/collapsible"
+import { Avatar, AvatarFallback, AvatarImage } from "@echoray/ui/components/ui/avatar"
 import { useAuthStore, Organization, UserProfile, WorkspaceContext } from "@/stores/auth-store"
 import { useAuthActions } from "@convex-dev/auth/react"
 import { useRouter } from "next/navigation"

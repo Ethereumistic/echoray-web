@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useQuery, useMutation, useAction } from "convex/react"
 import { api } from "../../../../../convex/_generated/api"
 import type { Id } from "../../../../../convex/_generated/dataModel"
-import { cn } from "@/lib/utils"
+import { cn } from "@echoray/ui/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import {
     Sparkles,
@@ -45,25 +45,25 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table"
+} from "@echoray/ui/components/ui/table"
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog"
+} from "@echoray/ui/components/ui/dialog"
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
+} from "@echoray/ui/components/ui/select"
+import { Badge } from "@echoray/ui/components/ui/badge"
+import { Skeleton } from "@echoray/ui/components/ui/skeleton"
+import { Input } from "@echoray/ui/components/ui/input"
+import { Label } from "@echoray/ui/components/ui/label"
+import { Separator } from "@echoray/ui/components/ui/separator"
 
 // ── Types ────────────────────────────────────────────────────────
 

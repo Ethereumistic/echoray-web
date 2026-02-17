@@ -1,7 +1,7 @@
 import { TemplateBuilder } from "@/components/apps/mapper/template-builder";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@echoray/ui/components/ui/button";
 import { Suspense } from "react";
 
 export default async function TemplateBuilderPage({

@@ -1,11 +1,11 @@
 "use client"
 
 import { motion, animate } from "framer-motion"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@echoray/ui/components/ui/accordion"
 import { MessageCircle, ArrowRight, HelpCircle, Phone, Mail, Copy } from "lucide-react"
 import { useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
+import { Button } from "@echoray/ui/components/ui/button"
+import { ButtonGroup } from "@echoray/ui/components/ui/button-group"
 import { toast } from "sonner"
 
 // Customize your scroll settings here

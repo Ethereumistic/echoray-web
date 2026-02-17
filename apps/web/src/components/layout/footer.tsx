@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@echoray/ui/components/ui/separator"
 
 export function Footer() {
     return (

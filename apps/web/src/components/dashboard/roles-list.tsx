@@ -11,9 +11,9 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+} from "@echoray/ui/components/ui/table"
+import { Button } from "@echoray/ui/components/ui/button"
+import { Badge } from "@echoray/ui/components/ui/badge"
 import { Loader2, Shield, Plus, MoreHorizontal, Check, Edit2 } from "lucide-react"
 import { toast } from "sonner"
 import { PermissionGuard } from "./permission-guard"
@@ -24,7 +24,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@echoray/ui/components/ui/dropdown-menu"
 
 /**
  * RolesList component allows managing organization-wide roles.

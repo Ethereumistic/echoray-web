@@ -3,11 +3,11 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@echoray/ui/components/ui/dialog";
+import { Button } from "@echoray/ui/components/ui/button";
+import { Input } from "@echoray/ui/components/ui/input";
+import { Label } from "@echoray/ui/components/ui/label";
+import { Switch } from "@echoray/ui/components/ui/switch";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";

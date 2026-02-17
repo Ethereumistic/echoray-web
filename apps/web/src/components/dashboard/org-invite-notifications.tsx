@@ -19,13 +19,13 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+} from "@echoray/ui/components/ui/dropdown-menu"
+import { Button } from "@echoray/ui/components/ui/button"
+import { Badge } from "@echoray/ui/components/ui/badge"
 import { toast } from "sonner"
 import { formatDistanceToNow } from "date-fns"
 import { useState } from "react"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea } from "@echoray/ui/components/ui/scroll-area"
 
 /**
  * OrgInviteNotifications displays pending organization invitations 

@@ -1,7 +1,7 @@
 "use client"
 
 import { DashboardHeader } from '@/components/dashboard/header'
-import { Button } from '@/components/ui/button'
+import { Button } from '@echoray/ui/components/ui/button'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useScopeContext } from '@/contexts/scope-context'
@@ -9,7 +9,7 @@ import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../../../../../convex/_generated/api'
 import { Id } from '../../../../../../convex/_generated/dataModel'
 import { UploadInterface } from '@/components/upload/upload-interface'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@echoray/ui/components/ui/card'
 import { useEffect } from 'react'
 
 /**

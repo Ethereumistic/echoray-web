@@ -13,12 +13,12 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+} from "@echoray/ui/components/ui/dialog"
+import { Button } from "@echoray/ui/components/ui/button"
+import { Checkbox } from "@echoray/ui/components/ui/checkbox"
 import { Shield, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@echoray/ui/components/ui/badge"
 import { Role, MemberWithRoles } from "@/types/permissions"
 import {
     AlertDialog,
@@ -29,9 +29,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@echoray/ui/components/ui/alert-dialog"
+import { Input } from "@echoray/ui/components/ui/input"
+import { Label } from "@echoray/ui/components/ui/label"
 import { AlertTriangle, Crown } from "lucide-react"
 
 interface MemberRolesDialogProps {

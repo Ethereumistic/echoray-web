@@ -1,8 +1,8 @@
 "use client"
 
 import { DashboardHeader } from '@/components/dashboard/header'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@echoray/ui/components/ui/card'
+import { Button } from '@echoray/ui/components/ui/button'
 import { Share2, ArrowLeft, Construction } from 'lucide-react'
 import Link from 'next/link'
 import { useScopeContext } from '@/contexts/scope-context'

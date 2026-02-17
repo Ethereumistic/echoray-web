@@ -3,8 +3,8 @@
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@echoray/ui/components/ui/card";
+import { Button } from "@echoray/ui/components/ui/button";
 import {
     MoreVertical,
     Archive,
@@ -19,7 +19,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
     DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+} from "@echoray/ui/components/ui/dropdown-menu";
 import Link from "next/link";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";

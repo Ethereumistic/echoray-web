@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MotionValue, motion, useScroll, useTransform } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn } from "@echoray/ui/lib/utils";
 import {
     Sun,
     ChevronRight,

@@ -13,20 +13,20 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@echoray/ui/components/ui/dialog"
+import { Button } from "@echoray/ui/components/ui/button"
+import { Input } from "@echoray/ui/components/ui/input"
+import { Label } from "@echoray/ui/components/ui/label"
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
+} from "@echoray/ui/components/ui/select"
 import { UserPlus, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { inviteMemberSchema, type InviteMemberFormValues } from "@/lib/validations"
+import { inviteMemberSchema, type InviteMemberFormValues } from "@echoray/utils/validations"
 
 interface InviteMemberDialogProps {
     onSuccess?: () => void

@@ -14,9 +14,9 @@ import {
     Terminal,
     Search,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { cn } from "@echoray/ui/lib/utils"
+import { Button } from "@echoray/ui/components/ui/button"
+import { Input } from "@echoray/ui/components/ui/input"
 import { PermissionEditor } from "@/components/admin/permission-editor"
 
 export default function PermissionsPage() {

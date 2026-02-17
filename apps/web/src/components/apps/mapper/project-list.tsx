@@ -5,7 +5,7 @@ import { api } from "@convex/_generated/api";
 import { MapperProjectCard } from "./project-card";
 import { Database } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@echoray/ui/components/ui/button";
 
 interface MapperProjectListProps {
     scope: string;

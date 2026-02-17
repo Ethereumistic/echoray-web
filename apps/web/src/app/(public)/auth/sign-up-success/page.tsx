@@ -4,7 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@echoray/ui/components/ui/card'
 
 export default function SignUpSuccessPage() {
   return (

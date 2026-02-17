@@ -9,16 +9,16 @@ import {
     Plus, Search, Trash2, ExternalLink, ArrowLeft, Briefcase,
     GripVertical, ChevronUp, ChevronDown, Eye, EyeOff
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@echoray/ui/components/ui/button"
+import { Input } from "@echoray/ui/components/ui/input"
+import { Badge } from "@echoray/ui/components/ui/badge"
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
+} from "@echoray/ui/components/ui/select"
 import {
     Dialog,
     DialogContent,
@@ -26,7 +26,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog"
+} from "@echoray/ui/components/ui/dialog"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"

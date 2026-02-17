@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { cn } from "@/lib/utils"
+import { cn } from "@echoray/ui/lib/utils"
 import { motion } from "framer-motion"
 
 const CDN_BASE = "https://cdn.jsdelivr.net/gh/Ethereumistic/echoray-cdn/partners/"

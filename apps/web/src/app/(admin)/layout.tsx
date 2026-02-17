@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { usePermissions } from "@/hooks/use-permissions"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarInset } from "@echoray/ui/components/ui/sidebar"
 import { OrgInitializer } from "@/components/dashboard/org-initializer"
 import { motion } from "framer-motion"
 

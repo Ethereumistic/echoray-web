@@ -3,7 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
+import { Button } from "@echoray/ui/components/ui/button";
 import { Plus, Settings, ChevronLeft, Search, X, Database, ListPlus } from "lucide-react";
 import Link from "next/link";
 import { TableView } from "./views/table-view";
@@ -11,8 +11,8 @@ import { GridView } from "./views/grid-view";
 import { ViewSwitcher } from "./view-switcher";
 import { useState } from "react";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import { Input } from "@echoray/ui/components/ui/input";
+import { Separator } from "@echoray/ui/components/ui/separator";
 
 interface ProjectViewProps {
     projectId: string;

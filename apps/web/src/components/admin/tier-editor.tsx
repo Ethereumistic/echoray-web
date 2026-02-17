@@ -11,18 +11,18 @@ import {
     Shield,
     Terminal,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@echoray/ui/lib/utils"
+import { Button } from "@echoray/ui/components/ui/button"
+import { Input } from "@echoray/ui/components/ui/input"
+import { Label } from "@echoray/ui/components/ui/label"
+import { Textarea } from "@echoray/ui/components/ui/textarea"
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogFooter,
-} from "@/components/ui/dialog"
+} from "@echoray/ui/components/ui/dialog"
 import { BitwisePermissionSelector } from "./bitwise-selector"
 import { toast } from "sonner"
 import type { Doc } from "../../../convex/_generated/dataModel"

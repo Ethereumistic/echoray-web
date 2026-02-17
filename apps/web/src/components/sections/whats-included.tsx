@@ -1,7 +1,7 @@
 "use client"
 
 import { Check, X } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@echoray/ui/components/ui/card"
 
 const included = [
   "Customized web design that brings results",

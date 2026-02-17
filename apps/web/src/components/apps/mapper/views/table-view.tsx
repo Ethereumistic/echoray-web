@@ -3,12 +3,12 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@echoray/ui/components/ui/table";
 import { FieldDisplay } from "../field-types/field-display";
 import { FieldInput } from "../field-types/field-input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Button } from "@echoray/ui/components/ui/button";
+import { Label } from "@echoray/ui/components/ui/label";
+import { Input } from "@echoray/ui/components/ui/input";
 import { Save, Database, Plus, ArrowUp, ArrowDown, GripVertical, ChevronRight, Trash2, ArrowUpDown, Check } from "lucide-react";
 import Link from "next/link";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { FieldType, FieldConfig } from "@/lib/mapper/field-types";
 import { FIELD_METADATA, FIELD_ICONS, getDefaultFieldConfig } from "@/lib/mapper";
-import { cn } from "@/lib/utils";
+import { cn } from "@echoray/ui/lib/utils";
 import { parseClipboardData, parseFieldValue, formatFieldValueForClipboard } from "@/lib/mapper/paste-utils";
 import {
     DndContext,
@@ -39,7 +39,7 @@ import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@echoray/ui/components/ui/popover";
 import {
     Command,
     CommandEmpty,
@@ -48,9 +48,9 @@ import {
     CommandItem,
     CommandList,
     CommandSeparator,
-} from "@/components/ui/command";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+} from "@echoray/ui/components/ui/command";
+import { ScrollArea } from "@echoray/ui/components/ui/scroll-area";
+import { Separator } from "@echoray/ui/components/ui/separator";
 import { FieldTypeSelector } from "../field-type-selector";
 interface TableViewProps {
     projectId: string;

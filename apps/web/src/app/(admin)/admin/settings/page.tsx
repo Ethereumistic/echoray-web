@@ -10,10 +10,10 @@ import {
     Zap,
     RefreshCcw
 } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
+import { Switch } from "@echoray/ui/components/ui/switch"
+import { Label } from "@echoray/ui/components/ui/label"
 import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { cn } from "@echoray/ui/lib/utils"
 
 export default function AdminSettingsPage() {
     const [settings, setSettings] = useState({

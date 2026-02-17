@@ -10,7 +10,7 @@ import {
     CreditCard,
     ChevronRight,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@echoray/ui/components/ui/button"
 import { TierEditor } from "@/components/admin/tier-editor"
 
 export default function TiersPage() {

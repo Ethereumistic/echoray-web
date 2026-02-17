@@ -3,9 +3,9 @@
 import { motion, useInView } from "framer-motion"
 import { MessageCircle, Palette, Code, Rocket, CheckCircle, type LucideIcon, Sparkles, Layers } from "lucide-react"
 import { useRef, useState, useEffect } from "react"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@echoray/ui/components/ui/badge"
 import { AnimatePresence } from "framer-motion"
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
+import { Carousel, CarouselContent, CarouselItem } from "@echoray/ui/components/ui/carousel"
 import Autoplay from "embla-carousel-autoplay"
 import { Hero3D } from "@/components/sections/hero-3d"
 

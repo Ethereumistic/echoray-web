@@ -26,9 +26,9 @@ import {
     SidebarMenuItem,
     SidebarRail,
     useSidebar,
-} from "@/components/ui/sidebar"
-import { cn } from "@/lib/utils"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@echoray/ui/components/ui/sidebar"
+import { cn } from "@echoray/ui/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "@echoray/ui/components/ui/avatar"
 import { useAuthStore } from "@/stores/auth-store"
 import { useAuthActions } from "@convex-dev/auth/react"
 

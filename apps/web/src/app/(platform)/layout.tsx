@@ -1,5 +1,5 @@
 import { AppSidebar } from '@/components/dashboard/app-sidebar'
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+import { SidebarProvider, SidebarInset } from '@echoray/ui/components/ui/sidebar'
 import { OrgInitializer } from '@/components/dashboard/org-initializer'
 
 /**

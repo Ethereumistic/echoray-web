@@ -6,11 +6,11 @@ import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@echoray/ui/components/ui/button";
+import { Input } from "@echoray/ui/components/ui/input";
+import { Textarea } from "@echoray/ui/components/ui/textarea";
+import { Label } from "@echoray/ui/components/ui/label";
+import { Card, CardContent, CardFooter, CardHeader } from "@echoray/ui/components/ui/card";
 import { IconPicker } from "./icon-picker";
 import { Loader2 } from "lucide-react";
 

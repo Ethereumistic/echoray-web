@@ -1,9 +1,9 @@
 'use client'
 
 import { Search, ChevronRight } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { SidebarTrigger } from '@/components/ui/sidebar'
-import { Separator } from '@/components/ui/separator'
+import { Input } from '@echoray/ui/components/ui/input'
+import { SidebarTrigger } from '@echoray/ui/components/ui/sidebar'
+import { Separator } from '@echoray/ui/components/ui/separator'
 import { OrgInviteNotifications } from './org-invite-notifications'
 import {
     Breadcrumb,
@@ -12,10 +12,10 @@ import {
     BreadcrumbList,
     BreadcrumbPage,
     BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+} from "@echoray/ui/components/ui/breadcrumb"
 import Link from 'next/link'
 import { useScopeContext } from '@/contexts/scope-context'
-import { cn } from '@/lib/utils'
+import { cn } from "@echoray/ui/lib/utils"
 import { usePathname } from 'next/navigation'
 
 interface DashboardHeaderProps {

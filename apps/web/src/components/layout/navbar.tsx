@@ -13,10 +13,10 @@ import {
     NavigationMenuList,
     NavigationMenuTrigger,
     navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { cn } from "@/lib/utils"
+} from "@echoray/ui/components/ui/navigation-menu"
+import { Button } from "@echoray/ui/components/ui/button"
+import { Sheet, SheetContent, SheetTrigger } from "@echoray/ui/components/ui/sheet"
+import { cn } from "@echoray/ui/lib/utils"
 import { useAuthStore, createProfileFromConvexUser } from "@/stores/auth-store"
 import { useConvexAuth, useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"

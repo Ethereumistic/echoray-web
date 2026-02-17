@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@echoray/ui/components/ui/button";
 import { LayoutGrid, Table2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@echoray/ui/lib/utils";
 
 interface ViewSwitcherProps {
     currentView: "table" | "grid";

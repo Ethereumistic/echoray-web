@@ -3,8 +3,8 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Button } from "@echoray/ui/components/ui/button";
+import { Card, CardHeader, CardContent } from "@echoray/ui/components/ui/card";
 import { Plus, GripVertical, Trash2, Settings } from "lucide-react";
 import { FieldTypeSelector } from "./field-type-selector";
 import { FieldEditor } from "./field-editor";

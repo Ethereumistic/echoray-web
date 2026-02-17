@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { MapperProjectList } from "@/components/apps/mapper/project-list";
-import { Button } from "@/components/ui/button";
+import { Button } from "@echoray/ui/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 

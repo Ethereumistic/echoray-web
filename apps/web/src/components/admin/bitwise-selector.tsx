@@ -4,7 +4,7 @@ import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import type { Doc } from "../../../convex/_generated/dataModel"
 import { Check, ShieldAlert, Info, Lock } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn } from "@echoray/ui/lib/utils"
 
 interface BitwisePermissionSelectorProps {
     value: number

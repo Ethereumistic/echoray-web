@@ -12,26 +12,26 @@ import {
     Facebook, Instagram, Twitter, Linkedin, Youtube, Github,
     MessageCircle, Plus, Trash2, DollarSign, CalendarDays
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@echoray/ui/components/ui/button"
+import { Input } from "@echoray/ui/components/ui/input"
+import { Label } from "@echoray/ui/components/ui/label"
+import { Textarea } from "@echoray/ui/components/ui/textarea"
+import { Switch } from "@echoray/ui/components/ui/switch"
+import { Checkbox } from "@echoray/ui/components/ui/checkbox"
+import { Calendar } from "@echoray/ui/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@echoray/ui/components/ui/popover"
+import { Tabs, TabsList, TabsTrigger } from "@echoray/ui/components/ui/tabs"
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
+} from "@echoray/ui/components/ui/select"
 import Link from "next/link"
 import { useRouter, useParams } from "next/navigation"
 import { toast } from "sonner"
-import { fileToBase64, uploadToGitHub, deleteFromGitHub, createGitTag } from "@/lib/file-upload"
+import { fileToBase64, uploadToGitHub, deleteFromGitHub, createGitTag } from "@echoray/utils/file-upload"
 import { format } from "date-fns"
 
 function slugify(text: string): string {
@@ -136,7 +136,7 @@ function DatePicker({
                             defaultMonth={selected || new Date()}
                             fromYear={2020}
                             toYear={2035}
-                            onSelect={(date) => {
+                            onSelect={(date: Date | undefined) => {
                                 onChange(date ? date.getTime() : undefined)
                                 setOpen(false)
                             }}

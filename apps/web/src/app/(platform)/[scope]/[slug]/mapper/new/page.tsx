@@ -1,7 +1,7 @@
 import { CreateProjectForm } from "@/components/apps/mapper/create-project-form";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@echoray/ui/components/ui/button";
 
 export default async function NewMapperProjectPage({
     params,

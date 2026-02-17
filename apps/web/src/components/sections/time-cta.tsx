@@ -1,9 +1,9 @@
 "use client"
 
-import { Calendar } from "@/components/ui/calendar"
+import { Calendar } from "@echoray/ui/components/ui/calendar"
 import { useState } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { Input } from "@echoray/ui/components/ui/input"
+import { Button } from "@echoray/ui/components/ui/button"
 import { ArrowRight, Clock } from "lucide-react"
 import {
     Command,
@@ -13,9 +13,9 @@ import {
     CommandInput,
     CommandItem,
     CommandList,
-} from "@/components/ui/command"
+} from "@echoray/ui/components/ui/command"
 
-import { PhoneInput } from "@/components/ui/phone-input"
+import { PhoneInput } from "@echoray/ui/components/ui/phone-input"
 import type { Value } from "react-phone-number-input"
 
 const timeSlots = [

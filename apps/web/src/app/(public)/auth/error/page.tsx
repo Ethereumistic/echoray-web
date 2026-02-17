@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@echoray/ui/components/ui/card'
 
 export default async function ErrorPage({ searchParams }: { searchParams: Promise<{ error: string }> }) {
   const params = await searchParams
