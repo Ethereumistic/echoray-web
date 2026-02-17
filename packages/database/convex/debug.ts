@@ -48,11 +48,11 @@ export const changeTier = mutation({
  * Get all subscription tiers (for tier switcher dropdown)
  */
 export const getAllTiers = query({
+    args: {},
     handler: async (ctx) => {
         const userId = await auth.getUserId(ctx);
         if (!userId) return [];
 
-        // Check if staff admin
         const isStaff = await isSystemAdmin(ctx, userId);
         if (!isStaff) return [];
 
