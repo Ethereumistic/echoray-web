@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation } from "convex/react"
-import { api } from "@/../convex/_generated/api"
+import { api } from "@convex/_generated/api"
 import { Button } from "@echoray/ui/components/ui/button"
 import { Input } from "@echoray/ui/components/ui/input"
 import { Textarea } from "@echoray/ui/components/ui/textarea"

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
+import { api } from "@convex/_generated/api"
 import { motion } from "framer-motion"
 import {
     Save,
@@ -25,7 +25,7 @@ import {
 } from "@echoray/ui/components/ui/dialog"
 import { BitwisePermissionSelector } from "./bitwise-selector"
 import { toast } from "sonner"
-import type { Doc } from "../../../convex/_generated/dataModel"
+import type { Doc } from "@convex/_generated/dataModel"
 
 interface TierData extends Doc<"subscriptionTiers"> {
     _id: Doc<"subscriptionTiers">["_id"]

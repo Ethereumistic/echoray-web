@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import { Briefcase, ArrowRight, Plus } from "lucide-react"
 import { useQuery } from "convex/react"
-import { api } from "../../../../../convex/_generated/api"
+import { api } from "@convex/_generated/api"
 import Link from "next/link"
 
 const contentTypes = [

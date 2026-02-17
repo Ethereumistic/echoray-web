@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { useQuery } from "convex/react"
 import { useAuthStore, createProfileFromConvexUser } from "@/stores/auth-store"
-import { api } from "../../../convex/_generated/api"
+import { api } from "@convex/_generated/api"
 import type { Organization } from "@/stores/auth-store"
 
 /**

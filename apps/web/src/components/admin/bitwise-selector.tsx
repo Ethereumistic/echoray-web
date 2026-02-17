@@ -1,8 +1,8 @@
 "use client"
 
 import { useQuery } from "convex/react"
-import { api } from "../../../convex/_generated/api"
-import type { Doc } from "../../../convex/_generated/dataModel"
+import { api } from "@convex/_generated/api"
+import type { Doc } from "@convex/_generated/dataModel"
 import { Check, ShieldAlert, Info, Lock } from "lucide-react"
 import { cn } from "@echoray/ui/lib/utils"
 

@@ -66,7 +66,7 @@ import { useAuthActions } from "@convex-dev/auth/react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useQuery } from "convex/react"
-import { api } from "../../../convex/_generated/api"
+import { api } from "@convex/_generated/api"
 
 // --- Types ---
 interface SubNavItem {

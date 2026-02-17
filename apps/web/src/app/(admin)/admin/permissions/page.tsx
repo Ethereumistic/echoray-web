@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { useQuery } from "convex/react"
-import { api } from "../../../../../convex/_generated/api"
-import type { Doc } from "../../../../../convex/_generated/dataModel"
+import { api } from "@convex/_generated/api"
+import type { Doc } from "@convex/_generated/dataModel"
 import { motion } from "framer-motion"
 import {
     Plus,

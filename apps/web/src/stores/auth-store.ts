@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { Id } from '../../convex/_generated/dataModel'
+import type { Id } from '@convex/_generated/dataModel'
 
 // Note: Legacy role-based access has been replaced by bitwise permissions
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useMutation } from "convex/react"
-import type { Id } from "../../../convex/_generated/dataModel"
+import type { Id } from "@convex/_generated/dataModel"
 import type { MemberWithRoles } from "@/types/permissions"
 import {
     Table,
@@ -28,7 +28,7 @@ import { useAuthStore } from "@/stores/auth-store"
 import { PermissionGuard } from "./permission-guard"
 import { InviteMemberDialog } from "./invite-member-dialog"
 import { MemberRolesDialog } from "./member-roles-dialog"
-import { api } from "../../../convex/_generated/api"
+import { api } from "@convex/_generated/api"
 
 /**
  * MembersList component shows a table of all members in the current active org.

@@ -19,7 +19,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@echoray/ui/components/ui/she
 import { cn } from "@echoray/ui/lib/utils"
 import { useAuthStore, createProfileFromConvexUser } from "@/stores/auth-store"
 import { useConvexAuth, useQuery } from "convex/react"
-import { api } from "../../../convex/_generated/api"
+import { api } from "@convex/_generated/api"
 
 const services: { title: string; href: string; description: string; icon: React.ReactNode }[] = [
     {

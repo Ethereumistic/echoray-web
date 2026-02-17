@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
-import type { Id } from "../../../convex/_generated/dataModel"
+import { api } from "@convex/_generated/api"
+import type { Id } from "@convex/_generated/dataModel"
 import { useAuthStore } from "@/stores/auth-store"
 import { Button } from "@echoray/ui/components/ui/button"
 import { Input } from "@echoray/ui/components/ui/input"

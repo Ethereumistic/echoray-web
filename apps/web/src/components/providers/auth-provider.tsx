@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useConvexAuth, useQuery } from 'convex/react'
 import { useAuthStore, createProfileFromConvexUser } from '@/stores/auth-store'
-import { api } from '../../../convex/_generated/api'
+import { api } from '@convex/_generated/api'
 
 interface AuthProviderProps {
     children: React.ReactNode

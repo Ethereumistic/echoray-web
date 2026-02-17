@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useQuery, useMutation, useAction } from "convex/react"
-import { api } from "../../../../../convex/_generated/api"
-import type { Id } from "../../../../../convex/_generated/dataModel"
+import { api } from "@convex/_generated/api"
+import type { Id } from "@convex/_generated/dataModel"
 import { cn } from "@echoray/ui/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import {

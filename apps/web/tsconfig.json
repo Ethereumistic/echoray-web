@@ -26,7 +26,7 @@
 		"baseUrl": ".",
 		"paths": {
 			"@/*": ["./src/*"],
-			"@convex/*": ["./convex/*"],
+			"@convex/*": ["../../packages/database/convex/*"],
 			"@echoray/ui": ["../../packages/ui/src"],
 			"@echoray/ui/components/*": ["../../packages/ui/src/components/*"],
 			"@echoray/ui/lib/*": ["../../packages/ui/src/lib/*"],

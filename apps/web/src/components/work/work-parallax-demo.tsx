@@ -2,7 +2,7 @@
 import React from "react";
 import { WorkParallax } from "./work-parallax";
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@convex/_generated/api";
 
 export function WorkParallaxDemo() {
     const projects = useQuery(api.work.getPublishedProjects);

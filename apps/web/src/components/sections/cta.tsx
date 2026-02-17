@@ -16,8 +16,8 @@ export function CTA() {
                 showGradient={false}
             >
                 <div className="w-full h-full ">
-                    <TimeCTA />
-                    {/* <TimeCTABlue /> */}
+                    {/* <TimeCTA /> */}
+                    <TimeCTABlue />
                 </div>
             </MacbookScroll>
         </div>

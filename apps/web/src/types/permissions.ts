@@ -2,7 +2,7 @@
  * roles and permissions types
  * Strictly follows the bitwise system defined in ai/roles_permissions.mdx
  */
-import type { Id } from "../../convex/_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 export type SubscriptionTier = 'user' | 'web' | 'app' | 'crm';
 

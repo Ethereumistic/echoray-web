@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@echo
 import { Activity, Users, Loader2, User, FileText, Settings } from "lucide-react"
 import { OrgQuickActions } from "@/components/dashboard/org-quick-actions"
 import Link from "next/link"
-import { api } from "../../../../../convex/_generated/api"
+import { api } from "@convex/_generated/api"
 import { useScopeContext } from "@/contexts/scope-context"
 
 /**

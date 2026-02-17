@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { useQuery, useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
+import { api } from "@convex/_generated/api"
 import { useAuthStore } from "@/stores/auth-store"
-import type { Id } from "../../../convex/_generated/dataModel"
+import type { Id } from "@convex/_generated/dataModel"
 import {
     Dialog,
     DialogContent,

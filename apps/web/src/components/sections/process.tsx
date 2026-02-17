@@ -8,6 +8,7 @@ import { AnimatePresence } from "framer-motion"
 import { Carousel, CarouselContent, CarouselItem } from "@echoray/ui/components/ui/carousel"
 import Autoplay from "embla-carousel-autoplay"
 import { Hero3D } from "@/components/sections/hero-3d"
+import { PhoneMock } from "./phone-mock"
 
 interface ProcessStep {
     icon: LucideIcon
@@ -434,7 +435,7 @@ function LaunchAnimation({ isActive }: { isActive: boolean }) {
 
                             {/* Hero3D component scaled to fit the fixed container */}
                             <div className="relative scale-[0.65] origin-center">
-                                <Hero3D />
+                                <PhoneMock />
                             </div>
                         </motion.div>
                     )}
