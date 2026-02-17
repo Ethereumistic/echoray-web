@@ -4,9 +4,12 @@
   "private": true,
   "type": "module",
   "exports": {
+    ".": "./index.tsx",
     "./components/ui/*": "./src/components/ui/*.tsx",
     "./lib/*": "./src/lib/*.ts",
-    "./hooks/*": "./src/hooks/*.ts"
+    "./hooks/*": "./src/hooks/*.ts",
+    "./styles/globals.css": "./src/styles/globals.css",
+    "./src/styles/globals.css": "./src/styles/globals.css"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
@@ -51,7 +54,9 @@
   "devDependencies": {
     "@types/react": "^19",
     "typescript": "^5",
-    "next": "^15.0.0"
+    "next": "^15.0.0",
+    "tailwindcss": "^4",
+    "@tailwindcss/postcss": "^4"
   },
   "peerDependencies": {
     "react": "^19.1.4",
