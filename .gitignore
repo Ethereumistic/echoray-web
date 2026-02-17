@@ -44,3 +44,7 @@ coverage/
 *.tsbuildinfo
 .turbo/
 telemetry-id
+
+# Bun
+**/.bun-cache/
+.bun/

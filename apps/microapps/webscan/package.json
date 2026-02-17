@@ -1,0 +1,30 @@
+{
+  "name": "@echoray/webscan",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "docker:build": "docker build -t echoray-webscan .",
+    "docker:run": "docker run -p 3001:3001 --env-file .env echoray-webscan"
+  },
+  "dependencies": {
+    "elysia": "^1.0.0",
+    "@elysiajs/cors": "^1.0.0",
+    "@elysiajs/bearer": "^1.0.0",
+    "lighthouse": "^12.0.0",
+    "chrome-launcher": "^1.1.0",
+    "puppeteer": "^22.0.0",
+    "bullmq": "^5.0.0",
+    "convex": "^1.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "bun-types": "latest"
+  },
+  "workspaces": [
+    "../../../packages/*"
+  ]
+}

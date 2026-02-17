@@ -1,0 +1,7 @@
+[install]
+optional = true
+dev = false
+peer = true
+
+[install.cache]
+dir = ".bun-cache"
