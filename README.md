@@ -1,47 +1,57 @@
-# OpenNext Starter
+# Echoray Monorepo
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Modern monorepo for Echoray web platform and microapplications.
 
-## Getting Started
+## Structure
 
-Read the documentation at https://opennext.js.org/cloudflare.
+- `apps/web` - Main Next.js application (Cloudflare Workers)
+- `apps/microapps` - Independent microapplications
+  - `webscan` - Web scanning microapp (Vite + React)
+  - `lead-ai` - Lead AI microapp (Next.js)
+- `packages/ui` - Shared UI components (shadcn/ui)
+- `packages/database` - Convex database schema & utilities
+- `packages/config` - Shared TypeScript/ESLint configs
+- `packages/utils` - Shared utility functions
 
-## Develop
-
-Run the Next.js development server:
-
-```bash
-npm run dev
-# or similar package manager command
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-## Preview
-
-Preview the application locally on the Cloudflare runtime:
+## Quick Start
 
 ```bash
-npm run preview
-# or similar package manager command
+# Install dependencies
+pnpm install
+
+# Run web app
+pnpm dev:web
+
+# Build for production
+pnpm build:web
+
+# Deploy to Cloudflare
+cd apps/web && pnpm deploy
 ```
 
-## Deploy
+## Development
 
-Deploy the application to Cloudflare:
+### Adding a new microapp
 
-```bash
-npm run deploy
-# or similar package manager command
+1. Create directory: `apps/microapps/[app-name]`
+2. Add package.json with workspace dependencies
+3. Add to pnpm-workspace.yaml (if not already covered by glob)
+4. Run `pnpm install` from root
+
+### Using shared packages
+
+```typescript
+// Use shared UI components
+import { Button } from '@echoray/ui/components/button'
+
+// Use shared utilities
+import { emailSchema } from '@echoray/utils/validations'
+
+// Use database types
+import { api } from '@echoray/database/convex'
 ```
 
-## Learn More
+## Requirements
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Node.js >= 20.0.0
+- pnpm >= 9.0.0

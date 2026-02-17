@@ -1,0 +1,24 @@
+{
+  "name": "@echoray/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./convex": "./convex/index.ts",
+    "./convex/*": "./convex/*.ts"
+  },
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy"
+  },
+  "dependencies": {
+    "@auth/core": "^0.37.4",
+    "@convex-dev/auth": "^0.0.90",
+    "@convex-dev/resend": "^0.2.3",
+    "convex": "^1.31.4",
+    "resend": "^6.7.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

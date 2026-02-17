@@ -1,56 +1,46 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Build outputs
+.next/
+.open-next/
+out/
+dist/
+build/
 
-#ai context
-# /ai
-# /sql
+# Environment variables
+.env
+.env*.local
+.dev.vars
 
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
-!.env.example
+# OS
+.DS_Store
+*.pem
+Thumbs.db
 
-# vercel
-.vercel
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
 
-# typescript
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
 *.tsbuildinfo
-next-env.d.ts
-
-# OpenNext
-/.open-next
-
-# wrangler files
-.wrangler
-.dev.vars*
-
-
-!.dev.vars.example
+.turbo/
+telemetry-id

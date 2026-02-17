@@ -1,0 +1,23 @@
+{
+  "name": "@echoray/lead-ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001"
+  },
+  "dependencies": {
+    "@echoray/database": "workspace:*",
+    "@echoray/ui": "workspace:*",
+    "@echoray/utils": "workspace:*",
+    "next": "15.5.9",
+    "react": "^19.1.4",
+    "react-dom": "^19.1.4"
+  },
+  "devDependencies": {
+    "@echoray/config": "workspace:*",
+    "typescript": "^5"
+  }
+}
