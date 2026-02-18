@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   webscan:
     build: .
@@ -13,13 +11,13 @@ services:
       - REDIS_PORT=6379
       - CONVEX_URL=${CONVEX_URL}
       - CONVEX_DEPLOY_KEY=${CONVEX_DEPLOY_KEY}
-      - LIGHTHOUSE_THROTTLING=true
-      - LIGHTHOUSE_TIMEOUT=60000
+      - LIGHTHOUSE_THROTTLING=false
+      - LIGHTHOUSE_TIMEOUT=120000
     depends_on:
       - redis
     restart: unless-stopped
-    mem_limit: 2g
-    cpus: 1.5
+    mem_limit: 4g
+    cpus: 2
 
   redis:
     image: redis:7-alpine

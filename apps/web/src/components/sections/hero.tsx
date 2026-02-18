@@ -53,7 +53,7 @@ export function Hero5() {
 
             <div className="container relative z-10 mx-auto px-4 md:px-6">
                 <div className="max-w-7xl mx-auto">
-                    <div className="grid lg:grid-cols-12 gap-12 sm:gap-0 items-center">
+                    <div className="grid lg:grid-cols-12 gap-12 xl:gap-0 items-center">
                         {/* Main content — 7 of 12 columns on desktop */}
                         <motion.div
                             className="lg:col-span-7 text-center lg:text-right"

@@ -97,9 +97,9 @@ export function FAQ5() {
                 </motion.div>
 
 
-                <div className="flex flex-col lg:grid lg:grid-cols-[1fr_1.5fr] gap-12 lg:gap-24 items-start max-w-7xl mx-auto">
+                <div className="flex flex-col xl:grid xl:grid-cols-[1fr_1.5fr] gap-12 xl:gap-24 items-start max-w-7xl mx-auto">
                     {/* Left column - Help Card (Moves to bottom on mobile) */}
-                    <div className="lg:sticky lg:top-32 w-full order-2 lg:order-1">
+                    <div className="xl:sticky xl:top-32 w-full order-2 xl:order-1">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             whileInView={{ opacity: 1, scale: 1 }}

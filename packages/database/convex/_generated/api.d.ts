@@ -30,6 +30,7 @@ import type * as seed from "../seed.js";
 import type * as uploads from "../uploads.js";
 import type * as users from "../users.js";
 import type * as webscan from "../webscan.js";
+import type * as webscanActions from "../webscanActions.js";
 import type * as work from "../work.js";
 
 import type {
@@ -61,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   uploads: typeof uploads;
   users: typeof users;
   webscan: typeof webscan;
+  webscanActions: typeof webscanActions;
   work: typeof work;
 }>;
 

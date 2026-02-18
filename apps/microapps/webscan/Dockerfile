@@ -1,4 +1,4 @@
-FROM oven/bun:1.1-alpine
+FROM oven/bun:alpine
 
 RUN apk add --no-cache \
     chromium \
@@ -14,18 +14,16 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 
 WORKDIR /app
 
-COPY package.json bun.lockb ./
+COPY package.json ./
 
-RUN bun install --frozen-lockfile --production
+RUN bun install
 
 COPY src ./src
 COPY tsconfig.json ./
-
-RUN bun build src/index.ts --outdir dist --target bun
 
 EXPOSE 3001
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD bun fetch http://localhost:3001/health || exit 1
 
-CMD ["bun", "dist/index.js"]
+CMD ["bun", "run", "src/index.ts"]
