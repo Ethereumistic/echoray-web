@@ -15,6 +15,7 @@ import {
   FileText,
   Sparkles,
   Gauge,
+  Calendar,
 } from "lucide-react";
 
 import {
@@ -39,6 +40,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 
 const adminNavItems = [
   { title: "Overview", href: "/admin", icon: LayoutDashboard },
+  { title: "Meetings", href: "/admin/meetings", icon: Calendar },
   { title: "WebScan", href: "/admin/webscan", icon: Gauge },
   { title: "Lead AI", href: "/admin/lead-ai", icon: Sparkles },
   { title: "Content CMS", href: "/admin/cms", icon: FileText },

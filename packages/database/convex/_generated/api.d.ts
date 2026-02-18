@@ -21,6 +21,7 @@ import type * as leadaiActions from "../leadaiActions.js";
 import type * as mapping_cards from "../mapping/cards.js";
 import type * as mapping_projects from "../mapping/projects.js";
 import type * as mapping_templates from "../mapping/templates.js";
+import type * as meetings from "../meetings.js";
 import type * as members from "../members.js";
 import type * as organizations from "../organizations.js";
 import type * as permissions from "../permissions.js";
@@ -53,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   "mapping/cards": typeof mapping_cards;
   "mapping/projects": typeof mapping_projects;
   "mapping/templates": typeof mapping_templates;
+  meetings: typeof meetings;
   members: typeof members;
   organizations: typeof organizations;
   permissions: typeof permissions;

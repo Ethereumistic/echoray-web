@@ -649,6 +649,70 @@ export default defineSchema({
     .index("by_timestamp", ["timestamp"]),
 
   // ========================================
+  // MEETING BOOKING TABLES
+  // ========================================
+
+  // Rate limiting tracker for booking form
+  meeting_book_rate_limits: defineTable({
+    identifier: v.string(),
+    identifierType: v.union(v.literal("ip"), v.literal("email")),
+    attemptCount: v.number(),
+    firstAttemptAt: v.number(),
+    lastAttemptAt: v.number(),
+    blockedUntil: v.optional(v.number()),
+  })
+    .index("by_identifier", ["identifier"])
+    .index("by_identifier_type", ["identifierType"]),
+
+  // Blocked dates for booking availability
+  meeting_book_blocked_dates: defineTable({
+    date: v.optional(v.number()),
+    dateStart: v.optional(v.number()),
+    dateEnd: v.optional(v.number()),
+    reason: v.optional(v.string()),
+    isWeekend: v.optional(v.boolean()),
+    isActive: v.boolean(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_date", ["date"])
+    .index("by_active", ["isActive"])
+    .index("by_weekend", ["isWeekend"]),
+
+  // Main bookings table
+  meeting_bookings: defineTable({
+    fullName: v.string(),
+    email: v.string(),
+    phone: v.string(),
+    meetingDate: v.number(),
+    timeSlot: v.string(),
+    timezone: v.string(),
+    status: v.union(
+      v.literal("awaiting"),
+      v.literal("confirmed"),
+      v.literal("cancelled"),
+      v.literal("passed"),
+      v.literal("successful"),
+      v.literal("ghosted"),
+    ),
+    notes: v.optional(v.string()),
+    spamScore: v.optional(v.number()),
+    honeypotTriggered: v.optional(v.boolean()),
+    submissionTimeMs: v.optional(v.number()),
+    clientIp: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    statusChangedAt: v.optional(v.number()),
+    statusChangedBy: v.optional(v.id("users")),
+  })
+    .index("by_status", ["status"])
+    .index("by_date", ["meetingDate"])
+    .index("by_email", ["email"])
+    .index("by_status_date", ["status", "meetingDate"])
+    .index("by_date_slot", ["meetingDate", "timeSlot"]),
+
+  // ========================================
   // WEBSCAN MICROSERVICE TABLES
   // ========================================
 
